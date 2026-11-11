@@ -39,7 +39,8 @@
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTask"
-            android:taskAffinity="de.silvertax.merks.record" />
+            android:taskAffinity="de.silvertax.merks.record"
+            android:theme="@style/OverlayTheme" />
 
         <activity
             android:name=".SettingsActivity"
@@ -58,6 +59,10 @@
 
         <receiver
             android:name=".AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".UndoReceiver"
             android:exported="false" />
 
         <receiver

@@ -10,17 +10,19 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import de.silvertax.merks.parse.Kind
 import java.util.Locale
 
 /** Opened by the widget: listens right away, sorts what was said and confirms it. */
 class RecordActivity : Activity() {
     private var recognizer: SpeechRecognizer? = null
     private var saved: Entry? = null
+    private var compact = false
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var status: TextView
@@ -32,8 +34,17 @@ class RecordActivity : Activity() {
     private lateinit var undo: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The manifest theme is the small floating info; the full screen is switched on here.
+        compact = Prefs.compact(this)
+        if (!compact) setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_record)
+        if (compact) {
+            setContentView(R.layout.activity_record_compact)
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.BOTTOM)
+        } else {
+            setContentView(R.layout.activity_record)
+        }
         status = findViewById(R.id.status)
         spoken = findViewById(R.id.spoken)
         detail = findViewById(R.id.detail)
@@ -140,21 +151,22 @@ class RecordActivity : Activity() {
             }
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                if (entry == null) fail(getString(R.string.err_save)) else confirm(entry)
+                when {
+                    entry == null -> fail(getString(R.string.err_save))
+                    // Small mode: the info disappears and a notification says what was saved.
+                    compact && Scheduler.canConfirmByNotification(this) -> {
+                        Scheduler.confirm(this, entry)
+                        finish()
+                    }
+                    else -> confirm(entry)
+                }
             }
         }.start()
     }
 
     private fun confirm(e: Entry) {
         saved = e
-        status.setText(
-            when {
-                e.kind == Kind.REMINDER -> R.string.saved_reminder
-                e.kind == Kind.NOTE -> R.string.saved_note
-                e.calendarEventId != null -> R.string.saved_appointment
-                else -> R.string.saved_appointment_local
-            },
-        )
+        status.setText(Format.savedLabel(e))
         spoken.text = e.title
         detail.text = Format.whenText(e)
         show(done, undo)

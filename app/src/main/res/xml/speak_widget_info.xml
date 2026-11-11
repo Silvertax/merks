@@ -4,6 +4,8 @@
     android:initialLayout="@layout/widget_speak"
     android:minWidth="110dp"
     android:minHeight="110dp"
+    android:minResizeWidth="40dp"
+    android:minResizeHeight="40dp"
     android:previewLayout="@layout/widget_speak"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"

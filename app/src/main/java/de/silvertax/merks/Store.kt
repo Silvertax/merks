@@ -83,7 +83,14 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
 }
 
 object Prefs {
-    private fun p(ctx: Context) = ctx.getSharedPreferences("merks", Context.MODE_PRIVATE)
+    fun prefs(ctx: Context) = ctx.getSharedPreferences("merks", Context.MODE_PRIVATE)
+    private fun p(ctx: Context) = prefs(ctx)
+
+    /** Small info while listening, confirmation as a notification. */
+    fun compact(ctx: Context): Boolean = p(ctx).getBoolean("compact", true)
+    fun setCompact(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("compact", on).apply()
+    fun updates(ctx: Context): Boolean = p(ctx).getBoolean("updates", true)
+    fun setUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("updates", on).apply()
     fun apiKey(ctx: Context): String = p(ctx).getString("api_key", "")!!.trim()
     fun setApiKey(ctx: Context, key: String) = p(ctx).edit().putString("api_key", key.trim()).apply()
     fun askedPermissions(ctx: Context): Boolean = p(ctx).getBoolean("asked", false)

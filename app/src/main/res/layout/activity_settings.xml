@@ -10,6 +10,42 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <Switch
+            android:id="@+id/compact"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="@string/settings_compact"
+            android:textColor="@color/ink"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_compact_hint"
+            android:textColor="@color/ink_soft"
+            android:textSize="17sp" />
+
+        <Switch
+            android:id="@+id/updates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minHeight="56dp"
+            android:text="@string/settings_updates"
+            android:textColor="@color/ink"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            android:text="@string/settings_updates_hint"
+            android:textColor="@color/ink_soft"
+            android:textSize="17sp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
