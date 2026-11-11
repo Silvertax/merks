@@ -50,4 +50,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" merks.apk --generate-notes
+        # Works for a pushed tag and for a release drafted in the GitHub UI.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" merks.apk --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" merks.apk --generate-notes
+          fi
