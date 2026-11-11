@@ -20,6 +20,16 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
 
+      # A release tag must match the version inside the app, otherwise the update notice lies.
+      - name: Check tag against app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match app version $version. Use the tag v$version."
+            exit 1
+          fi
+
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
 
