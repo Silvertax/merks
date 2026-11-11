@@ -6,20 +6,24 @@
     android:background="@drawable/widget_bg"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="8dp">
 
+    <!-- The icon takes whatever height the label leaves, so the label is never cut off. -->
     <ImageView
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:contentDescription="@string/speak"
+        android:scaleType="fitCenter"
         android:src="@drawable/ic_mic" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
         android:text="@string/speak"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="17sp"
         android:textStyle="bold" />
 </LinearLayout>

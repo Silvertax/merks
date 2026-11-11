@@ -12,7 +12,7 @@ A home screen widget starts listening right away. What you say is sorted into an
 
 By default only a small info appears at the bottom of the screen while listening; afterwards a notification shows what was saved (with an undo action). This can be switched to a full-screen view under "Einstellungen".
 
-The widget is 2x2 by default and can be resized down to 1x1.
+The widget is 2x2 by default and can be resized down to 1x1. Small sizes show only the icon, wide flat sizes show icon and label side by side.
 
 The app asks GitHub at most once a day whether a newer release exists and shows a notice. This can be switched off.
 
@@ -27,7 +27,7 @@ Speech-to-text uses the recogniser installed on the phone (`SpeechRecognizer`). 
 
 ## Status
 
-Version 0.2.0 is an early test version. The interface and the offline rules are German only.
+Version 0.2.1 is an early test version. The interface and the offline rules are German only.
 
 ## Build
 
