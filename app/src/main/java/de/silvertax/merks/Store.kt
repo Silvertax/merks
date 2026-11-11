@@ -11,33 +11,34 @@ import android.provider.CalendarContract
 import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Parsed
+import de.silvertax.merks.parse.Repeat
+import de.silvertax.merks.parse.RepeatUnit
 import de.silvertax.merks.parse.RuleParser
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.TimeZone
 
-data class Entry(
-    val id: Long,
-    val kind: Kind,
-    val title: String,
-    val raw: String,
-    val start: Long?,
-    val end: Long?,
-    val allDay: Boolean,
-    val calendarEventId: Long?,
-    val created: Long,
-)
-
-class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 1) {
+class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE entries(id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, title TEXT, raw TEXT, " +
                 "start INTEGER, end_ INTEGER, all_day INTEGER, cal_id INTEGER, created INTEGER)",
         )
+        addVersion2Columns(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) addVersion2Columns(db)
+    }
+
+    private fun addVersion2Columns(db: SQLiteDatabase) {
+        db.execSQL("ALTER TABLE entries ADD COLUMN done INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE entries ADD COLUMN snooze INTEGER")
+        db.execSQL("ALTER TABLE entries ADD COLUMN repeat_unit TEXT")
+        db.execSQL("ALTER TABLE entries ADD COLUMN repeat_every INTEGER")
+    }
 
     fun insert(e: Entry): Long = writableDatabase.insert(
         "entries", null,
@@ -50,11 +51,23 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
             put("all_day", if (e.allDay) 1 else 0)
             put("cal_id", e.calendarEventId)
             put("created", e.created)
+            put("done", if (e.done) 1 else 0)
+            put("snooze", e.snooze)
+            put("repeat_unit", e.repeat?.unit?.name)
+            put("repeat_every", e.repeat?.every)
         },
     )
 
     fun delete(id: Long) {
         writableDatabase.delete("entries", "id=?", arrayOf(id.toString()))
+    }
+
+    fun setDone(id: Long, done: Boolean) = update(id, ContentValues().apply { put("done", if (done) 1 else 0) })
+
+    fun setSnooze(id: Long, until: Long?) = update(id, ContentValues().apply { put("snooze", until) })
+
+    private fun update(id: Long, values: ContentValues) {
+        writableDatabase.update("entries", values, "id=?", arrayOf(id.toString()))
     }
 
     fun get(id: Long): Entry? = query("id=?", arrayOf(id.toString())).firstOrNull()
@@ -64,17 +77,24 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
     private fun query(where: String?, args: Array<String>?): List<Entry> {
         val out = ArrayList<Entry>()
         readableDatabase.query("entries", null, where, args, null, null, "created DESC").use { c ->
+            fun col(name: String) = c.getColumnIndexOrThrow(name)
+            fun long(name: String): Long? = col(name).let { if (c.isNull(it)) null else c.getLong(it) }
             while (c.moveToNext()) {
+                val unit = c.getString(col("repeat_unit"))
+                val every = long("repeat_every")?.toInt()
                 out += Entry(
-                    id = c.getLong(0),
-                    kind = Kind.valueOf(c.getString(1)),
-                    title = c.getString(2),
-                    raw = c.getString(3),
-                    start = if (c.isNull(4)) null else c.getLong(4),
-                    end = if (c.isNull(5)) null else c.getLong(5),
-                    allDay = c.getInt(6) == 1,
-                    calendarEventId = if (c.isNull(7)) null else c.getLong(7),
-                    created = c.getLong(8),
+                    id = c.getLong(col("id")),
+                    kind = Kind.valueOf(c.getString(col("kind"))),
+                    title = c.getString(col("title")),
+                    raw = c.getString(col("raw")),
+                    start = long("start"),
+                    end = long("end_"),
+                    allDay = c.getInt(col("all_day")) == 1,
+                    calendarEventId = long("cal_id"),
+                    created = c.getLong(col("created")),
+                    done = c.getInt(col("done")) == 1,
+                    snooze = long("snooze"),
+                    repeat = if (unit != null && every != null && every >= 1) Repeat(RepeatUnit.valueOf(unit), every) else null,
                 )
             }
         }
@@ -91,19 +111,40 @@ object Prefs {
     fun setCompact(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("compact", on).apply()
     fun updates(ctx: Context): Boolean = p(ctx).getBoolean("updates", true)
     fun setUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("updates", on).apply()
+
+    /** Extra notification at 18:00 on the day before an appointment. */
+    fun eveBefore(ctx: Context): Boolean = p(ctx).getBoolean("eve_before", true)
+    fun setEveBefore(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("eve_before", on).apply()
+
     fun apiKey(ctx: Context): String = p(ctx).getString("api_key", "")!!.trim()
     fun setApiKey(ctx: Context, key: String) = p(ctx).edit().putString("api_key", key.trim()).apply()
+
+    /** An empty model field means the built-in default. */
+    fun model(ctx: Context): String = p(ctx).getString("model", "")!!.trim().ifEmpty { AiParser.DEFAULT_MODEL }
+    fun setModel(ctx: Context, model: String) = p(ctx).edit().putString("model", model.trim()).apply()
+
+    fun setAiStatus(ctx: Context, ok: Boolean, error: String?) = p(ctx).edit()
+        .putLong("ai_at", System.currentTimeMillis()).putBoolean("ai_ok", ok).putString("ai_error", error).apply()
+    fun aiAt(ctx: Context): Long = p(ctx).getLong("ai_at", 0)
+    fun aiOk(ctx: Context): Boolean = p(ctx).getBoolean("ai_ok", false)
+    fun aiError(ctx: Context): String? = p(ctx).getString("ai_error", null)
+
     fun askedPermissions(ctx: Context): Boolean = p(ctx).getBoolean("asked", false)
     fun setAskedPermissions(ctx: Context) = p(ctx).edit().putBoolean("asked", true).apply()
 }
 
 object Store {
-    /** Sorts the spoken text: AI when a key is set and the network answers, fixed rules otherwise. */
+    /** Sorts the spoken text: AI when a key is set and the request works, fixed rules otherwise. */
     fun sort(ctx: Context, text: String): Parsed {
         val now = LocalDateTime.now()
         val key = Prefs.apiKey(ctx)
-        val ai = if (key.isNotEmpty()) AiParser.parse(key, text, now, ZoneId.systemDefault()) else null
-        return ai ?: RuleParser.parse(text, now)
+        if (key.isNotEmpty()) {
+            val ai = AiParser.parse(key, Prefs.model(ctx), text, now, ZoneId.systemDefault())
+            // Remembered so the settings can show whether AI sorting really works.
+            Prefs.setAiStatus(ctx, ai.parsed != null, ai.error)
+            if (ai.parsed != null) return ai.parsed
+        }
+        return RuleParser.parse(text, now)
     }
 
     /** Saves the entry, puts appointments into the phone calendar and schedules the reminder. */
@@ -112,7 +153,10 @@ object Store {
         val start = p.start?.atZone(zone)?.toInstant()?.toEpochMilli()
         val end = p.end?.atZone(zone)?.toInstant()?.toEpochMilli()
         val calId = if (p.kind == Kind.APPOINTMENT && p.start != null) insertCalendarEvent(ctx, p, raw) else null
-        val draft = Entry(0, p.kind, p.title, raw, start, end, p.allDay, calId, System.currentTimeMillis())
+        val draft = Entry(
+            0, p.kind, p.title, raw, start, end, p.allDay, calId, System.currentTimeMillis(),
+            repeat = if (start != null) p.repeat else null,
+        )
         val entry = draft.copy(id = Db(ctx).insert(draft))
         Scheduler.schedule(ctx, entry)
         return entry
@@ -147,6 +191,16 @@ object Store {
         return null
     }
 
+    fun rrule(r: Repeat): String {
+        val freq = when (r.unit) {
+            RepeatUnit.DAY -> "DAILY"
+            RepeatUnit.WEEK -> "WEEKLY"
+            RepeatUnit.MONTH -> "MONTHLY"
+            RepeatUnit.YEAR -> "YEARLY"
+        }
+        return if (r.every > 1) "FREQ=$freq;INTERVAL=${r.every}" else "FREQ=$freq"
+    }
+
     private fun insertCalendarEvent(ctx: Context, p: Parsed, raw: String): Long? {
         if (!hasCalendarPermission(ctx)) return null
         return try {
@@ -156,18 +210,26 @@ object Store {
                 put(CalendarContract.Events.CALENDAR_ID, calendar)
                 put(CalendarContract.Events.TITLE, p.title)
                 put(CalendarContract.Events.DESCRIPTION, raw)
+                val startMillis: Long
+                val length: Duration
                 if (p.allDay) {
-                    val day = start.toLocalDate()
                     put(CalendarContract.Events.ALL_DAY, 1)
                     put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
-                    put(CalendarContract.Events.DTSTART, day.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli())
-                    put(CalendarContract.Events.DTEND, day.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli())
+                    startMillis = start.toLocalDate().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
+                    length = Duration.ofDays(1)
                 } else {
-                    val zone = ZoneId.systemDefault()
                     val end = p.end?.takeIf { it.isAfter(start) } ?: start.plusHours(1)
                     put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
-                    put(CalendarContract.Events.DTSTART, start.atZone(zone).toInstant().toEpochMilli())
-                    put(CalendarContract.Events.DTEND, end.atZone(zone).toInstant().toEpochMilli())
+                    startMillis = start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    length = Duration.between(start, end)
+                }
+                put(CalendarContract.Events.DTSTART, startMillis)
+                if (p.repeat != null) {
+                    // The calendar wants a duration instead of an end for a series.
+                    put(CalendarContract.Events.RRULE, rrule(p.repeat))
+                    put(CalendarContract.Events.DURATION, if (p.allDay) "P1D" else "PT${length.seconds}S")
+                } else {
+                    put(CalendarContract.Events.DTEND, startMillis + length.toMillis())
                 }
             }
             ctx.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)?.lastPathSegment?.toLongOrNull()

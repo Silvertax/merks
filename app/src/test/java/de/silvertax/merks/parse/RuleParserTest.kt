@@ -60,6 +60,46 @@ class RuleParserTest {
 
     @Test fun timeOnlyPastRollsToTomorrow() = check("um 3 Anruf bei Klaus", Kind.APPOINTMENT, "2026-11-12T15:00", "Anruf bei Klaus")
 
+    private fun series(text: String, start: String, title: String, unit: RepeatUnit, every: Int, kind: Kind, allDay: Boolean) {
+        check(text, kind, start, title, allDay)
+        assertEquals("repeat of '$text'", Repeat(unit, every), RuleParser.parse(text, now).repeat)
+    }
+
+    @Test fun everyMonday() = series(
+        "Jeden Montag Mülltonne rausstellen", "2026-11-16T00:00", "Mülltonne rausstellen",
+        RepeatUnit.WEEK, 1, Kind.APPOINTMENT, allDay = true,
+    )
+
+    @Test fun everyDayAtEight() = series(
+        "Jeden Tag um 8 Uhr Tabletten nehmen", "2026-11-12T08:00", "Tabletten nehmen",
+        RepeatUnit.DAY, 1, Kind.APPOINTMENT, allDay = false,
+    )
+
+    @Test fun everyTwoWeeks() = series(
+        "Alle zwei Wochen freitags um 15 Uhr Fußpflege", "2026-11-13T15:00", "Fußpflege",
+        RepeatUnit.WEEK, 2, Kind.APPOINTMENT, allDay = false,
+    )
+
+    @Test fun everyYear() = series(
+        "Jedes Jahr am 3. Dezember Geburtstag von Oma", "2026-12-03T00:00", "Geburtstag von Oma",
+        RepeatUnit.YEAR, 1, Kind.APPOINTMENT, allDay = true,
+    )
+
+    @Test fun everyEveningReminder() = series(
+        "Erinnere mich jeden Abend an die Tabletten", "2026-11-12T19:00", "Die Tabletten",
+        RepeatUnit.DAY, 1, Kind.REMINDER, allDay = false,
+    )
+
+    @Test fun everyMonthOnTheFirst() = series(
+        "Jeden Monat am 1. Miete überweisen", "2026-12-01T00:00", "Miete überweisen",
+        RepeatUnit.MONTH, 1, Kind.APPOINTMENT, allDay = true,
+    )
+
+    @Test fun singleDatesHaveNoRepeat() {
+        assertEquals(null, RuleParser.parse("Morgen um 10 Zahnarzt", now).repeat)
+        assertEquals(null, RuleParser.parse("Freitag Abend Kino mit Peter", now).repeat)
+    }
+
     @Test fun nextWeek() = check(
         "Nächste Woche Auto zum TÜV", Kind.APPOINTMENT, "2026-11-18T00:00", "Auto zum TÜV", allDay = true,
     )

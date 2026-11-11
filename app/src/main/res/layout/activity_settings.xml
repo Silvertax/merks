@@ -28,6 +28,24 @@
             android:textSize="17sp" />
 
         <Switch
+            android:id="@+id/eve_before"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minHeight="56dp"
+            android:text="@string/settings_eve"
+            android:textColor="@color/ink"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_eve_hint"
+            android:textColor="@color/ink_soft"
+            android:textSize="17sp" />
+
+        <Switch
             android:id="@+id/updates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -73,10 +91,43 @@
             android:minHeight="56dp"
             android:textSize="18sp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/settings_model_label"
+            android:textColor="@color/ink_soft"
+            android:textSize="17sp" />
+
+        <EditText
+            android:id="@+id/model"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/settings_model_hint"
+            android:importantForAutofill="no"
+            android:inputType="textVisiblePassword"
+            android:minHeight="56dp"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/ai_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/ink"
+            android:textIsSelectable="true"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/test"
+            style="@style/QuietButton"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_test" />
+
         <Button
             android:id="@+id/save"
             style="@style/BigButton"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="8dp"
             android:text="@string/save" />
     </LinearLayout>
 </ScrollView>

@@ -62,6 +62,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".ActionReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".UndoReceiver"
             android:exported="false" />
 

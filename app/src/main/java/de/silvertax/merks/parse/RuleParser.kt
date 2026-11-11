@@ -12,7 +12,13 @@ data class Parsed(
     val start: LocalDateTime?,
     val end: LocalDateTime?,
     val allDay: Boolean,
+    val repeat: Repeat? = null,
 )
+
+enum class RepeatUnit { DAY, WEEK, MONTH, YEAR }
+
+/** A series: every [every] days, weeks, months or years, starting at the entry's start. */
+data class Repeat(val unit: RepeatUnit, val every: Int)
 
 /**
  * Offline fallback: recognises common German date and time phrases with fixed rules.
@@ -68,7 +74,15 @@ object RuleParser {
     private val dDayAfter = re("$L${PRE}übermorgen$R")
     private val dToday = re("$L${PRE}heute$R")
     private val dTomorrow = re("$L${PRE}morgen$R")
-    private val dWeekday = re("$L$PRE(?:(übernächsten?|nächsten?|kommenden?|diesen?)\\s+)?($DAYS)s?$R")
+    private val dWeekday =
+        re("$L$PRE(?:(übernächsten?|nächsten?|kommenden?|diesen?|jeden|immer)\\s+)?(?:am\\s+)?($DAYS)(s?)$R")
+    private val dDayOfMonth = re("$L$PRE(\\d{1,2})\\.(?!\\d)")
+
+    private val rDaily = re("$L(?:jeden\\s+tag|täglich|jeden\\s+(morgen|abend))$R")
+    private val rEveryN = re("${L}alle\\s+$COUNT\\s+(tage|wochen|monate|jahre)$R")
+    private val rWeekly = re("$L(?:jede\\s+woche|wöchentlich)$R")
+    private val rMonthly = re("$L(?:jeden\\s+monat|monatlich)$R")
+    private val rYearly = re("$L(?:jedes\\s+jahr|jährlich)$R")
     private val dNextWeek = re("$L(?:in\\s+der\\s+)?nächsten?\\s+woche$R")
     private val dNextMonth = re("$L(?:im\\s+)?nächsten\\s+monat$R")
 
@@ -110,6 +124,30 @@ object RuleParser {
         fun setTime(h: Int, m: Int) {
             if (time == null && h in 0..23 && m in 0..59) time = LocalTime.of(h, m)
         }
+
+        // Series first, so "jeden Morgen" is not read as "tomorrow".
+        var repeat: Repeat? = null
+        var seriesTime: LocalTime? = null
+        w.take(rEveryN)?.let { m ->
+            val n = num(m.groupValues[1]) ?: return@let
+            val unit = when (m.groupValues[2].lowercase()) {
+                "tage" -> RepeatUnit.DAY
+                "wochen" -> RepeatUnit.WEEK
+                "monate" -> RepeatUnit.MONTH
+                else -> RepeatUnit.YEAR
+            }
+            if (n >= 1) repeat = Repeat(unit, n)
+        }
+        w.take(rDaily)?.let { m ->
+            if (repeat == null) repeat = Repeat(RepeatUnit.DAY, 1)
+            when (m.groupValues[1].lowercase()) {
+                "morgen" -> seriesTime = LocalTime.of(8, 0)
+                "abend" -> seriesTime = LocalTime.of(19, 0)
+            }
+        }
+        if (w.take(rWeekly) != null && repeat == null) repeat = Repeat(RepeatUnit.WEEK, 1)
+        if (w.take(rMonthly) != null && repeat == null) repeat = Repeat(RepeatUnit.MONTH, 1)
+        if (w.take(rYearly) != null && repeat == null) repeat = Repeat(RepeatUnit.YEAR, 1)
 
         w.take(tClock)?.let { m ->
             val h = m.groupValues[1].toInt()
@@ -178,8 +216,21 @@ object RuleParser {
             val target = weekdays[m.groupValues[2].lowercase()] ?: return@let
             var diff = (target - today.dayOfWeek.value + 7) % 7
             if (diff == 0) diff = 7
-            if (m.groupValues[1].lowercase().startsWith("übernächst")) diff += 7
+            val lead = m.groupValues[1].lowercase()
+            if (lead.startsWith("übernächst")) diff += 7
             date = today.plusDays(diff.toLong())
+            // "jeden Montag", "immer montags", "montags" all mean every week.
+            if (repeat == null && (lead == "jeden" || lead == "immer" || m.groupValues[3].isNotEmpty())) {
+                repeat = Repeat(RepeatUnit.WEEK, 1)
+            }
+        }
+        // "jeden Monat am 1."
+        if (date == null && repeat?.unit == RepeatUnit.MONTH) w.take(dDayOfMonth)?.let { m ->
+            val day = m.groupValues[1].toInt()
+            if (day in 1..28) {
+                val thisMonth = today.withDayOfMonth(day)
+                date = if (thisMonth.isBefore(today)) thisMonth.plusMonths(1) else thisMonth
+            }
         }
         if (date == null && w.take(dNextWeek) != null) date = today.plusWeeks(1)
         if (date == null && w.take(dNextMonth) != null) date = today.plusMonths(1)
@@ -191,12 +242,12 @@ object RuleParser {
         }
 
         // Time-of-day words only count when there is a date or a reminder to attach them to.
-        if (date != null || time != null || isReminder) {
+        if (date != null || time != null || isReminder || repeat != null) {
             val m = w.take(todWord)
             if (time == null && exact == null) {
                 val word = m?.groupValues?.get(1)?.lowercase()
                 time = when {
-                    word == null -> if (morningWord) LocalTime.of(9, 0) else null
+                    word == null -> seriesTime ?: if (morningWord) LocalTime.of(9, 0) else null
                     word == "früh" -> LocalTime.of(8, 0)
                     word == "morgens" || word.startsWith("vormittag") -> LocalTime.of(9, 0)
                     word.startsWith("mittag") -> LocalTime.of(12, 0)
@@ -206,6 +257,9 @@ object RuleParser {
                 }
             }
         }
+
+        // A series without any date or time starts today as an all-day entry.
+        if (repeat != null && date == null && time == null && exact == null) date = today
 
         var allDay = false
         var start: LocalDateTime? = exact
@@ -236,7 +290,7 @@ object RuleParser {
         for (r in reminderPhrases) w.take(r)
         val fallback = if (kind == Kind.REMINDER) "Erinnerung" else "Termin"
         val title = tidy(w.s, removeFillers = true).ifEmpty { fallback }
-        return Parsed(kind, title, start, null, allDay)
+        return Parsed(kind, title, start, null, allDay, repeat)
     }
 
     private fun tidy(s: String, removeFillers: Boolean): String {

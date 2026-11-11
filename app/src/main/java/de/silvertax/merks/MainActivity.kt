@@ -15,10 +15,12 @@ import android.widget.BaseAdapter
 import android.widget.ListView
 import android.widget.TextView
 import de.silvertax.merks.parse.Kind
+import java.time.ZoneId
 
 /** The list of everything that was dictated, plus a big button to speak. */
 class MainActivity : Activity() {
     private var entries: List<Entry> = emptyList()
+    private var starts: Map<Long, Long?> = emptyMap()
     private lateinit var list: ListView
     private lateinit var empty: View
 
@@ -88,9 +90,12 @@ class MainActivity : Activity() {
     private fun reload() {
         val now = System.currentTimeMillis()
         val all = Db(this).all()
-        // Upcoming things first (soonest on top), then notes and everything that has passed.
-        val upcoming = all.filter { it.start != null && it.start + DAY > now }.sortedBy { it.start }
-        entries = upcoming + (all - upcoming.toSet())
+        val zone = ZoneId.systemDefault()
+        // For a series the date that counts is its next one.
+        starts = all.associate { it.id to Plan.currentStart(it, now, zone) }
+        // Upcoming things first (soonest on top), then notes, then everything done or passed.
+        val upcoming = all.filter { e -> !e.done && (starts[e.id] ?: 0) + DAY > now }.sortedBy { starts[it.id] }
+        entries = upcoming + (all - upcoming.toSet()).sortedBy { it.done }
         adapter.notifyDataSetChanged()
         empty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
         list.visibility = if (entries.isEmpty()) View.GONE else View.VISIBLE
@@ -107,10 +112,11 @@ class MainActivity : Activity() {
     private fun details(e: Entry) {
         val message = buildString {
             append(label(e))
-            if (e.start != null) append(" · ").append(Format.whenText(e))
+            if (e.start != null) append(" · ").append(Format.whenText(e, starts[e.id]))
+            if (e.done) append("\n").append(getString(R.string.is_done))
             append("\n\n").append(getString(R.string.said, e.raw))
         }
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(e.title)
             .setMessage(message)
             .setPositiveButton(R.string.close, null)
@@ -118,7 +124,18 @@ class MainActivity : Activity() {
                 Store.remove(this, e)
                 reload()
             }
-            .show()
+        // Single appointments and reminders can be ticked off; a series simply carries on.
+        if (e.start != null && e.repeat == null) {
+            dialog.setNeutralButton(if (e.done) R.string.mark_open else R.string.action_done) { _, _ ->
+                val db = Db(this)
+                db.setDone(e.id, !e.done)
+                db.setSnooze(e.id, null)
+                Scheduler.dismiss(this, e.id)
+                db.get(e.id)?.let { Scheduler.schedule(this, it) }
+                reload()
+            }
+        }
+        dialog.show()
     }
 
     private val adapter = object : BaseAdapter() {
@@ -129,9 +146,14 @@ class MainActivity : Activity() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val v = convertView ?: layoutInflater.inflate(R.layout.item_entry, parent, false)
             val e = entries[position]
-            v.findViewById<TextView>(R.id.title).text = e.title
-            v.findViewById<TextView>(R.id.sub).text =
-                if (e.start != null) "${label(e)} · ${Format.whenText(e)}" else label(e)
+            v.findViewById<TextView>(R.id.title).apply {
+                text = if (e.done) "✓ ${e.title}" else e.title
+                alpha = if (e.done) 0.5f else 1f
+            }
+            v.findViewById<TextView>(R.id.sub).apply {
+                text = if (e.start != null) "${label(e)} · ${Format.whenText(e, starts[e.id])}" else label(e)
+                alpha = if (e.done) 0.5f else 1f
+            }
             return v
         }
     }

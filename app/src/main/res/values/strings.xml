@@ -49,6 +49,27 @@
     <string name="settings_updates">Nach Updates suchen</string>
     <string name="settings_updates_hint">Fragt höchstens einmal am Tag bei GitHub nach, ob es eine neue Version gibt. Dabei werden keine persönlichen Daten gesendet.</string>
 
+    <string name="settings_eve">Am Vorabend erinnern</string>
+    <string name="settings_eve_hint">Termine melden sich zusätzlich am Tag davor um 18 Uhr.</string>
+
+    <string name="action_done">Erledigt</string>
+    <string name="action_snooze_15">In 15 Min.</string>
+    <string name="action_snooze_60">In 1 Std.</string>
+    <string name="mark_open">Wieder offen</string>
+    <string name="is_done">Erledigt ✓</string>
+
+    <string name="settings_model_label">Modell (leer lassen für den Standard)</string>
+    <string name="settings_model_hint">claude-haiku-5-5</string>
+    <string name="settings_test">KI jetzt testen</string>
+    <string name="ai_status_off">KI ist aus: kein Schlüssel eingetragen. Es gelten die festen Regeln.</string>
+    <string name="ai_status_unused">KI ist eingerichtet, wurde aber noch nicht benutzt.</string>
+    <string name="ai_status_ok">Letzte KI-Anfrage (%1$s): hat geklappt.</string>
+    <string name="ai_status_failed">Letzte KI-Anfrage (%1$s): fehlgeschlagen, die festen Regeln sind eingesprungen.\n%2$s</string>
+    <string name="ai_test_no_key">Zum Testen bitte erst einen Schlüssel eintragen.</string>
+    <string name="ai_test_running">Teste …</string>
+    <string name="ai_test_ok">Funktioniert mit %1$s.\nBeispiel „Morgen um 10 Zahnarzt“ verstanden als: %2$s, %3$s</string>
+    <string name="ai_test_failed">Test fehlgeschlagen:\n%1$s</string>
+
     <string name="settings_ai_title">Besser verstehen mit KI (freiwillig)</string>
     <string name="settings_ai_text">Ohne Schlüssel erkennt die App klare Angaben wie „morgen um 10“ selbst. Mit einem Anthropic-API-Schlüssel versteht sie auch freies Erzählen; dafür wird der gesprochene Text an Anthropic geschickt. Ohne Internet greifen automatisch die festen Regeln.</string>
     <string name="settings_ai_hint">API-Schlüssel (sk-ant-…)</string>
