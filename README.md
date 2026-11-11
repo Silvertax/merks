@@ -30,3 +30,7 @@ Version 0.1.0 is an early test version. The interface and the offline rules are 
 ```
 
 Requires JDK 17 or newer and the Android SDK (platform 35). Release signing reads `MERKS_KEYSTORE`, `MERKS_KEYSTORE_PASSWORD`, `MERKS_KEY_ALIAS` and `MERKS_KEY_PASSWORD` from the environment; without them the debug key is used.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
