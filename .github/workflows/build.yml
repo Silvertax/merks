@@ -64,6 +64,11 @@ jobs:
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" merks.apk --clobber
+            # Fill in the title when it was left empty in the GitHub UI.
+            name=$(gh release view "$GITHUB_REF_NAME" --json name --jq .name)
+            if [ -z "$name" ] || [ "$name" = "$GITHUB_REF_NAME" ]; then
+              gh release edit "$GITHUB_REF_NAME" --title "Merk's ${GITHUB_REF_NAME#v}"
+            fi
           else
-            gh release create "$GITHUB_REF_NAME" merks.apk --generate-notes
+            gh release create "$GITHUB_REF_NAME" merks.apk --title "Merk's ${GITHUB_REF_NAME#v}" --generate-notes
           fi
