@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1E4FD8</color>
+    <color name="primary_dark">#173DA8</color>
+    <color name="ink">#14181F</color>
+    <color name="ink_soft">#4A5361</color>
+    <color name="paper">#FFFFFF</color>
+
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/primary</item>
+        <item name="android:colorPrimaryDark">@color/primary_dark</item>
+        <item name="android:colorAccent">@color/primary</item>
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+
+    <style name="BigButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">72dp</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/paper</item>
+        <item name="android:backgroundTint">@color/primary</item>
+    </style>
+
+    <style name="QuietButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+</resources>
