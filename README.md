@@ -29,7 +29,7 @@ Speech-to-text uses the recogniser installed on the phone (`SpeechRecognizer`). 
 
 ## Status
 
-Version 0.4.0 is an early test version. The interface and the offline rules are German only.
+Version 0.4.1 is an early test version. The interface and the offline rules are German only.
 
 ## Build
 
