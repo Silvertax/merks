@@ -6,19 +6,19 @@
 ./gradlew testDebugUnitTest assembleRelease
 ```
 
-Requires JDK 21 and the Android SDK (platform 35). Release signing reads `MERKS_KEYSTORE`, `MERKS_KEYSTORE_PASSWORD`, `MERKS_KEY_ALIAS` and `MERKS_KEY_PASSWORD` from the environment; without them the debug key is used.
+Requires JDK 21 and the Android SDK (platform 35). Release signing reads `MERKS_KEYSTORE`, `MERKS_KEYSTORE_PASSWORD`, `MERKS_KEY_ALIAS` and `MERKS_KEY_PASSWORD` from the environment, or `storeFile`, `storePassword`, `keyAlias` and `keyPassword` from a local `keystore.properties` (never committed). Without them the debug key is used and the build warns: such an APK does not install over the released app.
 
 ## Releasing
 
 1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
-2. Describe the changes in a new section `## <version>` of `CHANGELOG.md`, and briefly (up to 500 characters) in `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` and `de-DE/changelogs/<versionCode>.txt` for F-Droid.
+2. Describe the changes in a new section `## <version>` of `CHANGELOG.md`.
 3. Create a GitHub release with the tag `v<version>`. Title and description can stay empty.
 
-The Build workflow then checks that the tag matches the app version, runs the tests, builds and signs `merks.apk`, attaches it to the release and fills in an empty title and description. The description comes from `CHANGELOG.md`, or from the commit messages if the changelog has no section for the version.
+The Build workflow then checks that the tag matches the app version, runs the tests, builds and signs `merks.apk`, checks that it carries the release key (fingerprint in `.github/release-cert.sha256`), attaches it to the release and fills in an empty title and description. The description comes from `CHANGELOG.md`, or from the commit messages if the changelog has no section for the version.
 
 ## F-Droid
 
-F-Droid builds the app from the tagged source with `gradle assembleRelease -Pfdroid`. That build is unsigned (F-Droid signs it) and leaves out the update check against GitHub, because F-Droid brings the updates. Store texts and pictures live in `fastlane/metadata/android/`. F-Droid picks up new tags by itself.
+Not submitted yet; the app is distributed through GitHub releases for now. Prepared: `gradle assembleRelease -Pfdroid` builds an unsigned APK without the update check against GitHub (F-Droid would bring the updates), and store texts and pictures live in `fastlane/metadata/android/`.
 
 ## Tests
 

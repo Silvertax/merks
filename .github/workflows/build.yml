@@ -36,12 +36,6 @@ jobs:
           if ! grep -qE "^## ${version//./\\.}( |$)" CHANGELOG.md; then
             echo "::warning::CHANGELOG.md has no section for $version; the release notes list the commit messages instead."
           fi
-          code=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)
-          for lang in en-US de-DE; do
-            if [ ! -f "fastlane/metadata/android/$lang/changelogs/$code.txt" ]; then
-              echo "::warning::fastlane/metadata/android/$lang/changelogs/$code.txt is missing; F-Droid shows no notes for this version."
-            fi
-          done
 
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
@@ -63,6 +57,18 @@ jobs:
         run: |
           ./gradlew assembleRelease
           cp app/build/outputs/apk/release/app-release.apk merks.apk
+
+      # A release must carry the real key, otherwise it does not install over the app people have.
+      - name: Check release signature
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          cert=$("$apksigner" verify --print-certs merks.apk | sed -n 's/.*certificate SHA-256 digest: //p' | head -1)
+          expected=$(tr -d '[:space:]' < .github/release-cert.sha256)
+          if [ "$cert" != "$expected" ]; then
+            echo "::error::merks.apk is signed with $cert, not with the release key $expected. Check the signing secrets."
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

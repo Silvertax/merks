@@ -6,7 +6,7 @@ What changed for users, per version. When a GitHub release is created with an em
 
 ### Changed
 
-- Prepared for F-Droid: the F-Droid version gets its updates from F-Droid and leaves out the update check on GitHub. The version from GitHub keeps telling you about new releases.
+- Releases are now checked to carry the real signing key, so every update installs over the app you have.
 - The APK no longer contains an encrypted block of dependency data meant for Google.
 
 ## 0.5.1

@@ -1,10 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
-// Release signing comes from environment variables (set locally or as CI secrets).
-val ksPath: String? = System.getenv("MERKS_KEYSTORE")
+// Release signing: environment variables (CI secrets) or a local, git-ignored keystore.properties
+// with storeFile, storePassword, keyAlias and keyPassword.
+val localKeys = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun secret(env: String, key: String): String? = System.getenv(env) ?: localKeys.getProperty(key)
+val ksPath: String? = secret("MERKS_KEYSTORE", "storeFile")
 
 // F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. It also brings
 // the updates, so that build leaves out the update check against GitHub releases.
@@ -36,10 +43,10 @@ android {
     signingConfigs {
         if (ksPath != null) {
             create("release") {
-                storeFile = file(ksPath)
-                storePassword = System.getenv("MERKS_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("MERKS_KEY_ALIAS")
-                keyPassword = System.getenv("MERKS_KEY_PASSWORD")
+                storeFile = rootProject.file(ksPath)
+                storePassword = secret("MERKS_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = secret("MERKS_KEY_ALIAS", "keyAlias")
+                keyPassword = secret("MERKS_KEY_PASSWORD", "keyPassword")
             }
         }
     }
@@ -68,6 +75,13 @@ android {
     testOptions {
         // Robolectric runs the app's screens and receivers on the JVM and needs the resources.
         unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// An APK signed with the debug key does not install over the real app. Say so loudly.
+gradle.taskGraph.whenReady {
+    if (ksPath == null && !fdroid && allTasks.any { it.path == ":app:assembleRelease" }) {
+        logger.warn("WARNING: no release key found; app-release.apk is signed with the DEBUG key and will not update an installed Merk's.")
     }
 }
 
