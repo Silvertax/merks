@@ -1,0 +1,50 @@
+# Changelog
+
+What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
+
+## 0.3.2
+
+### Fixed
+
+- Settings: tapping next to the key or model field ends the input and starts the check more reliably.
+
+## 0.3.1
+
+Includes 0.3.0, which was not released on its own.
+
+### What's new
+
+- **Series:** "jeden Montag", "jeden Tag um 8 Uhr", "alle zwei Wochen freitags", "jeden Monat am 1." or "jedes Jahr am 3. Dezember" become repeating calendar events.
+- **Reminder the evening before:** appointments also notify at 18:00 on the day before. Can be switched off in the settings.
+- **Buttons in reminders:** "Erledigt", "In 15 Min." and "In 1 Std." right in the notification. "Erledigt" on a series only settles that date.
+- **Choose the AI model:** any Anthropic model can be entered; Haiku 5.5 is the default. Spellings like "Sonnet 5.5" are turned into the model ID.
+- **Checks as you go:** key and model are checked as soon as you leave the field. An unknown model goes back to Haiku 5.5 with a short note, and the settings show whether the last AI request worked.
+
+### Fixed
+
+- The AI test failed with "No value for text" for models that think before they answer, such as Sonnet 5.5 and Opus 5.5.
+- A model entered in the settings was lost when leaving without pressing "Speichern". Everything is now saved automatically.
+- AI errors are shown as short German texts instead of raw HTTP codes.
+
+## 0.2.1
+
+Includes 0.2.0, which was not released on its own.
+
+### What's new
+
+- **Update notice:** the app checks GitHub once a day and tells you when a newer version is available. Can be switched off in the settings.
+- **Resizable widget:** 2x2 by default, down to 1x1. Small sizes show only the microphone, flat wide sizes show icon and label side by side.
+- **Compact recording:** only a small info appears at the bottom of the screen while listening. Afterwards a notification shows what was saved, with an undo action. Can be switched to full screen in the settings.
+
+### Fixed
+
+- The widget label was missing at 2x2.
+
+## 0.1.0
+
+First test version.
+
+- **Widget:** one tap on the home screen, then speak.
+- **Sorting:** what you say becomes an appointment, a reminder or a note. Appointments go into the phone calendar.
+- **Reminders:** on time for reminders, one hour ahead for appointments, at 8:00 for all-day entries.
+- **Offline first:** German date and time phrases are understood without internet. AI sorting with an Anthropic API key is optional.
