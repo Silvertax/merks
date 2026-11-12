@@ -3,6 +3,7 @@ package de.silvertax.merks
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -24,9 +25,16 @@ object Appearance {
         )
     }
 
-    /** Whether this screen is shown in the dark design right now. */
-    fun isDark(ctx: Context): Boolean =
-        (ctx.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    /**
+     * Whether the app is dark: decided by the choice in the settings, or by the phone itself.
+     * Deliberately not read from a screen's own resources: during onCreate those can still show
+     * the phone's mode, which made screens rebuild themselves over and over (the recording too).
+     */
+    fun isDark(ctx: Context): Boolean = when (Prefs.theme(ctx)) {
+        LIGHT -> false
+        DARK -> true
+        else -> (Resources.getSystem().configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    }
 }
 
 class MerksApp : Application() {
@@ -41,6 +49,9 @@ class MerksApp : Application() {
 abstract class MerksActivity : AppCompatActivity() {
     private var oledShown = false
 
+    /** Rebuild when OLED was switched on another screen meanwhile. Never for a running recording. */
+    protected open val followsOledChanges = true
+
     private fun wantsOled() = Prefs.oled(this) && Appearance.isDark(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +64,6 @@ abstract class MerksActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (wantsOled() != oledShown) recreate()
+        if (followsOledChanges && wantsOled() != oledShown) recreate()
     }
 }

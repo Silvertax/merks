@@ -2,6 +2,13 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.5.3
+
+### Fixed
+
+- With OLED mode on and a theme different from the phone's, the recording restarted itself over and over and never listened.
+- The speech recognition now gets a plain language code and, if it refuses the language, tries again in its own default.
+
 ## 0.5.2
 
 ### Changed

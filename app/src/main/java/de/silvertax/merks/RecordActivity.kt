@@ -18,6 +18,8 @@ import android.widget.Toast
 
 /** Opened by the widget: listens right away, sorts what was said and confirms it. */
 class RecordActivity : MerksActivity() {
+    // A rebuild would stop the microphone; the recording is over in a few seconds anyway.
+    override val followsOledChanges = false
     private var recognizer: SpeechRecognizer? = null
     private var saved: Entry? = null
     private var compact = false
@@ -78,6 +80,15 @@ class RecordActivity : MerksActivity() {
         for (b in listOf(stop, retry, done, undo)) b.visibility = if (b in visible) View.VISIBLE else View.GONE
     }
 
+    /** Only language and region, e.g. "de-DE": recognisers stumble over extras such as "-u-fw-mon". */
+    private fun speechTag(): String {
+        val l = Lang.locale(this)
+        return if (l.country.isEmpty()) l.language else l.language + "-" + l.country
+    }
+
+    // Set after the recogniser refused the language once; then it listens in its own default.
+    private var plainLanguage = false
+
     private fun listen() {
         handler.removeCallbacksAndMessages(null)
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -95,7 +106,7 @@ class RecordActivity : MerksActivity() {
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 // Listen in the app's language, which is the one people speak to it.
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Lang.locale(this).toLanguageTag())
+                .apply { if (!plainLanguage) putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechTag()) }
                 .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 // Give people time to think; not every recogniser honours these.
                 .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
@@ -114,6 +125,12 @@ class RecordActivity : MerksActivity() {
         }
 
         override fun onError(error: Int) {
+            // 12/13: language not supported or not installed. Try once more in the recogniser's own language.
+            if ((error == 12 || error == 13) && !plainLanguage) {
+                plainLanguage = true
+                listen()
+                return
+            }
             fail(
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> getString(R.string.err_nothing)
