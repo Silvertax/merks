@@ -4,9 +4,14 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
+    <!-- Focusable so that a tap beside a text field can take the focus away from it. -->
     <LinearLayout
+        android:id="@+id/settings_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:importantForAccessibility="no"
         android:orientation="vertical"
         android:padding="24dp">
 
@@ -86,6 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:hint="@string/settings_ai_hint"
+            android:imeOptions="actionDone"
             android:importantForAutofill="no"
             android:inputType="textVisiblePassword"
             android:minHeight="56dp"
@@ -104,6 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/settings_model_hint"
+            android:imeOptions="actionDone"
             android:importantForAutofill="no"
             android:inputType="textVisiblePassword"
             android:minHeight="56dp"
@@ -128,6 +135,6 @@
             android:id="@+id/save"
             style="@style/BigButton"
             android:layout_marginTop="8dp"
-            android:text="@string/save" />
+            android:text="@string/done" />
     </LinearLayout>
 </ScrollView>

@@ -119,9 +119,15 @@ object Prefs {
     fun apiKey(ctx: Context): String = p(ctx).getString("api_key", "")!!.trim()
     fun setApiKey(ctx: Context, key: String) = p(ctx).edit().putString("api_key", key.trim()).apply()
 
-    /** An empty model field means the built-in default. */
-    fun model(ctx: Context): String = p(ctx).getString("model", "")!!.trim().ifEmpty { AiParser.DEFAULT_MODEL }
-    fun setModel(ctx: Context, model: String) = p(ctx).edit().putString("model", model.trim()).apply()
+    /**
+     * Stored tidied ("Sonnet 5.5" becomes "claude-sonnet-5-5"). The default is stored as empty,
+     * so a new default in a later version applies automatically.
+     */
+    fun model(ctx: Context): String = AiParser.normalizeModel(p(ctx).getString("model", "")!!)
+    fun setModel(ctx: Context, model: String) {
+        val m = AiParser.normalizeModel(model)
+        p(ctx).edit().putString("model", if (m == AiParser.DEFAULT_MODEL) "" else m).apply()
+    }
 
     fun setAiStatus(ctx: Context, ok: Boolean, error: String?) = p(ctx).edit()
         .putLong("ai_at", System.currentTimeMillis()).putBoolean("ai_ok", ok).putString("ai_error", error).apply()
@@ -139,10 +145,19 @@ object Store {
         val now = LocalDateTime.now()
         val key = Prefs.apiKey(ctx)
         if (key.isNotEmpty()) {
-            val ai = AiParser.parse(key, Prefs.model(ctx), text, now, ZoneId.systemDefault())
+            val zone = ZoneId.systemDefault()
+            val model = Prefs.model(ctx)
+            var ai = AiParser.parse(key, model, text, now, zone)
+            var note = ai.error
+            if (ai.modelUnknown && model != AiParser.DEFAULT_MODEL) {
+                // A mistyped model must not switch the AI off for good: back to the default, try again.
+                Prefs.setModel(ctx, "")
+                ai = AiParser.parse(key, AiParser.DEFAULT_MODEL, text, now, zone)
+                note = listOfNotNull(ctx.getString(R.string.ai_model_reset, model), ai.error).joinToString("\n")
+            }
             // Remembered so the settings can show whether AI sorting really works.
-            Prefs.setAiStatus(ctx, ai.parsed != null, ai.error)
-            if (ai.parsed != null) return ai.parsed
+            Prefs.setAiStatus(ctx, ai.parsed != null, note)
+            ai.parsed?.let { return it }
         }
         return RuleParser.parse(text, now)
     }

@@ -23,13 +23,13 @@ Series work too: "Jeden Montag Mülltonne", "Jeden Tag um 8 Uhr Tabletten", "All
 ## Sorting
 
 - **Offline rules** (default): recognise common German date and time phrases. No account, no internet for the sorting step.
-- **AI** (optional): enter an Anthropic API key under "Einstellungen". The model can be changed there (default `claude-haiku-5-5`), a test button checks key and model, and a status line shows whether the last request worked. The spoken text is then sent to the Anthropic API, which also copes with free-form speech. If the request fails, the offline rules take over.
+- **AI** (optional): enter an Anthropic API key under "Einstellungen". The model can be changed there (default `claude-haiku-5-5`), key and model are checked as soon as a field is left, spellings like "Sonnet 5.5" become the model ID, and an unknown name goes back to the default, a test button checks key and model, and a status line shows whether the last request worked. The spoken text is then sent to the Anthropic API, which also copes with free-form speech. If the request fails, the offline rules take over.
 
 Speech-to-text uses the recogniser installed on the phone (`SpeechRecognizer`). Whether that works offline depends on the phone.
 
 ## Status
 
-Version 0.3.0 is an early test version. The interface and the offline rules are German only.
+Version 0.3.1 is an early test version. The interface and the offline rules are German only.
 
 ## Build
 

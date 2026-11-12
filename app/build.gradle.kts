@@ -14,8 +14,8 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.3.0"
+        versionCode = 5
+        versionName = "0.3.1"
     }
 
     signingConfigs {
@@ -50,4 +50,6 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // The Android stubs of org.json do nothing in unit tests; this is the real thing for them.
+    testImplementation("org.json:json:20240303")
 }
