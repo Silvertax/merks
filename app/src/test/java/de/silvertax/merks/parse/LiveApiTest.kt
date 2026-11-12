@@ -22,7 +22,7 @@ class LiveApiTest {
     @Test fun wrongKeyIsReportedAsSuch() {
         assertEquals(ModelCheck.KEY_INVALID, AiParser.checkModel("sk-ant-invalid", AiParser.DEFAULT_MODEL))
         val r = AiParser.parse("sk-ant-invalid", AiParser.DEFAULT_MODEL, "Morgen um 10 Zahnarzt", now, zone)
-        assertEquals("Schlüssel ungültig (HTTP 401).", r.error)
+        assertEquals(AiProblem.KEY, r.error?.problem)
         assertFalse(r.modelUnknown)
     }
 

@@ -2,6 +2,15 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.5.0
+
+### What's new
+
+- **English:** the app now speaks English as well. It follows the phone (German phones get German, all others English), and the language can be chosen in the settings; on Android 13 and newer also in the system's app language settings.
+- **Offline rules in English:** "Tomorrow at 10 dentist", "Remind me in 20 minutes to take the laundry out", "Every Monday take out the trash" and more work without AI.
+- **Speech recognition** listens in the app's language; dates and times follow it too ("Fri, Nov 13, 10:00 AM").
+- AI error messages appear in the app's language.
+
 ## 0.4.1
 
 ### What's new

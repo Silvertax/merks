@@ -48,6 +48,42 @@
                 app:strokeWidth="1dp">
 
                 <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/row_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:minHeight="72dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_language"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/language_value"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    app:dividerColor="?attr/colorOutlineVariant" />
+
+                <LinearLayout
                     android:id="@+id/row_oled"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -84,6 +120,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:contentDescription="@string/settings_oled" />
+                </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

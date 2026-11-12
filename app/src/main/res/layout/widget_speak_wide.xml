@@ -16,6 +16,7 @@
 
     <!-- Shrinks on narrow widgets instead of cutting the word off. -->
     <TextView
+        android:id="@+id/widget_label"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_marginStart="8dp"

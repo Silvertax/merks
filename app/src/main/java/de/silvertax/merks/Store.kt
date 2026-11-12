@@ -14,6 +14,7 @@ import de.silvertax.merks.parse.Parsed
 import de.silvertax.merks.parse.Repeat
 import de.silvertax.merks.parse.RepeatUnit
 import de.silvertax.merks.parse.RuleParser
+import de.silvertax.merks.parse.RuleParserEn
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -119,6 +120,10 @@ object Prefs {
     fun eveBefore(ctx: Context): Boolean = p(ctx).getBoolean("eve_before", true)
     fun setEveBefore(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("eve_before", on).apply()
 
+    /** "" follows the phone, otherwise "de" or "en". */
+    fun lang(ctx: Context): String = p(ctx).getString("lang", "")!!
+    fun setLang(ctx: Context, lang: String) = p(ctx).edit().putString("lang", lang).apply()
+
     fun apiKey(ctx: Context): String = p(ctx).getString("api_key", "")!!.trim()
     fun setApiKey(ctx: Context, key: String) = p(ctx).edit().putString("api_key", key.trim()).apply()
 
@@ -151,18 +156,19 @@ object Store {
             val zone = ZoneId.systemDefault()
             val model = Prefs.model(ctx)
             var ai = AiParser.parse(key, model, text, now, zone)
-            var note = ai.error
+            var note = ai.error?.text(ctx)
             if (ai.modelUnknown && model != AiParser.DEFAULT_MODEL) {
                 // A mistyped model must not switch the AI off for good: back to the default, try again.
                 Prefs.setModel(ctx, "")
                 ai = AiParser.parse(key, AiParser.DEFAULT_MODEL, text, now, zone)
-                note = listOfNotNull(ctx.getString(R.string.ai_model_reset, model), ai.error).joinToString("\n")
+                val reset = Lang.context(ctx).getString(R.string.ai_model_reset, model)
+                note = listOfNotNull(reset, ai.error?.text(ctx)).joinToString("\n")
             }
             // Remembered so the settings can show whether AI sorting really works.
             Prefs.setAiStatus(ctx, ai.parsed != null, note)
             ai.parsed?.let { return it }
         }
-        return RuleParser.parse(text, now)
+        return if (Lang.isGerman(ctx)) RuleParser.parse(text, now) else RuleParserEn.parse(text, now)
     }
 
     /** Saves the entry, puts appointments into the phone calendar and schedules the reminder. */

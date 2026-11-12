@@ -11,73 +11,7 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import de.silvertax.merks.parse.Kind
-import de.silvertax.merks.parse.Repeat
-import de.silvertax.merks.parse.RepeatUnit
-import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
-import java.util.Locale
-
-object Format {
-    private val dateTime = DateTimeFormatter.ofPattern("EEE, d. MMM, HH:mm 'Uhr'", Locale.GERMAN)
-    private val dateOnly = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMAN)
-    private val timeOnly = DateTimeFormatter.ofPattern("HH:mm 'Uhr'", Locale.GERMAN)
-    private val shortDate = DateTimeFormatter.ofPattern("dd.MM.yy", Locale.GERMAN)
-    private val shortDateTime = DateTimeFormatter.ofPattern("dd.MM.yy, HH:mm 'Uhr'", Locale.GERMAN)
-
-    private fun zoned(millis: Long) = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
-
-    fun repeatText(r: Repeat): String = when {
-        r.every == 1 -> when (r.unit) {
-            RepeatUnit.DAY -> "täglich"
-            RepeatUnit.WEEK -> "wöchentlich"
-            RepeatUnit.MONTH -> "monatlich"
-            RepeatUnit.YEAR -> "jährlich"
-        }
-        else -> "alle ${r.every} " + when (r.unit) {
-            RepeatUnit.DAY -> "Tage"
-            RepeatUnit.WEEK -> "Wochen"
-            RepeatUnit.MONTH -> "Monate"
-            RepeatUnit.YEAR -> "Jahre"
-        }
-    }
-
-    /** Date line for the list; [start] is the occurrence to show (the next one for a series). */
-    fun whenText(e: Entry, start: Long? = e.start): String {
-        if (start == null) return ""
-        val text = if (e.allDay) dateOnly.format(zoned(start)) else dateTime.format(zoned(start))
-        return if (e.repeat != null) "$text · ${repeatText(e.repeat)}" else text
-    }
-
-    /** One line for the confirmation, e.g. "13.11.26 Zahnarzt bei Neupert". */
-    fun oneLine(e: Entry): String {
-        val start = e.start ?: return e.title
-        val date = if (e.allDay) shortDate.format(zoned(start)) else shortDateTime.format(zoned(start))
-        return "$date ${e.title}" + if (e.repeat != null) " (${repeatText(e.repeat)})" else ""
-    }
-
-    /** "Heute um 14:30 Uhr", "Morgen", ... for the reminder notification. */
-    fun dueText(e: Entry, start: Long, now: Long): String {
-        val day = zoned(start).toLocalDate()
-        val days = ChronoUnit.DAYS.between(zoned(now).toLocalDate(), day)
-        val dayWord = when (days) {
-            0L -> "Heute"
-            1L -> "Morgen"
-            else -> dateOnly.format(zoned(start))
-        }
-        return if (e.allDay) dayWord else "$dayWord um ${timeOnly.format(zoned(start))}"
-    }
-
-    fun stamp(millis: Long): String = shortDateTime.format(zoned(millis))
-
-    fun savedLabel(e: Entry): Int = when {
-        e.kind == Kind.REMINDER -> R.string.saved_reminder
-        e.kind == Kind.NOTE -> R.string.saved_note
-        e.calendarEventId != null -> R.string.saved_appointment
-        else -> R.string.saved_appointment_local
-    }
-}
 
 object Scheduler {
     private const val CHANNEL = "reminders"
@@ -120,12 +54,13 @@ object Scheduler {
     }
 
     private fun action(ctx: Context, e: Entry, action: String, minutes: Int, label: Int): Notification.Action {
+        val texts = Lang.context(ctx)
         val intent = Intent(ctx, ActionReceiver::class.java)
             .setAction(if (minutes > 0) "$action.$minutes" else action)
             .putExtra("id", e.id).putExtra("minutes", minutes)
         return Notification.Action.Builder(
             Icon.createWithResource(ctx, R.drawable.ic_mic),
-            ctx.getString(label),
+            texts.getString(label),
             PendingIntent.getBroadcast(ctx, e.id.toInt(), intent, FLAGS),
         ).build()
     }
@@ -133,12 +68,13 @@ object Scheduler {
     /** The reminder itself, with "Erledigt" and two "later" buttons. */
     fun notify(ctx: Context, e: Entry) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
+        val texts = Lang.context(ctx)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL, ctx.getString(R.string.channel_name), NotificationManager.IMPORTANCE_HIGH),
+            NotificationChannel(CHANNEL, texts.getString(R.string.channel_name), NotificationManager.IMPORTANCE_HIGH),
         )
         val now = System.currentTimeMillis()
         val start = Plan.currentStart(e, now, ZoneId.systemDefault()) ?: return
-        val text = if (e.kind == Kind.REMINDER) ctx.getString(R.string.notif_reminder) else Format.dueText(e, start, now)
+        val text = if (e.kind == Kind.REMINDER) texts.getString(R.string.notif_reminder) else Format.dueText(ctx, e, start, now)
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, MainActivity::class.java), FLAGS)
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_merks)
@@ -164,26 +100,27 @@ object Scheduler {
     /** Tells the user what was just saved, with a way to take it back. */
     fun confirm(ctx: Context, e: Entry) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
+        val texts = Lang.context(ctx)
         nm.createNotificationChannel(
-            NotificationChannel(CONFIRM_CHANNEL, ctx.getString(R.string.channel_confirm), NotificationManager.IMPORTANCE_HIGH)
+            NotificationChannel(CONFIRM_CHANNEL, texts.getString(R.string.channel_confirm), NotificationManager.IMPORTANCE_HIGH)
                 .apply { setSound(null, null) },
         )
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, MainActivity::class.java), FLAGS)
         val undo = PendingIntent.getBroadcast(
             ctx, confirmId(e.id), Intent(ctx, UndoReceiver::class.java).putExtra("id", e.id), FLAGS,
         )
-        val text = Format.oneLine(e)
+        val text = Format.oneLine(ctx, e)
         val n = Notification.Builder(ctx, CONFIRM_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_merks)
             .setColor(ctx.getColor(R.color.brand_teal))
-            .setContentTitle(ctx.getString(Format.savedLabel(e)))
+            .setContentTitle(texts.getString(Format.savedLabel(e)))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))
             .setContentIntent(open)
             .setAutoCancel(true)
             .addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(ctx, R.drawable.ic_mic), ctx.getString(R.string.undo), undo,
+                    Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(R.string.undo), undo,
                 ).build(),
             )
             .build()

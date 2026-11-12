@@ -1,92 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- English is the default; German is in values-de. -->
 <resources>
-    <string name="app_name">Merk\'s</string>
-    <string name="speak">Sprechen</string>
-    <string name="settings">Einstellungen</string>
-    <string name="add_widget">Knopf auf den Startbildschirm legen</string>
-    <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen und „Merk\'s“ hinzufügen.</string>
-    <string name="empty_title">Noch nichts gemerkt</string>
-    <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
+    <string name="app_name" translatable="false">Merk\'s</string>
+    <string name="speak">Speak</string>
+    <string name="settings">Settings</string>
+    <string name="add_widget">Put the button on the home screen</string>
+    <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets” and add “Merk\'s”.</string>
+    <string name="empty_title">Nothing noted yet</string>
+    <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”.</string>
 
-    <string name="listening">Ich höre zu …</string>
-    <string name="stop">Fertig gesprochen</string>
-    <string name="working">Einen Moment …</string>
-    <string name="retry">Nochmal sprechen</string>
-    <string name="done">Fertig</string>
-    <string name="undo">Rückgängig</string>
-    <string name="undone">Wieder gelöscht</string>
+    <string name="listening">Listening …</string>
+    <string name="stop">Done speaking</string>
+    <string name="working">One moment …</string>
+    <string name="retry">Speak again</string>
+    <string name="done">Done</string>
+    <string name="undo">Undo</string>
+    <string name="undone">Removed again</string>
 
-    <string name="saved_appointment">Termin im Kalender eingetragen</string>
-    <string name="saved_appointment_local">Termin gemerkt (nicht im Kalender)</string>
-    <string name="saved_reminder">Ich erinnere dich</string>
-    <string name="saved_note">Notiz gemerkt</string>
+    <string name="saved_appointment">Added to your calendar</string>
+    <string name="saved_appointment_local">Appointment noted (not in calendar)</string>
+    <string name="saved_reminder">I\'ll remind you</string>
+    <string name="saved_note">Note saved</string>
 
-    <string name="err_nothing">Ich habe nichts verstanden.</string>
-    <string name="err_network">Die Spracherkennung braucht gerade Internet.</string>
-    <string name="err_mic">Ohne Mikrofon-Erlaubnis kann ich nicht zuhören.</string>
-    <string name="err_no_recognizer">Auf diesem Handy ist keine Spracherkennung eingerichtet.</string>
-    <string name="err_generic">Die Spracherkennung hat nicht geklappt (Fehler %1$d).</string>
-    <string name="err_save">Das Speichern hat nicht geklappt.</string>
+    <string name="err_nothing">I didn\'t catch that.</string>
+    <string name="err_network">Speech recognition needs internet right now.</string>
+    <string name="err_mic">I can\'t listen without permission to use the microphone.</string>
+    <string name="err_no_recognizer">No speech recognition is set up on this phone.</string>
+    <string name="err_generic">Speech recognition didn\'t work (error %1$d).</string>
+    <string name="err_save">Saving didn\'t work.</string>
 
-    <string name="kind_appointment">Termin</string>
-    <string name="kind_reminder">Erinnerung</string>
-    <string name="kind_note">Notiz</string>
-    <string name="said">Gesagt: „%1$s“</string>
-    <string name="close">Schließen</string>
-    <string name="delete">Löschen</string>
+    <string name="kind_appointment">Appointment</string>
+    <string name="kind_reminder">Reminder</string>
+    <string name="kind_note">Note</string>
+    <string name="said">Said: “%1$s”</string>
+    <string name="close">Close</string>
+    <string name="delete">Delete</string>
 
-    <string name="channel_name">Erinnerungen</string>
-    <string name="notif_reminder">Daran wolltest du erinnert werden.</string>
+    <string name="channel_name">Reminders</string>
+    <string name="notif_reminder">You wanted to be reminded of this.</string>
 
-    <string name="channel_confirm">Bestätigungen</string>
-    <string name="update_text">Version %1$s ist verfügbar.</string>
-    <string name="update_get">Herunterladen</string>
-    <string name="update_later">Später</string>
+    <string name="channel_confirm">Confirmations</string>
+    <string name="update_text">Version %1$s is available.</string>
+    <string name="update_get">Download</string>
+    <string name="update_later">Later</string>
 
-    <string name="settings_compact">Kleine Anzeige beim Aufnehmen</string>
-    <string name="settings_compact_hint">Beim Sprechen erscheint nur eine kleine Karte unten, danach zeigt eine Benachrichtigung, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
-    <string name="settings_updates">Nach Updates suchen</string>
-    <string name="settings_updates_hint">Fragt höchstens einmal am Tag bei GitHub nach, ob es eine neue Version gibt. Dabei werden keine persönlichen Daten gesendet.</string>
+    <string name="settings_compact">Small display while speaking</string>
+    <string name="settings_compact_hint">While you speak, only a small card appears at the bottom; afterwards a notification shows what was added. Off: listening and confirmation fill the whole screen.</string>
+    <string name="settings_updates">Check for updates</string>
+    <string name="settings_updates_hint">Asks GitHub at most once a day whether a new version is available. No personal data is sent.</string>
 
-    <string name="settings_eve">Am Vorabend erinnern</string>
-    <string name="settings_eve_hint">Termine melden sich zusätzlich am Tag davor um 18 Uhr.</string>
+    <string name="settings_eve">Remind the evening before</string>
+    <string name="settings_eve_hint">Appointments also notify you at 6 pm on the day before.</string>
 
-    <string name="action_done">Erledigt</string>
-    <string name="action_snooze_15">In 15 Min.</string>
-    <string name="action_snooze_60">In 1 Std.</string>
-    <string name="mark_open">Wieder offen</string>
-    <string name="is_done">Erledigt ✓</string>
+    <string name="action_done">Done</string>
+    <string name="action_snooze_15">In 15 min</string>
+    <string name="action_snooze_60">In 1 hr</string>
+    <string name="mark_open">Open again</string>
+    <string name="is_done">Done ✓</string>
 
-    <string name="settings_model_title">Modell</string>
-    <string name="settings_model_label">Leer lassen für den Standard. Schlüssel und Modell werden geprüft, sobald du ein Feld verlässt.</string>
-    <string name="settings_model_hint">claude-haiku-5-5</string>
-    <string name="ai_model_reset">Eingabe ungültig („%1$s“) – zurückgesetzt auf Haiku 5.5.</string>
-    <string name="ai_default_gone">Das Standardmodell Haiku 5.5 wird von Anthropic nicht mehr angeboten. Bitte ein anderes Modell eintragen.</string>
-    <string name="ai_model_adjusted">„%1$s“ als „%2$s“ übernommen.</string>
-    <string name="ai_checking">Prüfe …</string>
-    <string name="ai_model_valid">✓ Modell „%1$s“ funktioniert mit deinem Schlüssel.</string>
-    <string name="ai_key_invalid">Der Schlüssel wird von Anthropic nicht akzeptiert. Bitte prüfen.</string>
-    <string name="ai_model_unchecked">Konnte gerade nicht prüfen (kein Internet?). „%1$s“ bleibt eingetragen.</string>
-    <string name="settings_test">KI jetzt testen</string>
-    <string name="ai_status_off">KI ist aus: kein Schlüssel eingetragen. Es gelten die festen Regeln.</string>
-    <string name="ai_status_unused">KI ist eingerichtet, wurde aber noch nicht benutzt.</string>
-    <string name="ai_status_ok">Letzte KI-Anfrage (%1$s): hat geklappt.</string>
-    <string name="ai_status_failed">Letzte KI-Anfrage (%1$s): fehlgeschlagen, die festen Regeln sind eingesprungen.</string>
-    <string name="ai_test_no_key">Zum Testen bitte erst einen Schlüssel eintragen.</string>
-    <string name="ai_test_running">Teste …</string>
-    <string name="ai_test_ok">Funktioniert mit %1$s.\nBeispiel „Morgen um 10 Zahnarzt“ verstanden als: %2$s, %3$s</string>
-    <string name="ai_test_failed">Test fehlgeschlagen:\n%1$s</string>
+    <string name="settings_model_title">Model</string>
+    <string name="settings_model_label">Leave empty for the default. Key and model are checked as soon as you leave a field.</string>
+    <string name="settings_model_hint" translatable="false">claude-haiku-5-5</string>
+    <string name="ai_model_reset">Invalid entry (“%1$s”) – reset to Haiku 5.5.</string>
+    <string name="ai_default_gone">Anthropic no longer offers the default model Haiku 5.5. Please enter another model.</string>
+    <string name="ai_model_adjusted">Took “%1$s” as “%2$s”.</string>
+    <string name="ai_checking">Checking …</string>
+    <string name="ai_model_valid">✓ Model “%1$s” works with your key.</string>
+    <string name="ai_key_invalid">Anthropic does not accept this key. Please check it.</string>
+    <string name="ai_model_unchecked">Couldn\'t check right now (no internet?). “%1$s” stays as entered.</string>
+    <string name="settings_test">Test AI now</string>
+    <string name="ai_status_off">AI is off: no key entered. The built-in rules are used.</string>
+    <string name="ai_status_unused">AI is set up but hasn\'t been used yet.</string>
+    <string name="ai_status_ok">Last AI request (%1$s): worked.</string>
+    <string name="ai_status_failed">Last AI request (%1$s): failed, the built-in rules stepped in.</string>
+    <string name="ai_test_no_key">Please enter a key first to test.</string>
+    <string name="ai_test_running">Testing …</string>
+    <string name="ai_test_ok">Works with %1$s.\nExample “%2$s” understood as: %3$s, %4$s</string>
+    <string name="ai_test_sample">Tomorrow at 10 dentist</string>
+    <string name="ai_test_failed">Test failed:\n%1$s</string>
 
-    <string name="settings_ai_title">Besser verstehen mit KI (freiwillig)</string>
-    <string name="section_recording">Aufnahme</string>
-    <string name="section_look">Darstellung</string>
-    <string name="settings_oled">OLED-Modus</string>
-    <string name="settings_oled_hint">Tiefschwarzer Hintergrund, spart auf OLED-Bildschirmen Strom. Die App ist dann immer dunkel.</string>
-    <string name="section_reminders">Erinnerungen</string>
+    <string name="settings_ai_title">Better understanding with AI (optional)</string>
+    <string name="section_recording">Speaking</string>
+    <string name="section_look">Appearance</string>
+    <string name="settings_oled">OLED mode</string>
+    <string name="settings_oled_hint">Pure black background, saves power on OLED screens. The app then always stays dark.</string>
+    <string name="section_reminders">Reminders</string>
     <string name="section_app">App</string>
-    <string name="back">Zurück</string>
-    <string name="settings_ai_text">Ohne Schlüssel erkennt die App klare Angaben wie „morgen um 10“ selbst. Mit einem Anthropic-API-Schlüssel versteht sie auch freies Erzählen; dafür wird der gesprochene Text an Anthropic geschickt. Ohne Internet greifen automatisch die festen Regeln.</string>
-    <string name="settings_ai_hint">API-Schlüssel (sk-ant-…)</string>
-    <string name="settings_saved">Gespeichert</string>
-    <string name="widget_description">Ein Tipp, dann sprechen</string>
+    <string name="back">Back</string>
+    <string name="settings_ai_text">Without a key, the app understands clear phrases like “tomorrow at 10” on its own. With an Anthropic API key it also understands free speech; the spoken text is then sent to Anthropic. Without internet, the built-in rules take over automatically.</string>
+    <string name="settings_ai_hint">API key (sk-ant-…)</string>
+    <string name="settings_saved">Saved</string>
+    <string name="widget_description">One tap, then speak</string>
+
+    <string name="settings_language">Language</string>
+    <string name="settings_language_auto">Automatic (phone language)</string>
+    <string name="language_de" translatable="false">Deutsch</string>
+    <string name="language_en" translatable="false">English</string>
+
+    <string name="due_today">Today</string>
+    <string name="due_tomorrow">Tomorrow</string>
+    <string name="due_at">%1$s at %2$s</string>
+
+    <string name="repeat_daily">daily</string>
+    <string name="repeat_weekly">weekly</string>
+    <string name="repeat_monthly">monthly</string>
+    <string name="repeat_yearly">yearly</string>
+    <string name="repeat_every_days">every %1$d days</string>
+    <string name="repeat_every_weeks">every %1$d weeks</string>
+    <string name="repeat_every_months">every %1$d months</string>
+    <string name="repeat_every_years">every %1$d years</string>
+
+    <string name="ai_err_bad_name">Invalid model name.</string>
+    <string name="ai_err_key">Invalid key (HTTP 401).</string>
+    <string name="ai_err_forbidden">The key has no permission (HTTP 403).</string>
+    <string name="ai_err_model">Model not found (HTTP 404).</string>
+    <string name="ai_err_credit">No credit left in the Anthropic account (HTTP %1$d).</string>
+    <string name="ai_err_rate">Too many requests, please wait a moment (HTTP 429).</string>
+    <string name="ai_err_overloaded">Anthropic is overloaded right now (HTTP 529).</string>
+    <string name="ai_err_server">Problem at Anthropic (HTTP %1$d).</string>
+    <string name="ai_err_http">HTTP %1$d: %2$s</string>
+    <string name="ai_err_connection">No connection to Anthropic (%1$s).</string>
+    <string name="ai_err_only_thinking">The model only thought and gave no answer.</string>
+    <string name="ai_err_no_text">The answer contained no text.</string>
+    <string name="ai_err_unreadable">The answer could not be read.</string>
 </resources>

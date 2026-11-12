@@ -13,13 +13,13 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout
 import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.ModelCheck
 import de.silvertax.merks.parse.Parsed
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
 
@@ -47,6 +47,10 @@ class SettingsActivity : MerksActivity() {
         setContentView(R.layout.activity_settings)
         root = findViewById(R.id.settings_root)
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
+
+        val language = findViewById<TextView>(R.id.language_value)
+        language.text = languageName(Prefs.lang(this))
+        findViewById<View>(R.id.row_language).setOnClickListener { chooseLanguage() }
 
         switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
             fun night(c: Configuration) = (c.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -91,6 +95,30 @@ class SettingsActivity : MerksActivity() {
             Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
             finish()
         }
+    }
+
+    private fun languageName(choice: String): String = getString(
+        when (choice) {
+            Lang.GERMAN -> R.string.language_de
+            Lang.ENGLISH -> R.string.language_en
+            else -> R.string.settings_language_auto
+        },
+    )
+
+    /** Automatic, Deutsch or English. AppCompat redraws all screens in the new language by itself. */
+    private fun chooseLanguage() {
+        val choices = arrayOf(Lang.AUTO, Lang.GERMAN, Lang.ENGLISH)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_language)
+            .setSingleChoiceItems(choices.map { languageName(it) }.toTypedArray(), choices.indexOf(Prefs.lang(this))) { dialog, which ->
+                dialog.dismiss()
+                val choice = choices[which]
+                if (choice == Prefs.lang(this)) return@setSingleChoiceItems
+                Prefs.setLang(this, choice)
+                SpeakWidget.updateAll(this)
+                Lang.apply(choice)
+            }
+            .show()
     }
 
     /** A setting with a switch; the whole row can be tapped, which is easier than hitting the switch. */
@@ -217,8 +245,8 @@ class SettingsActivity : MerksActivity() {
         when {
             Prefs.apiKey(this).isEmpty() -> show(getString(R.string.ai_status_off))
             at == 0L -> show(getString(R.string.ai_status_unused))
-            Prefs.aiOk(this) -> show(getString(R.string.ai_status_ok, Format.stamp(at)), note)
-            else -> show(getString(R.string.ai_status_failed, Format.stamp(at)), note)
+            Prefs.aiOk(this) -> show(getString(R.string.ai_status_ok, Format.stamp(this, at)), note)
+            else -> show(getString(R.string.ai_status_failed, Format.stamp(this, at)), note)
         }
     }
 
@@ -235,18 +263,19 @@ class SettingsActivity : MerksActivity() {
             return
         }
         val token = ++seq
+        val sample = getString(R.string.ai_test_sample)
         button.isEnabled = false
         show(getString(R.string.ai_test_running))
         Thread {
             val now = LocalDateTime.now()
             val zone = ZoneId.systemDefault()
             var used = input.name
-            var result = AiParser.parse(typedKey, used, SAMPLE, now, zone)
+            var result = AiParser.parse(typedKey, used, sample, now, zone)
             val reset = result.modelUnknown && used != AiParser.DEFAULT_MODEL
             if (reset) {
                 // Unknown model: back to the default, and test that instead.
                 used = AiParser.DEFAULT_MODEL
-                result = AiParser.parse(typedKey, used, SAMPLE, now, zone)
+                result = AiParser.parse(typedKey, used, sample, now, zone)
             }
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
@@ -260,9 +289,9 @@ class SettingsActivity : MerksActivity() {
                 }
                 val p = result.parsed
                 val outcome = if (p != null) {
-                    getString(R.string.ai_test_ok, used, p.title, startText(p))
+                    getString(R.string.ai_test_ok, used, sample, p.title, startText(p))
                 } else {
-                    getString(R.string.ai_test_failed, result.error.orEmpty())
+                    getString(R.string.ai_test_failed, result.error?.text(this).orEmpty())
                 }
                 val first = if (reset) getString(R.string.ai_model_reset, input.shown) else input.note
                 show(first, if (first != null) "\n" + outcome else outcome)
@@ -270,10 +299,13 @@ class SettingsActivity : MerksActivity() {
         }.start()
     }
 
-    private fun startText(p: Parsed): String = p.start?.let { DATE.format(it) }.orEmpty()
+    private fun startText(p: Parsed): String {
+        val start = p.start ?: return ""
+        val entry = Entry(0, p.kind, p.title, "", start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), null, p.allDay, null, 0)
+        return Format.whenText(this, entry)
+    }
 
     private companion object {
-        const val SAMPLE = "Morgen um 10 Zahnarzt"
-        val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yy, HH:mm 'Uhr'", Locale.GERMAN)
+
     }
 }

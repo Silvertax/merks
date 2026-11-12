@@ -114,7 +114,7 @@ class MainActivity : MerksActivity() {
     private fun details(e: Entry) {
         val message = buildString {
             append(label(e))
-            if (e.start != null) append(" · ").append(Format.whenText(e, starts[e.id]))
+            if (e.start != null) append(" · ").append(Format.whenText(this@MainActivity, e, starts[e.id]))
             if (e.done) append("\n").append(getString(R.string.is_done))
             append("\n\n").append(getString(R.string.said, e.raw))
         }
@@ -151,7 +151,7 @@ class MainActivity : MerksActivity() {
             v.findViewById<View>(R.id.card).setOnClickListener { details(e) }
             v.findViewById<TextView>(R.id.title).text = e.title
             v.findViewById<TextView>(R.id.sub).text =
-                if (e.start != null) "${label(e)} · ${Format.whenText(e, starts[e.id])}" else label(e)
+                if (e.start != null) "${label(e)} · ${Format.whenText(this@MainActivity, e, starts[e.id])}" else label(e)
 
             // Each kind has its own symbol and colour; done entries get a tick and step back.
             val (icon, background, foreground) = when {

@@ -17,7 +17,6 @@ import android.view.LayoutInflater
 import android.view.View
 import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Parsed
-import de.silvertax.merks.parse.RuleParser
 import org.junit.Assume.assumeTrue
 import org.junit.After
 import org.junit.Before
@@ -37,8 +36,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * Renders the screens to PNG files for design reviews. Skipped unless MERKS_SCREENSHOTS names
- * an output folder, so normal builds never write images.
+ * Renders the screens to PNG files for design reviews and the store listing. Skipped unless
+ * MERKS_SCREENSHOTS names an output folder, so normal builds never write images.
+ * MERKS_SCREENSHOTS_LANG=en renders the English app, otherwise German.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -46,11 +46,16 @@ import java.time.LocalDateTime
 class ScreenshotRender {
     private val app: Application get() = RuntimeEnvironment.getApplication()
     private lateinit var out: File
+    private var english = false
+
+    private fun t(de: String, en: String) = if (english) en else de
 
     @Before fun onlyWhenAsked() {
         val dir = System.getenv("MERKS_SCREENSHOTS")
         assumeTrue("set MERKS_SCREENSHOTS to a folder to render", !dir.isNullOrBlank())
         out = File(dir!!).apply { mkdirs() }
+        english = System.getenv("MERKS_SCREENSHOTS_LANG") == "en"
+        RuntimeEnvironment.setQualifiers(if (english) "+en-rUS" else "+de-rDE")
         Prefs.setAskedPermissions(app)
         Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
     }
@@ -85,15 +90,21 @@ class ScreenshotRender {
         if (on) RuntimeEnvironment.setQualifiers("+night")
     }
 
+    @Test fun settingsTopDark() {
+        night(true)
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        shotActivity(activity, "7b_settings_top_dark")
+    }
+
     private fun sampleEntries() {
         val today = LocalDate.now()
-        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt bei Neupert", today.plusDays(1).atTime(10, 0), null, false), "x")
-        Store.save(app, Parsed(Kind.REMINDER, "Wäsche aufhängen", LocalDateTime.now().plusHours(2).withMinute(0), null, false), "x")
-        val series = "Jeden Montag Mülltonne rausstellen"
-        Store.save(app, RuleParser.parse(series, LocalDateTime.now()), series)
-        Store.save(app, Parsed(Kind.APPOINTMENT, "Geburtstag von Oma", today.plusDays(9).atStartOfDay(), null, true), "x")
-        Store.save(app, Parsed(Kind.NOTE, "Geschenkidee: Fotobuch vom Urlaub", null, null, false), "x")
-        val done = Store.save(app, Parsed(Kind.REMINDER, "Rezept in der Apotheke abholen", LocalDateTime.now().minusHours(3), null, false), "x")
+        Store.save(app, Parsed(Kind.APPOINTMENT, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), today.plusDays(1).atTime(10, 0), null, false), "x")
+        Store.save(app, Parsed(Kind.REMINDER, t("Wäsche aufhängen", "Hang up the laundry"), LocalDateTime.now().plusHours(2).withMinute(0), null, false), "x")
+        val series = t("Jeden Montag Mülltonne rausstellen", "Every Monday take out the trash")
+        Store.save(app, Store.sort(app, series), series)
+        Store.save(app, Parsed(Kind.APPOINTMENT, t("Geburtstag von Oma", "Grandma's birthday"), today.plusDays(9).atStartOfDay(), null, true), "x")
+        Store.save(app, Parsed(Kind.NOTE, t("Geschenkidee: Fotobuch vom Urlaub", "Gift idea: photo book of the holiday"), null, null, false), "x")
+        val done = Store.save(app, Parsed(Kind.REMINDER, t("Rezept in der Apotheke abholen", "Pick up the prescription"), LocalDateTime.now().minusHours(3), null, false), "x")
         Db(app).setDone(done.id, true)
     }
 
@@ -122,7 +133,10 @@ class ScreenshotRender {
         val recognizer = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
         recognizer.triggerOnPartialResults(
             Bundle().apply {
-                putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf("Morgen um 10 Zahnarzt bei Neupert"))
+                putStringArrayList(
+                    SpeechRecognizer.RESULTS_RECOGNITION,
+                    arrayListOf(t("Morgen um 10 Zahnarzt bei Neupert", "Tomorrow at 10 dentist, Dr. Miller")),
+                )
             },
         )
         recognizer.triggerOnRmsChanged(7f)

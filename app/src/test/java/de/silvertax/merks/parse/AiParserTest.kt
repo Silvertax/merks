@@ -52,12 +52,13 @@ class AiParserTest {
         assertTrue(r.modelUnknown)
     }
 
-    @Test fun friendlyErrors() {
+    @Test fun errorsAreSorted() {
         val notFound = """{"type":"error","error":{"type":"not_found_error","message":"model: claude-sonet-5-5"}}"""
-        assertEquals("Modell nicht gefunden (HTTP 404).", AiParser.friendlyError(404, notFound))
-        assertEquals("Schlüssel ungültig (HTTP 401).", AiParser.friendlyError(401, "{}"))
+        assertEquals(AiProblem.MODEL_NOT_FOUND, AiParser.classify(404, notFound).problem)
+        assertEquals(AiProblem.KEY, AiParser.classify(401, "{}").problem)
         val credit = """{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}"""
-        assertEquals("Kein Guthaben im Anthropic-Konto (HTTP 400).", AiParser.friendlyError(400, credit))
-        assertEquals("Anthropic ist gerade überlastet (HTTP 529).", AiParser.friendlyError(529, "{}"))
+        assertEquals(AiError(AiProblem.NO_CREDIT, 400, "Your credit balance is too low to access the Anthropic API."), AiParser.classify(400, credit))
+        assertEquals(AiProblem.OVERLOADED, AiParser.classify(529, "{}").problem)
+        assertEquals(AiProblem.HTTP, AiParser.classify(400, """{"error":{"type":"x","message":"odd"}}""").problem)
     }
 }

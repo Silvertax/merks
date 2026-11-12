@@ -15,7 +15,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import java.util.Locale
 
 /** Opened by the widget: listens right away, sorts what was said and confirms it. */
 class RecordActivity : MerksActivity() {
@@ -95,7 +94,8 @@ class RecordActivity : MerksActivity() {
         recognizer?.startListening(
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                // Listen in the app's language, which is the one people speak to it.
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Lang.locale(this).toLanguageTag())
                 .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 // Give people time to think; not every recogniser honours these.
                 .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
@@ -179,7 +179,7 @@ class RecordActivity : MerksActivity() {
         saved = e
         status.setText(Format.savedLabel(e))
         spoken.text = e.title
-        detail.text = Format.whenText(e)
+        detail.text = Format.whenText(this, e)
         show(done, undo)
         handler.postDelayed({ finish() }, 8000)
     }

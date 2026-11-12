@@ -33,11 +33,10 @@ fi
 
 printf '%s\n\n' "$notes"
 if [ -n "$prev" ]; then
-  printf '## Install\n\nDownload `merks.apk` below and open it. It installs over older versions; your entries are kept.\n\n'
+  printf '## Install\n\nDownload `merks.apk` below and open it. It installs over older versions; your entries are kept.\n'
 else
-  printf '## Install\n\nDownload `merks.apk` below and open it.\n\n'
+  printf '## Install\n\nDownload `merks.apk` below and open it.\n'
 fi
-printf 'The interface and the offline rules are German only for now.\n'
 if [ -n "$prev" ]; then
   printf '\n**Full changelog:** https://github.com/%s/compare/%s...%s\n' "$repo" "$prev" "$tag"
 fi

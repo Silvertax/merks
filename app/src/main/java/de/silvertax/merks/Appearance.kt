@@ -2,6 +2,7 @@ package de.silvertax.merks
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -19,6 +20,7 @@ class MerksApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Appearance.applyNightMode(this)
+        Lang.sync(this)
     }
 }
 
@@ -27,6 +29,8 @@ abstract class MerksActivity : AppCompatActivity() {
     private var oledShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The language may have been changed in Android's settings meanwhile (Android 13+).
+        if (Build.VERSION.SDK_INT >= 33) Lang.sync(this)
         oledShown = Prefs.oled(this)
         if (oledShown) theme.applyStyle(R.style.ThemeOverlay_Merks_Oled, true)
         super.onCreate(savedInstanceState)

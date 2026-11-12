@@ -9,11 +9,19 @@ import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 
+/** What went wrong with an AI request; the app turns it into a text in its language. */
+enum class AiProblem {
+    BAD_MODEL_NAME, KEY, FORBIDDEN, MODEL_NOT_FOUND, NO_CREDIT, RATE_LIMIT, OVERLOADED, SERVER, HTTP,
+    NO_CONNECTION, ONLY_THINKING, NO_TEXT, UNREADABLE,
+}
+
+data class AiError(val problem: AiProblem, val code: Int = 0, val detail: String = "")
+
 /**
- * Outcome of an AI request: either [parsed] or a short [error] to show in the settings.
+ * Outcome of an AI request: either [parsed] or an [error] to show in the settings.
  * [modelUnknown] is set when the API does not know the model name.
  */
-data class AiResult(val parsed: Parsed?, val error: String?, val modelUnknown: Boolean = false)
+data class AiResult(val parsed: Parsed?, val error: AiError?, val modelUnknown: Boolean = false)
 
 enum class ModelCheck { VALID, INVALID, KEY_INVALID, UNKNOWN }
 
@@ -45,7 +53,7 @@ object AiParser {
     fun isPlausibleModelName(model: String): Boolean = MODEL_NAME.matches(model)
 
     fun parse(apiKey: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiResult {
-        if (!isPlausibleModelName(model)) return AiResult(null, "Ungültiger Modellname.", modelUnknown = true)
+        if (!isPlausibleModelName(model)) return AiResult(null, AiError(AiProblem.BAD_MODEL_NAME), modelUnknown = true)
         return try {
             val weekday = now.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
             val system = """
@@ -71,19 +79,19 @@ object AiParser {
             val code = conn.responseCode
             if (code != 200) {
                 val detail = conn.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
-                AiResult(null, friendlyError(code, detail), modelUnknown = code == 404 && isNotFound(detail))
+                AiResult(null, classify(code, detail), modelUnknown = code == 404 && isNotFound(detail))
             } else {
                 val response = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
                 val reply = replyText(response)
                 when {
                     reply.isEmpty() && response.optString("stop_reason") == "max_tokens" ->
-                        AiResult(null, "Das Modell hat nur nachgedacht und keine Antwort geliefert.")
-                    reply.isEmpty() -> AiResult(null, "Die Antwort enthielt keinen Text.")
-                    else -> fromJson(reply)?.let { AiResult(it, null) } ?: AiResult(null, "Antwort nicht lesbar.")
+                        AiResult(null, AiError(AiProblem.ONLY_THINKING))
+                    reply.isEmpty() -> AiResult(null, AiError(AiProblem.NO_TEXT))
+                    else -> fromJson(reply)?.let { AiResult(it, null) } ?: AiResult(null, AiError(AiProblem.UNREADABLE))
                 }
             }
         } catch (e: Exception) {
-            AiResult(null, "Keine Verbindung zu Anthropic (${e.message ?: e.javaClass.simpleName}).")
+            AiResult(null, AiError(AiProblem.NO_CONNECTION, detail = e.message ?: e.javaClass.simpleName))
         }
     }
 
@@ -155,19 +163,20 @@ object AiParser {
         false
     }
 
-    /** A short German text instead of the raw API error. */
-    internal fun friendlyError(code: Int, body: String): String {
+    /** Sorts an API error into the cases the app explains in plain words. */
+    internal fun classify(code: Int, body: String): AiError {
         val message = apiMessage(body)
-        return when {
-            code == 401 -> "Schlüssel ungültig (HTTP 401)."
-            code == 403 -> "Der Schlüssel hat keine Berechtigung (HTTP 403)."
-            code == 404 && isNotFound(body) -> "Modell nicht gefunden (HTTP 404)."
-            message.contains("credit balance", ignoreCase = true) -> "Kein Guthaben im Anthropic-Konto (HTTP $code)."
-            code == 429 -> "Zu viele Anfragen, bitte kurz warten (HTTP 429)."
-            code == 529 -> "Anthropic ist gerade überlastet (HTTP 529)."
-            code >= 500 -> "Störung bei Anthropic (HTTP $code)."
-            else -> "HTTP $code: $message"
+        val problem = when {
+            code == 401 -> AiProblem.KEY
+            code == 403 -> AiProblem.FORBIDDEN
+            code == 404 && isNotFound(body) -> AiProblem.MODEL_NOT_FOUND
+            message.contains("credit balance", ignoreCase = true) -> AiProblem.NO_CREDIT
+            code == 429 -> AiProblem.RATE_LIMIT
+            code == 529 -> AiProblem.OVERLOADED
+            code >= 500 -> AiProblem.SERVER
+            else -> AiProblem.HTTP
         }
+        return AiError(problem, code, message)
     }
 
     /** The human-readable part of an API error body. */
