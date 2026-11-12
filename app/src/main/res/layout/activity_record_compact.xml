@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The small sheet at the bottom of the screen; the window draws the card around it. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingStart="20dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,18 +16,37 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
-            android:layout_width="52dp"
-            android:layout_height="52dp"
-            android:background="@drawable/circle_bg"
-            android:importantForAccessibility="no"
-            android:padding="12dp"
-            android:src="@drawable/ic_mic" />
+        <!-- The ring grows with the voice, so one can see that the app is listening. -->
+        <FrameLayout
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:clipChildren="false">
+
+            <View
+                android:id="@+id/pulse"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:alpha="0.25"
+                android:background="@drawable/circle_bg"
+                android:backgroundTint="?attr/colorPrimary" />
+
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:background="@drawable/circle_bg"
+                android:backgroundTint="?attr/colorPrimary"
+                android:importantForAccessibility="no"
+                android:padding="14dp"
+                android:src="@drawable/ic_mic"
+                app:tint="?attr/colorOnPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -30,9 +54,8 @@
                 android:id="@+id/status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/ink"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:id="@+id/spoken"
@@ -40,16 +63,15 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="start"
                 android:maxLines="3"
-                android:textColor="@color/ink_soft"
-                android:textSize="17sp" />
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:id="@+id/detail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorPrimary" />
         </LinearLayout>
     </LinearLayout>
 
@@ -62,45 +84,35 @@
 
         <Button
             android:id="@+id/undo"
-            style="?android:attr/borderlessButtonStyle"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
-            android:layout_height="52dp"
+            android:layout_height="wrap_content"
             android:text="@string/undo"
-            android:textAllCaps="false"
-            android:textColor="@color/ink"
-            android:textSize="17sp"
             android:visibility="gone" />
 
         <Button
             android:id="@+id/retry"
-            style="?android:attr/borderlessButtonStyle"
+            style="@style/Widget.Merks.Button.Tonal"
             android:layout_width="wrap_content"
-            android:layout_height="52dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:text="@string/retry"
-            android:textAllCaps="false"
-            android:textColor="@color/primary"
-            android:textSize="17sp"
             android:visibility="gone" />
 
         <Button
             android:id="@+id/done"
-            style="?android:attr/borderlessButtonStyle"
+            style="@style/Widget.Material3.Button"
             android:layout_width="wrap_content"
-            android:layout_height="52dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:text="@string/done"
-            android:textAllCaps="false"
-            android:textColor="@color/primary"
-            android:textSize="17sp"
             android:visibility="gone" />
 
         <Button
             android:id="@+id/stop"
-            style="?android:attr/borderlessButtonStyle"
+            style="@style/Widget.Merks.Button.Tonal"
             android:layout_width="wrap_content"
-            android:layout_height="52dp"
-            android:text="@string/stop"
-            android:textAllCaps="false"
-            android:textColor="@color/primary"
-            android:textSize="17sp" />
+            android:layout_height="wrap_content"
+            android:text="@string/stop" />
     </LinearLayout>
 </LinearLayout>

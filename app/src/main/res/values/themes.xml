@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Merks" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/m_primary</item>
+        <item name="colorOnPrimary">@color/m_on_primary</item>
+        <item name="colorPrimaryContainer">@color/m_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/m_on_primary_container</item>
+        <item name="colorSecondary">@color/m_secondary</item>
+        <item name="colorOnSecondary">@color/m_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/m_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/m_on_secondary_container</item>
+        <item name="android:colorBackground">@color/m_background</item>
+        <item name="colorOnBackground">@color/m_on_background</item>
+        <item name="colorSurface">@color/m_surface</item>
+        <item name="colorOnSurface">@color/m_on_surface</item>
+        <item name="colorSurfaceVariant">@color/m_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/m_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/m_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/m_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/m_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/m_surface_container_highest</item>
+        <item name="colorOutline">@color/m_outline</item>
+        <item name="colorOutlineVariant">@color/m_outline_variant</item>
+        <item name="colorError">@color/m_error</item>
+        <item name="colorOnError">@color/m_on_error</item>
+        <item name="colorSurfaceInverse">@color/m_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/m_inverse_on_surface</item>
+        <item name="colorPrimaryInverse">@color/m_inverse_primary</item>
+
+        <item name="android:windowBackground">@color/m_background</item>
+        <item name="android:statusBarColor">@color/m_background</item>
+        <item name="android:navigationBarColor">@color/m_background</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/light_bars</item>
+
+        <!-- Fonts come from the text appearances; a theme-wide font would override their weights. -->
+        <item name="android:textAppearance">@style/TextAppearance.Merks.BodyLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Merks.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Merks.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Merks.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Merks.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.Merks.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Merks.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Merks.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.Merks.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Merks.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Merks.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Merks.LabelSmall</item>
+    </style>
+
+    <!-- Small sheet at the bottom of the screen while listening. -->
+    <style name="Theme.Merks.Overlay">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowBackground">@drawable/overlay_bg</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.InputMethod</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="windowMinWidthMajor">100%</item>
+        <item name="windowMinWidthMinor">100%</item>
+    </style>
+
+    <!-- Type: Nunito throughout, a little larger than usual so it reads well for everyone. -->
+    <style name="TextAppearance.Merks.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">@font/nunito_extrabold</item>
+        <item name="fontFamily">@font/nunito_extrabold</item>
+    </style>
+    <style name="TextAppearance.Merks.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/nunito_extrabold</item>
+        <item name="fontFamily">@font/nunito_extrabold</item>
+    </style>
+    <style name="TextAppearance.Merks.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/nunito_extrabold</item>
+        <item name="fontFamily">@font/nunito_extrabold</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+    <style name="TextAppearance.Merks.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="TextAppearance.Merks.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+    <style name="TextAppearance.Merks.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="fontFamily">@font/nunito</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="TextAppearance.Merks.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="fontFamily">@font/nunito</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style name="TextAppearance.Merks.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/nunito</item>
+        <item name="fontFamily">@font/nunito</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style name="TextAppearance.Merks.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+    <style name="TextAppearance.Merks.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/nunito_semibold</item>
+        <item name="fontFamily">@font/nunito_semibold</item>
+    </style>
+    <style name="TextAppearance.Merks.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/nunito_semibold</item>
+        <item name="fontFamily">@font/nunito_semibold</item>
+    </style>
+
+    <!-- The big "Sprechen" button. -->
+    <style name="Widget.Merks.Button.Big" parent="Widget.Material3.Button">
+        <item name="android:minHeight">76dp</item>
+        <item name="android:textSize">22sp</item>
+        <item name="iconSize">30dp</item>
+        <item name="iconPadding">12dp</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
+    <style name="Widget.Merks.Button.Big.Tonal" parent="Widget.Merks.Button.Tonal">
+        <item name="android:minHeight">76dp</item>
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <!-- Second-rank buttons in a light teal; amber stays for reminders and the icon's dot. -->
+    <style name="Widget.Merks.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="backgroundTint">?attr/colorPrimaryContainer</item>
+        <item name="android:textColor">?attr/colorOnPrimaryContainer</item>
+        <item name="iconTint">?attr/colorOnPrimaryContainer</item>
+    </style>
+
+    <!-- Section label above a group of settings. -->
+    <style name="Merks.SectionLabel" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">24dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand: calm teal with a warm amber accent, on warm paper. Same in light and dark. -->
+    <color name="brand_teal">#0D7A6F</color>
+    <color name="brand_teal_light">#1AAE9C</color>
+    <color name="brand_teal_dark">#0A5C54</color>
+    <color name="brand_amber">#F4A63A</color>
+
+    <!-- Material roles, light. The dark values are in values-night/colors.xml. -->
+    <color name="m_primary">#0D7A6F</color>
+    <color name="m_on_primary">#FFFFFF</color>
+    <color name="m_primary_container">#C6EDE7</color>
+    <color name="m_on_primary_container">#00332D</color>
+    <color name="m_secondary">#8A5A00</color>
+    <color name="m_on_secondary">#FFFFFF</color>
+    <color name="m_secondary_container">#FFE2B6</color>
+    <color name="m_on_secondary_container">#2C1A00</color>
+    <color name="m_background">#FBF8F3</color>
+    <color name="m_on_background">#1C1B19</color>
+    <color name="m_surface">#FBF8F3</color>
+    <color name="m_on_surface">#1C1B19</color>
+    <color name="m_surface_variant">#ECE6DC</color>
+    <color name="m_on_surface_variant">#55524C</color>
+    <color name="m_surface_container_lowest">#FFFFFF</color>
+    <color name="m_surface_container_low">#F5F1EA</color>
+    <color name="m_surface_container">#F0EBE3</color>
+    <color name="m_surface_container_high">#EAE5DC</color>
+    <color name="m_surface_container_highest">#E4DED5</color>
+    <color name="m_outline">#7E7A72</color>
+    <color name="m_outline_variant">#DCD5CA</color>
+    <color name="m_error">#B3261E</color>
+    <color name="m_on_error">#FFFFFF</color>
+    <color name="m_inverse_surface">#31302D</color>
+    <color name="m_inverse_on_surface">#F4F0EA</color>
+    <color name="m_inverse_primary">#7FD8CB</color>
+</resources>

@@ -5,7 +5,8 @@
     <string name="settings">Einstellungen</string>
     <string name="add_widget">Knopf auf den Startbildschirm legen</string>
     <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen und „Merk\'s“ hinzufügen.</string>
-    <string name="empty">Noch nichts gemerkt.\n\nTippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
+    <string name="empty_title">Noch nichts gemerkt</string>
+    <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
 
     <string name="listening">Ich höre zu …</string>
     <string name="stop">Fertig gesprochen</string>
@@ -43,7 +44,7 @@
     <string name="update_later">Später</string>
 
     <string name="settings_compact">Kleine Anzeige beim Aufnehmen</string>
-    <string name="settings_compact_hint">An: Beim Sprechen erscheint nur eine kleine Info am unteren Rand. Danach verschwindet sie, und eine Benachrichtigung zeigt, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
+    <string name="settings_compact_hint">Beim Sprechen erscheint nur eine kleine Karte unten, danach zeigt eine Benachrichtigung, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
     <string name="settings_updates">Nach Updates suchen</string>
     <string name="settings_updates_hint">Fragt höchstens einmal am Tag bei GitHub nach, ob es eine neue Version gibt. Dabei werden keine persönlichen Daten gesendet.</string>
 
@@ -56,7 +57,8 @@
     <string name="mark_open">Wieder offen</string>
     <string name="is_done">Erledigt ✓</string>
 
-    <string name="settings_model_label">Modell, z. B. claude-sonnet-5-5 (leer lassen für den Standard). Schlüssel und Modell werden geprüft, sobald du ein Feld verlässt.</string>
+    <string name="settings_model_title">Modell</string>
+    <string name="settings_model_label">Leer lassen für den Standard. Schlüssel und Modell werden geprüft, sobald du ein Feld verlässt.</string>
     <string name="settings_model_hint">claude-haiku-5-5</string>
     <string name="ai_model_reset">Eingabe ungültig („%1$s“) – zurückgesetzt auf Haiku 5.5.</string>
     <string name="ai_default_gone">Das Standardmodell Haiku 5.5 wird von Anthropic nicht mehr angeboten. Bitte ein anderes Modell eintragen.</string>
@@ -76,6 +78,10 @@
     <string name="ai_test_failed">Test fehlgeschlagen:\n%1$s</string>
 
     <string name="settings_ai_title">Besser verstehen mit KI (freiwillig)</string>
+    <string name="section_recording">Aufnahme</string>
+    <string name="section_reminders">Erinnerungen</string>
+    <string name="section_app">App</string>
+    <string name="back">Zurück</string>
     <string name="settings_ai_text">Ohne Schlüssel erkennt die App klare Angaben wie „morgen um 10“ selbst. Mit einem Anthropic-API-Schlüssel versteht sie auch freies Erzählen; dafür wird der gesprochene Text an Anthropic geschickt. Ohne Internet greifen automatisch die festen Regeln.</string>
     <string name="settings_ai_hint">API-Schlüssel (sk-ant-…)</string>
     <string name="settings_saved">Gespeichert</string>

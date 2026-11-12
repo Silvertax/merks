@@ -29,7 +29,7 @@ Speech-to-text uses the recogniser installed on the phone (`SpeechRecognizer`). 
 
 ## Status
 
-Version 0.3.2 is an early test version. The interface and the offline rules are German only.
+Version 0.4.0 is an early test version. The interface and the offline rules are German only.
 
 ## Build
 
@@ -55,4 +55,4 @@ The Build workflow then checks that the tag matches the app version, runs the te
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE). The Nunito font is licensed under the SIL Open Font License, see [fonts/Nunito-OFL.txt](fonts/Nunito-OFL.txt).

@@ -1,16 +1,18 @@
 package de.silvertax.merks
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.CompoundButton
 import android.widget.EditText
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.textfield.TextInputLayout
 import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.ModelCheck
 import de.silvertax.merks.parse.Parsed
@@ -21,7 +23,7 @@ import java.util.Locale
 import kotlin.math.abs
 
 /** Settings: recording style, reminders, update check, and the optional AI sorting with its status. */
-class SettingsActivity : Activity() {
+class SettingsActivity : AppCompatActivity() {
     private lateinit var root: View
     private lateinit var key: EditText
     private lateinit var model: EditText
@@ -43,22 +45,15 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         root = findViewById(R.id.settings_root)
+        findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
 
-        val compact = findViewById<Switch>(R.id.compact)
-        compact.isChecked = Prefs.compact(this)
-        compact.setOnCheckedChangeListener { _, on -> Prefs.setCompact(this, on) }
-
-        val eve = findViewById<Switch>(R.id.eve_before)
-        eve.isChecked = Prefs.eveBefore(this)
-        eve.setOnCheckedChangeListener { _, on ->
+        switchRow(R.id.row_compact, R.id.compact, Prefs.compact(this)) { on -> Prefs.setCompact(this, on) }
+        switchRow(R.id.row_eve, R.id.eve_before, Prefs.eveBefore(this)) { on ->
             Prefs.setEveBefore(this, on)
             // Existing entries follow the switch right away.
             Thread { Scheduler.rescheduleAll(applicationContext) }.start()
         }
-
-        val updates = findViewById<Switch>(R.id.updates)
-        updates.isChecked = Prefs.updates(this)
-        updates.setOnCheckedChangeListener { _, on -> Prefs.setUpdates(this, on) }
+        switchRow(R.id.row_updates, R.id.updates, Prefs.updates(this)) { on -> Prefs.setUpdates(this, on) }
 
         key = findViewById(R.id.api_key)
         model = findViewById(R.id.model)
@@ -88,6 +83,14 @@ class SettingsActivity : Activity() {
         }
     }
 
+    /** A setting with a switch; the whole row can be tapped, which is easier than hitting the switch. */
+    private fun switchRow(row: Int, switch: Int, value: Boolean, changed: (Boolean) -> Unit) {
+        val s = findViewById<CompoundButton>(switch)
+        s.isChecked = value
+        s.setOnCheckedChangeListener { _, on -> changed(on) }
+        findViewById<View>(row).setOnClickListener { s.toggle() }
+    }
+
     /** Key and model are kept whenever the screen is left, not only via the button. */
     override fun onPause() {
         Prefs.setApiKey(this, key.text.toString())
@@ -109,11 +112,15 @@ class SettingsActivity : Activity() {
                 val slop = ViewConfiguration.get(this).scaledTouchSlop
                 val tap = abs(ev.rawX - downX) < slop && abs(ev.rawY - downY) < slop
                 // A tap into the other field just moves the focus there; that also starts the check.
-                if (tap && focused != null && fields.none { hits(it, ev) }) leaveField(focused)
+                if (tap && focused != null && fields.none { hits(box(it), ev) }) leaveField(focused)
             }
         }
         return super.dispatchTouchEvent(ev)
     }
+
+    /** The outlined box around a field, including its label, counts as part of the field. */
+    private fun box(field: EditText): View =
+        generateSequence(field.parent) { it.parent }.filterIsInstance<TextInputLayout>().firstOrNull() ?: field
 
     private fun hits(v: View, ev: MotionEvent): Boolean {
         val at = IntArray(2)

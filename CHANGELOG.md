@@ -2,7 +2,18 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
-## 0.3.2
+## 0.4.0
+
+A new look.
+
+### What's new
+
+- **New icon:** a speech bubble with an "m" and an amber dot, instead of a microphone like any dictation app.
+- **Fresh design:** calm teal and warm amber on cream, the friendly Nunito font, rounded buttons and cards with a symbol for each kind of entry.
+- **Dark mode:** the app follows the phone's light or dark setting.
+- **Listening you can see:** the ring around the microphone grows with your voice.
+- **Clearer settings:** a title bar with a back arrow, settings grouped, and each row can be tapped as a whole.
+- **Widget and notifications** in the new style.
 
 ### Fixed
 

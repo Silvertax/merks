@@ -1,20 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Full-screen listening, for those who switched the small sheet off. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
     android:fitsSystemWindows="true"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="24dp">
 
-    <ImageView
-        android:layout_width="112dp"
-        android:layout_height="112dp"
-        android:layout_marginTop="32dp"
-        android:background="@drawable/circle_bg"
-        android:importantForAccessibility="no"
-        android:padding="26dp"
-        android:src="@drawable/ic_mic" />
+    <FrameLayout
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="40dp"
+        android:clipChildren="false">
+
+        <View
+            android:id="@+id/pulse"
+            android:layout_width="134dp"
+            android:layout_height="134dp"
+            android:layout_gravity="center"
+            android:alpha="0.22"
+            android:background="@drawable/circle_bg"
+            android:backgroundTint="?attr/colorPrimary" />
+
+        <ImageView
+            android:layout_width="124dp"
+            android:layout_height="124dp"
+            android:layout_gravity="center"
+            android:background="@drawable/circle_bg"
+            android:backgroundTint="?attr/colorPrimary"
+            android:importantForAccessibility="no"
+            android:padding="32dp"
+            android:src="@drawable/ic_mic"
+            app:tint="?attr/colorOnPrimary" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/status"
@@ -22,14 +43,13 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:gravity="center"
-        android:textColor="@color/ink"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnSurface" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:layout_weight="1">
 
         <LinearLayout
@@ -42,8 +62,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:textColor="@color/ink"
-                android:textSize="24sp" />
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:id="@+id/detail"
@@ -51,32 +71,42 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:textColor="@color/primary"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorPrimary" />
         </LinearLayout>
     </ScrollView>
 
     <Button
         android:id="@+id/stop"
-        style="@style/BigButton"
+        style="@style/Widget.Merks.Button.Big"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="@string/stop" />
 
     <Button
         android:id="@+id/retry"
-        style="@style/BigButton"
+        style="@style/Widget.Merks.Button.Big"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="@string/retry"
         android:visibility="gone" />
 
     <Button
         android:id="@+id/done"
-        style="@style/BigButton"
+        style="@style/Widget.Merks.Button.Big.Tonal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="@string/done"
         android:visibility="gone" />
 
     <Button
         android:id="@+id/undo"
-        style="@style/QuietButton"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:minHeight="56dp"
         android:text="@string/undo"
         android:visibility="gone" />
 </LinearLayout>

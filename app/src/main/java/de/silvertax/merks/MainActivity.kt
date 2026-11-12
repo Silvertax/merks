@@ -1,24 +1,28 @@
 package de.silvertax.merks
 
 import android.Manifest
-import android.app.Activity
-import android.app.AlertDialog
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.R as M
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import de.silvertax.merks.parse.Kind
 import java.time.ZoneId
 
 /** The list of everything that was dictated, plus a big button to speak. */
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private var entries: List<Entry> = emptyList()
     private var starts: Map<Long, Long?> = emptyMap()
     private lateinit var list: ListView
@@ -30,7 +34,6 @@ class MainActivity : Activity() {
         list = findViewById(R.id.list)
         empty = findViewById(R.id.empty)
         list.adapter = adapter
-        list.setOnItemClickListener { _, _, position, _ -> details(entries[position]) }
 
         findViewById<View>(R.id.speak).setOnClickListener {
             startActivity(Intent(this, RecordActivity::class.java))
@@ -43,7 +46,7 @@ class MainActivity : Activity() {
             if (awm.isRequestPinAppWidgetSupported) {
                 awm.requestPinAppWidget(ComponentName(this, SpeakWidget::class.java), null, null)
             } else {
-                AlertDialog.Builder(this).setMessage(R.string.widget_manual)
+                MaterialAlertDialogBuilder(this).setMessage(R.string.widget_manual)
                     .setPositiveButton(android.R.string.ok, null).show()
             }
         }
@@ -116,7 +119,7 @@ class MainActivity : Activity() {
             if (e.done) append("\n").append(getString(R.string.is_done))
             append("\n\n").append(getString(R.string.said, e.raw))
         }
-        val dialog = AlertDialog.Builder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(e.title)
             .setMessage(message)
             .setPositiveButton(R.string.close, null)
@@ -146,14 +149,26 @@ class MainActivity : Activity() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val v = convertView ?: layoutInflater.inflate(R.layout.item_entry, parent, false)
             val e = entries[position]
-            v.findViewById<TextView>(R.id.title).apply {
-                text = if (e.done) "✓ ${e.title}" else e.title
-                alpha = if (e.done) 0.5f else 1f
+            v.findViewById<View>(R.id.card).setOnClickListener { details(e) }
+            v.findViewById<TextView>(R.id.title).text = e.title
+            v.findViewById<TextView>(R.id.sub).text =
+                if (e.start != null) "${label(e)} · ${Format.whenText(e, starts[e.id])}" else label(e)
+
+            // Each kind has its own symbol and colour; done entries get a tick and step back.
+            val (icon, background, foreground) = when {
+                e.done -> Triple(R.drawable.ic_check, M.attr.colorSurfaceContainerHigh, M.attr.colorOnSurfaceVariant)
+                e.kind == Kind.APPOINTMENT ->
+                    Triple(R.drawable.ic_event, M.attr.colorPrimaryContainer, M.attr.colorOnPrimaryContainer)
+                e.kind == Kind.REMINDER ->
+                    Triple(R.drawable.ic_bell, M.attr.colorSecondaryContainer, M.attr.colorOnSecondaryContainer)
+                else -> Triple(R.drawable.ic_note, M.attr.colorSurfaceContainerHigh, M.attr.colorOnSurfaceVariant)
             }
-            v.findViewById<TextView>(R.id.sub).apply {
-                text = if (e.start != null) "${label(e)} · ${Format.whenText(e, starts[e.id])}" else label(e)
-                alpha = if (e.done) 0.5f else 1f
+            v.findViewById<ImageView>(R.id.badge).apply {
+                setImageResource(icon)
+                backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(this, background))
+                imageTintList = ColorStateList.valueOf(MaterialColors.getColor(this, foreground))
             }
+            v.findViewById<View>(R.id.card).alpha = if (e.done) 0.6f else 1f
             return v
         }
     }

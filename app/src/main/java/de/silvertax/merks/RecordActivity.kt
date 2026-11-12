@@ -1,7 +1,6 @@
 package de.silvertax.merks
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -16,10 +15,11 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import java.util.Locale
 
 /** Opened by the widget: listens right away, sorts what was said and confirms it. */
-class RecordActivity : Activity() {
+class RecordActivity : AppCompatActivity() {
     private var recognizer: SpeechRecognizer? = null
     private var saved: Entry? = null
     private var compact = false
@@ -32,11 +32,12 @@ class RecordActivity : Activity() {
     private lateinit var retry: Button
     private lateinit var done: Button
     private lateinit var undo: Button
+    private lateinit var pulse: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The manifest theme is the small floating info; the full screen is switched on here.
         compact = Prefs.compact(this)
-        if (!compact) setTheme(R.style.AppTheme)
+        if (!compact) setTheme(R.style.Theme_Merks)
         super.onCreate(savedInstanceState)
         if (compact) {
             setContentView(R.layout.activity_record_compact)
@@ -52,6 +53,7 @@ class RecordActivity : Activity() {
         retry = findViewById(R.id.retry)
         done = findViewById(R.id.done)
         undo = findViewById(R.id.undo)
+        pulse = findViewById(R.id.pulse)
 
         stop.setOnClickListener { recognizer?.stopListening() }
         retry.setOnClickListener { listen() }
@@ -70,6 +72,7 @@ class RecordActivity : Activity() {
     }
 
     override fun onRequestPermissionsResult(code: Int, permissions: Array<String>, results: IntArray) {
+        super.onRequestPermissionsResult(code, permissions, results)
         if (results.firstOrNull() == PackageManager.PERMISSION_GRANTED) listen() else fail(getString(R.string.err_mic))
     }
 
@@ -124,22 +127,31 @@ class RecordActivity : Activity() {
 
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
-        override fun onRmsChanged(rmsdB: Float) {}
+        // Roughly -2 dB in silence and up to 10 dB when speaking up.
+        override fun onRmsChanged(rmsdB: Float) = ring((rmsdB + 2f) / 12f)
         override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onEndOfSpeech() {}
+        override fun onEndOfSpeech() = ring(0f)
         override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 
     private fun best(b: Bundle?): String? =
         b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.takeIf { it.isNotBlank() }
 
+    /** The ring around the microphone follows the voice: bigger when louder, resting when quiet. */
+    private fun ring(level: Float) {
+        val scale = 1f + 0.45f * level.coerceIn(0f, 1f)
+        pulse.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+    }
+
     private fun fail(message: String) {
+        ring(0f)
         status.text = message
         detail.text = ""
         show(retry, done)
     }
 
     private fun sortAndSave(text: String) {
+        ring(0f)
         status.setText(R.string.working)
         spoken.text = text
         show()
