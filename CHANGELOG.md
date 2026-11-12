@@ -2,6 +2,27 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.6.1
+
+### Better understanding without AI
+
+Most people use Merk's without an AI key, so the built-in rules now understand a lot more, in English and German:
+
+- **Time spans:** "Tomorrow from 10 to 12 handyman", "Friday from 2 to 4 pm", "between 2 and 4". The calendar event gets the right end, and the app shows it too.
+- **Several days:** "Monday to Friday vacation" or "December 20 to 23 grandma visits" become one calendar event over all those days.
+- **In the evening:** "today at 8" said in the evening now means 8 pm instead of a time that is already over. A bare "at 8" or "at 9" once the morning is past also means tonight; "at 10" or "at 11" still means tomorrow morning.
+- **Short times are reminders:** "in 20 minutes", "in 2 hours", "in half an hour" now remind you on time instead of making a calendar appointment.
+- **More series:** "every other Wednesday", "every second Wednesday", and "every weekday" or "on weekdays", a new series from Monday to Friday.
+- **More dates:** "on the 15th", "Friday the 20th", "the 1st of next month", "a week from Friday", "Wednesday next week", "this weekend", "the first Monday of the month", "at midnight", "this afternoon", and "12/3" (month first in the US, day first elsewhere).
+- **Cleaner titles:** "next week", "of every month", "until" and the like no longer end up in the title.
+- "At 3:15" without am or pm is now in the afternoon.
+
+In German, for example: "morgen von 10 bis 12 Uhr Handwerker", "vom 20. bis 23. Dezember Urlaub", "heute um 8", "in 2 Stunden", "jeden zweiten Mittwoch", "werktags um 7", "am 15.", "nächste Woche Mittwoch", "bis Freitag".
+
+### Fixed
+
+- Entries the AI recognised as lasting several days went into the calendar as a single day.
+
 ## 0.6.0
 
 ### What's new

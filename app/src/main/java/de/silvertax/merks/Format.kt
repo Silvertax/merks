@@ -5,6 +5,7 @@ import android.text.format.DateFormat
 import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Repeat
 import de.silvertax.merks.parse.RepeatUnit
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -29,9 +30,32 @@ object Format {
     private fun longDate(ctx: Context, t: ZonedDateTime): String =
         pattern(ctx, if (Lang.isGerman(ctx)) "EEEE, d. MMMM" else "EEEE, MMMM d").format(t)
 
-    /** "Fr., 13. Nov., 14:30 Uhr" / "Fri, Nov 13, 2:30 PM". */
-    private fun dayAndTime(ctx: Context, t: ZonedDateTime): String =
-        pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(t) + ", " + time(ctx, t)
+    /** "Fr., 13. Nov., 14:30 Uhr" / "Fri, Nov 13, 2:30 PM", with the end when there is one. */
+    private fun dayAndTime(ctx: Context, e: Entry, t: ZonedDateTime): String =
+        pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(t) + ", " + clock(ctx, e, t)
+
+    /** The last day of an all-day entry that runs over several days, for the occurrence starting at [t]. */
+    private fun lastDay(e: Entry, t: ZonedDateTime): ZonedDateTime? =
+        Plan.extraDays(e, t.zone).takeIf { it > 0 }?.let { t.plusDays(it) }
+
+    /** When this occurrence of an appointment ends, if it was said and ends the same day. */
+    private fun endOf(e: Entry, t: ZonedDateTime): ZonedDateTime? {
+        if (e.allDay || e.kind != Kind.APPOINTMENT) return null
+        val start = e.start ?: return null
+        val end = e.end ?: return null
+        if (end <= start) return null
+        return t.plus(Duration.ofMillis(end - start)).takeIf { it.toLocalDate() == t.toLocalDate() }
+    }
+
+    /** "14:00 Uhr", or "14:00–16:00 Uhr" / "2:00 PM – 4:00 PM" when the end is known. */
+    private fun clock(ctx: Context, e: Entry, t: ZonedDateTime): String {
+        val end = endOf(e, t) ?: return time(ctx, t)
+        return when {
+            Lang.isGerman(ctx) -> pattern(ctx, "HH:mm").format(t) + "–" + time(ctx, end)
+            DateFormat.is24HourFormat(ctx) -> time(ctx, t) + "–" + time(ctx, end)
+            else -> time(ctx, t) + " – " + time(ctx, end)
+        }
+    }
 
     /** "13.11.26" / "11/13/26", as usual in the language and region. */
     private fun shortDate(ctx: Context, t: ZonedDateTime): String =
@@ -39,13 +63,14 @@ object Format {
 
     fun repeatText(ctx: Context, r: Repeat): String {
         val c = Lang.context(ctx)
+        if (r.unit == RepeatUnit.WORKDAY) return c.getString(R.string.repeat_workdays)
         return if (r.every == 1) {
             c.getString(
                 when (r.unit) {
                     RepeatUnit.DAY -> R.string.repeat_daily
                     RepeatUnit.WEEK -> R.string.repeat_weekly
                     RepeatUnit.MONTH -> R.string.repeat_monthly
-                    RepeatUnit.YEAR -> R.string.repeat_yearly
+                    RepeatUnit.YEAR, RepeatUnit.WORKDAY -> R.string.repeat_yearly
                 },
             )
         } else {
@@ -54,7 +79,7 @@ object Format {
                     RepeatUnit.DAY -> R.string.repeat_every_days
                     RepeatUnit.WEEK -> R.string.repeat_every_weeks
                     RepeatUnit.MONTH -> R.string.repeat_every_months
-                    RepeatUnit.YEAR -> R.string.repeat_every_years
+                    RepeatUnit.YEAR, RepeatUnit.WORKDAY -> R.string.repeat_every_years
                 },
                 r.every,
             )
@@ -65,7 +90,11 @@ object Format {
     fun whenText(ctx: Context, e: Entry, start: Long? = e.start): String {
         if (start == null) return ""
         val t = zoned(start)
-        val text = if (e.allDay) longDate(ctx, t) else dayAndTime(ctx, t)
+        val text = when {
+            !e.allDay -> dayAndTime(ctx, e, t)
+            lastDay(e, t) != null -> longDate(ctx, t) + " – " + longDate(ctx, lastDay(e, t)!!)
+            else -> longDate(ctx, t)
+        }
         return if (e.repeat != null) "$text · ${repeatText(ctx, e.repeat)}" else text
     }
 
@@ -73,7 +102,11 @@ object Format {
     fun oneLine(ctx: Context, e: Entry): String {
         val start = e.start ?: return e.title
         val t = zoned(start)
-        val date = if (e.allDay) shortDate(ctx, t) else shortDate(ctx, t) + ", " + time(ctx, t)
+        val date = when {
+            !e.allDay -> shortDate(ctx, t) + ", " + clock(ctx, e, t)
+            lastDay(e, t) != null -> shortDate(ctx, t) + " – " + shortDate(ctx, lastDay(e, t)!!)
+            else -> shortDate(ctx, t)
+        }
         return "$date ${e.title}" + if (e.repeat != null) " (${repeatText(ctx, e.repeat)})" else ""
     }
 
@@ -94,6 +127,10 @@ object Format {
         val c = Lang.context(ctx)
         val t = zoned(start)
         val days = ChronoUnit.DAYS.between(zoned(now).toLocalDate(), t.toLocalDate())
+        // A holiday that has already begun: "bis Fr., 20. Nov." / "until Fri, Nov 20".
+        lastDay(e, t)?.takeIf { days < 0 }?.let { last ->
+            return c.getString(R.string.until_day, pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(last))
+        }
         val day = when (days) {
             0L -> c.getString(R.string.due_today)
             1L -> c.getString(R.string.due_tomorrow)

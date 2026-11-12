@@ -61,12 +61,12 @@ object AiParser {
                 Current local time: ${now.withSecond(0).withNano(0)} ($weekday), time zone ${zone.id}.
                 The memo comes from speech recognition, so expect filler words and small errors.
                 Reply with one JSON object and nothing else:
-                {"type":"appointment"|"reminder"|"note","title":string,"start":string|null,"end":string|null,"all_day":boolean,"repeat":null|{"unit":"day"|"week"|"month"|"year","every":number}}
+                {"type":"appointment"|"reminder"|"note","title":string,"start":string|null,"end":string|null,"all_day":boolean,"repeat":null|{"unit":"day"|"week"|"month"|"year"|"workday","every":number}}
                 - appointment: an event at a date or time. reminder: the speaker wants to be reminded of something at a time. note: everything else, or no usable date.
                 - title: short and clear, in the memo's language, without the date, time or repetition.
                 - start/end: local time as YYYY-MM-DDTHH:MM, resolved from relative phrases. end only if stated.
-                - all_day: true when a date is given without a time (start then uses T00:00).
-                - repeat: only when the memo says it recurs ("every Monday" -> unit week, every 1; "every two weeks" -> unit week, every 2). start is then the first occurrence.
+                - all_day: true when a date is given without a time (start then uses T00:00). Over several days ("from the 20th to the 23rd"), end is the last day at T00:00.
+                - repeat: only when the memo says it recurs ("every Monday" -> unit week, every 1; "every two weeks" -> unit week, every 2; "every weekday" or "Monday to Friday" -> unit workday, every 1). start is then the first occurrence.
                 - Never pick a start in the past; move it to the next matching day.
             """.trimIndent()
             val body = JSONObject()
@@ -210,6 +210,7 @@ object AiParser {
             "week" -> RepeatUnit.WEEK
             "month" -> RepeatUnit.MONTH
             "year" -> RepeatUnit.YEAR
+            "workday", "weekday" -> return Repeat(RepeatUnit.WORKDAY, 1)
             else -> return null
         }
         val every = r.optInt("every", 1)

@@ -8,13 +8,21 @@ class RuleParserTest {
     // A Wednesday evening.
     private val now = LocalDateTime.of(2026, 11, 11, 20, 0)
 
-    private fun check(text: String, kind: Kind, start: String?, title: String, allDay: Boolean = false) {
-        val p = RuleParser.parse(text, now)
+    private fun check(
+        text: String, kind: Kind, start: String?, title: String, allDay: Boolean = false,
+        end: String? = null, repeat: Repeat? = null, at: LocalDateTime = now,
+    ) {
+        val p = RuleParser.parse(text, at)
         assertEquals("kind of '$text'", kind, p.kind)
         assertEquals("start of '$text'", start?.let { LocalDateTime.parse(it) }, p.start)
+        assertEquals("end of '$text'", end?.let { LocalDateTime.parse(it) }, p.end)
         assertEquals("title of '$text'", title, p.title)
         assertEquals("allDay of '$text'", allDay, p.allDay)
+        if (repeat != null) assertEquals("repeat of '$text'", repeat, p.repeat)
     }
+
+    private val mondayMorning = LocalDateTime.of(2026, 11, 9, 9, 0)
+    private val saturdayMorning = LocalDateTime.of(2026, 11, 14, 10, 0)
 
     @Test fun tomorrowAtTen() = check("Morgen um 10 Zahnarzt", Kind.APPOINTMENT, "2026-11-12T10:00", "Zahnarzt")
 
@@ -103,4 +111,109 @@ class RuleParserTest {
     @Test fun nextWeek() = check(
         "Nächste Woche Auto zum TÜV", Kind.APPOINTMENT, "2026-11-18T00:00", "Auto zum TÜV", allDay = true,
     )
+
+    // Zeiträume
+
+    @Test fun rangeVonBis() = check(
+        "Morgen von 10 bis 12 Uhr Handwerker", Kind.APPOINTMENT, "2026-11-12T10:00", "Handwerker", end = "2026-11-12T12:00",
+    )
+
+    @Test fun rangeAfternoon() = check(
+        "Freitag von 14 bis 16 Uhr Kartenrunde", Kind.APPOINTMENT, "2026-11-13T14:00", "Kartenrunde", end = "2026-11-13T16:00",
+    )
+
+    @Test fun rangeZwischenSpoken() = check(
+        "Morgen zwischen 2 und 4 Handwerker", Kind.APPOINTMENT, "2026-11-12T14:00", "Handwerker", end = "2026-11-12T16:00",
+    )
+
+    @Test fun rangeWithoutVon() = check(
+        "Montag 9:30 bis 11 Uhr Physio", Kind.APPOINTMENT, "2026-11-16T09:30", "Physio", end = "2026-11-16T11:00",
+    )
+
+    @Test fun rangeWithoutDateStaysInTheMorning() = check(
+        "Von 8 bis 10 Uhr Maler", Kind.APPOINTMENT, "2026-11-12T08:00", "Maler", end = "2026-11-12T10:00",
+    )
+
+    @Test fun severalDays() = check(
+        "Vom 20. bis 23. Dezember Oma zu Besuch", Kind.APPOINTMENT, "2026-12-20T00:00", "Oma zu Besuch",
+        allDay = true, end = "2026-12-23T00:00",
+    )
+
+    @Test fun severalDaysNumeric() = check(
+        "Vom 28.12. bis 3.1. Skiurlaub", Kind.APPOINTMENT, "2026-12-28T00:00", "Skiurlaub", allDay = true, end = "2027-01-03T00:00",
+    )
+
+    @Test fun severalWeekdays() = check(
+        "Von Montag bis Freitag Urlaub", Kind.APPOINTMENT, "2026-11-16T00:00", "Urlaub", allDay = true, end = "2026-11-20T00:00",
+    )
+
+    // Uhrzeiten ohne "abends"
+
+    @Test fun todayAtNineInTheEvening() = check("Heute um 9 Tabletten", Kind.APPOINTMENT, "2026-11-11T21:00", "Tabletten")
+
+    @Test fun bareHourTakesTheComingEvening() = check("Um 9 Tabletten", Kind.APPOINTMENT, "2026-11-11T21:00", "Tabletten")
+
+    @Test fun bareTenStaysTomorrowMorning() = check("Um 10 Zahnarzt", Kind.APPOINTMENT, "2026-11-12T10:00", "Zahnarzt")
+
+    @Test fun todayWithUhr() = check("Heute um 9 Uhr zurückrufen", Kind.APPOINTMENT, "2026-11-11T21:00", "Zurückrufen")
+
+    @Test fun midnight() = check("Um Mitternacht Tabletten", Kind.APPOINTMENT, "2026-11-11T23:59", "Tabletten")
+
+    // Bald: Erinnerungen
+
+    @Test fun inTwoHoursIsAReminder() = check("In 2 Stunden Tabletten nehmen", Kind.REMINDER, "2026-11-11T22:00", "Tabletten nehmen")
+
+    @Test fun inHalfAnHourIsAReminder() = check("In einer halben Stunde Herd aus", Kind.REMINDER, "2026-11-11T20:30", "Herd aus")
+
+    // Serien
+
+    @Test fun everySecondWednesday() = check(
+        "Jeden zweiten Mittwoch Chor um 18 Uhr", Kind.APPOINTMENT, "2026-11-18T18:00", "Chor",
+        repeat = Repeat(RepeatUnit.WEEK, 2),
+    )
+
+    @Test fun everySecondWeek() = check(
+        "Jede zweite Woche Fenster putzen", Kind.APPOINTMENT, "2026-11-11T00:00", "Fenster putzen", allDay = true,
+        repeat = Repeat(RepeatUnit.WEEK, 2),
+    )
+
+    @Test fun workdays() = check(
+        "Werktags um 7 Uhr Hund ausführen", Kind.APPOINTMENT, "2026-11-12T07:00", "Hund ausführen",
+        repeat = Repeat(RepeatUnit.WORKDAY, 1),
+    )
+
+    @Test fun workdaysStartOnMonday() = check(
+        "Montags bis freitags um 8 Uhr Tabletten", Kind.APPOINTMENT, "2026-11-16T08:00", "Tabletten",
+        repeat = Repeat(RepeatUnit.WORKDAY, 1), at = saturdayMorning,
+    )
+
+    // Datum und Titel
+
+    @Test fun nextWeekWednesday() = check(
+        "Nächste Woche Mittwoch Fußpflege um 11 Uhr", Kind.APPOINTMENT, "2026-11-18T11:00", "Fußpflege", at = mondayMorning,
+    )
+
+    @Test fun untilFriday() = check(
+        "Bis Freitag Steuererklärung abgeben", Kind.APPOINTMENT, "2026-11-13T00:00", "Steuererklärung abgeben", allDay = true,
+    )
+
+    @Test fun dayOfMonthAlone() = check("Am 15. Zahnarzt", Kind.APPOINTMENT, "2026-11-15T00:00", "Zahnarzt", allDay = true)
+
+    @Test fun firstOfNextMonth() = check(
+        "Am 1. des nächsten Monats Miete", Kind.APPOINTMENT, "2026-12-01T00:00", "Miete", allDay = true,
+    )
+
+    @Test fun weekdayAndDay() = check("Freitag, den 20. Kino", Kind.APPOINTMENT, "2026-11-20T00:00", "Kino", allDay = true)
+
+    @Test fun weekFromFriday() = check("Freitag in einer Woche Kino", Kind.APPOINTMENT, "2026-11-20T00:00", "Kino", allDay = true)
+
+    @Test fun weekend() = check("Am Wochenende Auto waschen", Kind.APPOINTMENT, "2026-11-14T00:00", "Auto waschen", allDay = true)
+
+    @Test fun firstMondayOfTheMonth() = check(
+        "Am ersten Montag im Monat Seniorentreff", Kind.APPOINTMENT, "2026-12-07T00:00", "Seniorentreff", allDay = true,
+    )
+
+    @Test fun tomorrowAndWeekday() = check("Morgen, Donnerstag, Zahnarzt", Kind.APPOINTMENT, "2026-11-12T00:00", "Zahnarzt", allDay = true)
+
+    @Test fun numberWithDotIsNoDate() = check("Zum 3. Mal Tabletten vergessen", Kind.NOTE, null, "Zum 3. Mal Tabletten vergessen")
 }

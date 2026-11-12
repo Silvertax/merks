@@ -123,6 +123,7 @@
 
     <string name="due_today">Heute</string>
     <string name="due_tomorrow">Morgen</string>
+    <string name="until_day">bis %1$s</string>
     <string name="due_at">%1$s um %2$s</string>
 
     <string name="repeat_daily">täglich</string>
@@ -133,6 +134,7 @@
     <string name="repeat_every_weeks">alle %1$d Wochen</string>
     <string name="repeat_every_months">alle %1$d Monate</string>
     <string name="repeat_every_years">alle %1$d Jahre</string>
+    <string name="repeat_workdays">werktags (Mo–Fr)</string>
 
     <string name="ai_err_bad_name">Ungültiger Modellname.</string>
     <string name="ai_err_key">Schlüssel ungültig (HTTP 401).</string>

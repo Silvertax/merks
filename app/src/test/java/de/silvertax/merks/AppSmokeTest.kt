@@ -338,6 +338,45 @@ class AppSmokeTest {
         assertNull(v.getAsLong(CalendarContract.Events.DTEND))
     }
 
+    @Test fun rangeGoesIntoCalendarWithItsEnd() {
+        val calendar = fakeCalendar()
+        val start = LocalDate.now().plusDays(3).atTime(10, 0)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Handwerker", start, start.withHour(12), false), "x")
+
+        val v = calendar.inserted.single()
+        assertEquals(millis(start), v.getAsLong(CalendarContract.Events.DTSTART))
+        assertEquals(millis(start.withHour(12)), v.getAsLong(CalendarContract.Events.DTEND))
+        assertTrue(Format.whenText(app, e), Format.whenText(app, e).endsWith("10:00–12:00 Uhr"))
+    }
+
+    @Test fun severalDaysGoIntoCalendarAsOneLongEvent() {
+        val calendar = fakeCalendar()
+        val first = LocalDate.now().plusDays(3)
+        val text = "Urlaub"
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, text, first.atStartOfDay(), first.plusDays(4).atStartOfDay(), true), text)
+
+        val v = calendar.inserted.single()
+        assertEquals(1, v.getAsInteger(CalendarContract.Events.ALL_DAY))
+        val days = (v.getAsLong(CalendarContract.Events.DTEND) - v.getAsLong(CalendarContract.Events.DTSTART)) / (24 * 3600_000L)
+        assertEquals(5L, days)
+        assertTrue(Format.whenText(app, e), Format.whenText(app, e).contains(" – "))
+
+        // Once it has begun, "Up next" shows until when it lasts.
+        val ongoing = e.copy(start = millis(LocalDate.now().minusDays(1).atStartOfDay()), end = millis(LocalDate.now().plusDays(2).atStartOfDay()))
+        val shown = Format.compactWhen(app, ongoing, ongoing.start!!, System.currentTimeMillis())
+        assertTrue(shown, shown.startsWith("bis "))
+    }
+
+    @Test fun workdaySeriesGoesIntoCalendarMondayToFriday() {
+        val calendar = fakeCalendar()
+        val text = "Werktags um 7 Uhr Hund ausführen"
+        val e = Store.save(app, RuleParser.parse(text, LocalDateTime.now()), text)
+
+        assertEquals("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR", calendar.inserted.single().getAsString(CalendarContract.Events.RRULE))
+        assertTrue(Format.whenText(app, e), Format.whenText(app, e).endsWith("werktags (Mo–Fr)"))
+        assertTrue(java.time.Instant.ofEpochMilli(e.start!!).atZone(zone).dayOfWeek.value <= 5)
+    }
+
     // ---------- Reminders and their buttons ----------
 
     @Test fun appointmentAlarmComesTheEveningBeforeOrAnHourAhead() {

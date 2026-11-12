@@ -23,7 +23,9 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 
 Forgot the date, or said the wrong time? Tap "Change" on the confirmation, or tap the entry in the app and then "Change date or time", and just say the new one, for example "Friday at 10". The title stays; the calendar entry and the reminders move along. A note that gets a date becomes an appointment.
 
-Repeating things work too: "Every Monday take out the trash", "Every day at 8 am take pills", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
+Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
+
+Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
 Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
 

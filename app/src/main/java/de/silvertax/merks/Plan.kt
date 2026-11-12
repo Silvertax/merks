@@ -33,6 +33,10 @@ object Plan {
         val start = e.start ?: return emptySequence()
         val base = Instant.ofEpochMilli(start).atZone(zone)
         val r = e.repeat ?: return sequenceOf(base)
+        if (r.unit == RepeatUnit.WORKDAY) {
+            return generateSequence(0L) { it + 1 }.map { base.plusDays(it) }
+                .filter { it.dayOfWeek.value <= 5 }.take(MAX_OCCURRENCES)
+        }
         // Always counted from the first date, so "31st of every month" does not drift.
         return generateSequence(0L) { it + 1 }.take(MAX_OCCURRENCES).map { k ->
             val n = k * r.every
@@ -41,6 +45,7 @@ object Plan {
                 RepeatUnit.WEEK -> base.plusWeeks(n)
                 RepeatUnit.MONTH -> base.plusMonths(n)
                 RepeatUnit.YEAR -> base.plusYears(n)
+                RepeatUnit.WORKDAY -> base.plusDays(n)
             }
         }
     }
@@ -74,12 +79,22 @@ object Plan {
     /** One thing coming up: the entry and the start of the occurrence that counts. */
     data class Upcoming(val entry: Entry, val start: Long)
 
+    /** How many days an all-day entry lasts beyond its first one ("vom 20. bis 23." has three). */
+    fun extraDays(e: Entry, zone: ZoneId): Long {
+        val start = e.start ?: return 0
+        val end = e.end ?: return 0
+        if (!e.allDay || end <= start) return 0
+        val first = Instant.ofEpochMilli(start).atZone(zone).toLocalDate()
+        val last = Instant.ofEpochMilli(end).atZone(zone).toLocalDate()
+        return java.time.temporal.ChronoUnit.DAYS.between(first, last).coerceIn(0, 365)
+    }
+
     /** Until when an occurrence counts as coming up: its end, the end of its day, or an hour after it began. */
     private fun over(e: Entry, occ: ZonedDateTime): Long {
         val at = occ.toInstant().toEpochMilli()
         return when {
             e.kind == Kind.REMINDER -> at
-            e.allDay -> occ.toLocalDate().plusDays(1).atStartOfDay(occ.zone).toInstant().toEpochMilli()
+            e.allDay -> occ.toLocalDate().plusDays(1 + extraDays(e, occ.zone)).atStartOfDay(occ.zone).toInstant().toEpochMilli()
             e.end != null && e.start != null && e.end > e.start -> at + (e.end - e.start)
             else -> at + HOUR
         }

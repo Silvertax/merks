@@ -141,4 +141,22 @@ class PlanTest {
         // An appointment from 9:00 is shown until 10:00.
         assertEquals(at("2026-11-13T10:00"), Plan.nextChange(listOf(item(3, Kind.APPOINTMENT, "2026-11-13T09:00")), now, zone))
     }
+
+    @Test fun workdaySeriesSkipsTheWeekend() {
+        val e = entry(Kind.REMINDER, "2026-11-12T07:00", "2026-11-11T20:00", repeat = Repeat(RepeatUnit.WORKDAY, 1))
+        assertEquals(at("2026-11-12T07:00"), next(e, "2026-11-11T20:00"))
+        assertEquals(at("2026-11-13T07:00"), next(e, "2026-11-12T07:00"))
+        assertEquals(at("2026-11-16T07:00"), next(e, "2026-11-13T07:00"))
+    }
+
+    @Test fun severalDaysStayUpUntilTheLastDay() {
+        val e = Entry(
+            1, Kind.APPOINTMENT, "Urlaub", "x", at("2026-11-16T00:00"), at("2026-11-20T00:00"), true, null,
+            at("2026-11-11T20:00"),
+        )
+        assertEquals(4L, Plan.extraDays(e, zone))
+        assertEquals(at("2026-11-16T00:00"), Plan.upcoming(e, at("2026-11-18T12:00"), zone)?.start)
+        assertEquals(at("2026-11-16T00:00"), Plan.upcoming(e, at("2026-11-20T23:00"), zone)?.start)
+        assertNull(Plan.upcoming(e, at("2026-11-21T00:00"), zone))
+    }
 }

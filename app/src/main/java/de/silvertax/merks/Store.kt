@@ -19,6 +19,7 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.TimeZone
 
 class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 2) {
@@ -316,11 +317,13 @@ object Store {
     }
 
     fun rrule(r: Repeat): String {
+        if (r.unit == RepeatUnit.WORKDAY) return "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
         val freq = when (r.unit) {
             RepeatUnit.DAY -> "DAILY"
             RepeatUnit.WEEK -> "WEEKLY"
             RepeatUnit.MONTH -> "MONTHLY"
             RepeatUnit.YEAR -> "YEARLY"
+            RepeatUnit.WORKDAY -> "WEEKLY"
         }
         return if (r.every > 1) "FREQ=$freq;INTERVAL=${r.every}" else "FREQ=$freq"
     }
@@ -340,7 +343,9 @@ object Store {
                     put(CalendarContract.Events.ALL_DAY, 1)
                     put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
                     startMillis = start.toLocalDate().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-                    length = Duration.ofDays(1)
+                    // Several days ("vom 20. bis 23. Dezember"): the end is the last day.
+                    val days = p.end?.let { ChronoUnit.DAYS.between(start.toLocalDate(), it.toLocalDate()) + 1 } ?: 1
+                    length = Duration.ofDays(days.coerceIn(1, 366))
                 } else {
                     val end = p.end?.takeIf { it.isAfter(start) } ?: start.plusHours(1)
                     put(CalendarContract.Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
@@ -351,7 +356,7 @@ object Store {
                 if (p.repeat != null) {
                     // The calendar wants a duration instead of an end for a series.
                     put(CalendarContract.Events.RRULE, rrule(p.repeat))
-                    put(CalendarContract.Events.DURATION, if (p.allDay) "P1D" else "PT${length.seconds}S")
+                    put(CalendarContract.Events.DURATION, if (p.allDay) "P${length.toDays()}D" else "PT${length.seconds}S")
                 } else {
                     put(CalendarContract.Events.DTEND, startMillis + length.toMillis())
                 }
