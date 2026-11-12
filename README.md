@@ -7,7 +7,6 @@ A home screen widget starts listening right away. What you say becomes an appoin
 <p>
   <img src="docs/screenshots/en-speaking.png" width="200" alt="Speaking via the widget">
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries">
-  <img src="docs/screenshots/en-main-oled.png" width="200" alt="OLED mode">
   <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings">
 </p>
 
