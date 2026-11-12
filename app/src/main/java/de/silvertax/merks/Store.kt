@@ -121,8 +121,6 @@ object Prefs {
         p(ctx).getString("theme", null) ?: if (oled(ctx)) Appearance.DARK else Appearance.AUTO
     fun setTheme(ctx: Context, theme: String) = p(ctx).edit().putString("theme", theme).apply()
     fun setOled(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("oled", on).apply()
-    fun updates(ctx: Context): Boolean = p(ctx).getBoolean("updates", true)
-    fun setUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("updates", on).apply()
 
     /** Extra notification at 18:00 on the day before an appointment. */
     fun eveBefore(ctx: Context): Boolean = p(ctx).getBoolean("eve_before", true)

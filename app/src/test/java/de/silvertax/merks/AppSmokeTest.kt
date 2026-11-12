@@ -224,7 +224,6 @@ class AppSmokeTest {
     /** A home screen that adds the button: nothing to explain. */
     @Test fun widgetButtonStaysQuietWhenThePhoneAddsIt() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         main.findViewById<View>(R.id.add_widget).performClick()
@@ -236,7 +235,6 @@ class AppSmokeTest {
     @org.robolectric.annotation.Config(shadows = [SilentHomeScreen::class])
     @Test fun widgetButtonExplainsWhenThePhoneDoesNothing() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
         org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "Xiaomi")
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
@@ -252,7 +250,6 @@ class AppSmokeTest {
 
     @Test fun widgetButtonWithoutSupportExplainsRightAway() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         main.findViewById<View>(R.id.add_widget).performClick()
@@ -442,16 +439,10 @@ class AppSmokeTest {
         assertEquals("claude-haiku-5-5", Prefs.model(app))
     }
 
-    // ---------- Main list and update notice ----------
+    // ---------- Main list ----------
 
-    @Test fun mainListShowsEntriesAndTheUpdateNotice() {
+    @Test fun mainListShowsEntries() {
         Prefs.setAskedPermissions(app)
-        // A newer version is known, and no check is due, so nothing goes to the network.
-        Prefs.prefs(app).edit()
-            .putLong("update_checked_at", System.currentTimeMillis())
-            .putString("update_tag", "v9.0.0")
-            .putString("update_url", "https://github.com/Silvertax/merks/releases/tag/v9.0.0")
-            .apply()
         Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
         val text = "Jeden Montag Mülltonne rausstellen"
         Store.save(app, RuleParser.parse(text, LocalDateTime.now()), text)
@@ -461,12 +452,64 @@ class AppSmokeTest {
         assertEquals(2, list.adapter.count)
         assertEquals("Mülltonne rausstellen", (list.adapter.getItem(0) as Entry).title)
         assertEquals("Milch kaufen", (list.adapter.getItem(1) as Entry).title)
+    }
 
-        val banner = activity.findViewById<View>(R.id.update_banner)
-        assertEquals(View.VISIBLE, banner.visibility)
-        assertEquals("Version 9.0.0 ist verfügbar.", activity.findViewById<TextView>(R.id.update_text).text.toString())
-        activity.findViewById<View>(R.id.update_later).performClick()
-        assertEquals(View.GONE, banner.visibility)
+    // ---------- Updates: only on request ----------
+
+    @After fun realUpdateSource() { Updater.source = null }
+
+    private fun checkForUpdates(answer: Updater.Info?): android.app.Activity {
+        var asked = 0
+        Updater.source = { asked++; answer }
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val state = settings.findViewById<TextView>(R.id.update_state)
+        // Nothing is asked until the button is tapped.
+        idleMain()
+        assertEquals(0, asked)
+        assertTrue(state.text.toString().startsWith("Installiert: Version "))
+        val button = settings.findViewById<View>(R.id.check_updates)
+        assertEquals("Jetzt nach Updates suchen", (button as TextView).text.toString())
+        button.performClick()
+        waitFor { button.isEnabled }
+        assertEquals(1, asked)
+        return settings
+    }
+
+    @Test fun updateButtonFindsANewerVersion() {
+        val settings = checkForUpdates(Updater.Info("v9.0.0", "https://github.com/Silvertax/merks/releases/tag/v9.0.0"))
+        assertEquals("Version 9.0.0 ist verfügbar.", settings.findViewById<TextView>(R.id.update_state).text.toString())
+        val get = settings.findViewById<View>(R.id.update_get)
+        assertEquals(View.VISIBLE, get.visibility)
+        get.performClick()
+        val opened = shadowOf(app).nextStartedActivity
+        assertEquals("https://github.com/Silvertax/merks/releases/tag/v9.0.0", opened.dataString)
+    }
+
+    @Test fun updateButtonSaysWhenNothingIsNewer() {
+        val settings = checkForUpdates(Updater.Info("v0.0.1", "https://github.com/Silvertax/merks/releases/tag/v0.0.1"))
+        assertTrue(settings.findViewById<TextView>(R.id.update_state).text.toString().startsWith("Du hast die neueste Version ("))
+        assertEquals(View.GONE, settings.findViewById<View>(R.id.update_get).visibility)
+    }
+
+    @Test fun updateButtonSaysWhenTheCheckFails() {
+        val settings = checkForUpdates(null)
+        assertEquals(
+            "Die Suche hat nicht geklappt. Prüfe die Internetverbindung.",
+            settings.findViewById<TextView>(R.id.update_state).text.toString(),
+        )
+        assertEquals(View.GONE, settings.findViewById<View>(R.id.update_get).visibility)
+    }
+
+    /** Opening the app asks nobody anything. */
+    @Test fun openingTheAppDoesNotCheckForUpdates() {
+        Prefs.setAskedPermissions(app)
+        var asked = 0
+        Updater.source = { asked++; null }
+        Robolectric.buildActivity(MainActivity::class.java).setup()
+        idleMain()
+        Thread.sleep(200)
+        idleMain()
+        assertEquals(0, asked)
     }
 
     // ---------- OLED mode ----------
@@ -537,7 +580,6 @@ class AppSmokeTest {
 
     @Test fun oledStaysOutOfTheLightDesign() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         Prefs.setOled(app, true)
         Prefs.setTheme(app, Appearance.LIGHT)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
@@ -547,7 +589,6 @@ class AppSmokeTest {
 
     @Test fun oledModeMakesTheAppDarkAndBlack() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         Prefs.setOled(app, true)
         // Making the app dark is AppCompat's part (see designCanBeChosenInTheSettings); here the phone is dark already.
         RuntimeEnvironment.setQualifiers("+night")
@@ -561,7 +602,6 @@ class AppSmokeTest {
 
     @Test fun withoutOledTheBackgroundIsNotBlack() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val root = main.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
         assertTrue((root.background as ColorDrawable).color != Color.BLACK)

@@ -57,7 +57,6 @@ class ScreenshotRender {
         english = System.getenv("MERKS_SCREENSHOTS_LANG") == "en"
         RuntimeEnvironment.setQualifiers(if (english) "+en-rUS" else "+de-rDE")
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
     }
 
     @After fun reset() = androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(

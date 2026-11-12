@@ -2,6 +2,12 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.5.4
+
+### Changed
+
+- **Updates:** the app no longer looks for updates by itself. Under Settings there is now a button "Check for updates now"; it says whether a newer version is out and offers the download. The switch and the notice on the main screen are gone.
+
 ## 0.5.3
 
 ### Fixed

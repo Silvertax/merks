@@ -12,7 +12,7 @@ A home screen widget starts listening right away. What you say becomes an appoin
 
 ## Install
 
-Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. The app tells you when a new version is out.
+Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. To look for a new version, tap “Check for updates now” in the settings.
 
 ## How it works
 

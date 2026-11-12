@@ -81,7 +81,6 @@ class AppSmokeTestEn {
 
     @Test fun mainScreenInEnglish() {
         Prefs.setAskedPermissions(app)
-        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         val text = "Every Monday take out the trash"
         Store.save(app, Store.sort(app, text), text)
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()

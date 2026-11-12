@@ -22,44 +22,41 @@ object Versions {
     }
 }
 
-/** Asks GitHub at most once a day for the latest release. No personal data is sent. */
+/** Asks GitHub for the latest release, only when "Check for updates now" is tapped. No personal data is sent. */
 object Updater {
     private const val REPO_URL = "https://github.com/Silvertax/merks"
     private const val LATEST_API = "https://api.github.com/repos/Silvertax/merks/releases/latest"
-    private const val DAY = 24 * 60 * 60 * 1000L
 
     data class Info(val tag: String, val url: String)
 
-    private fun currentVersion(ctx: Context): String =
-        ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0"
-
-    /** In the F-Droid version, F-Droid brings the updates; a notice pointing to GitHub would not install over it. */
-    val available: Boolean get() = !BuildConfig.FDROID
-
-    /** The update to point out right now, or null. */
-    fun pending(ctx: Context): Info? {
-        if (!available || !Prefs.updates(ctx)) return null
-        val p = Prefs.prefs(ctx)
-        val tag = p.getString("update_tag", null) ?: return null
-        val url = p.getString("update_url", null) ?: return null
-        if (!Versions.newer(tag, currentVersion(ctx)) || p.getString("update_skip", null) == tag) return null
-        return Info(tag, url)
+    sealed interface Result {
+        data class Newer(val info: Info) : Result
+        data object UpToDate : Result
+        data object Failed : Result
     }
 
-    fun skip(ctx: Context, tag: String) = Prefs.prefs(ctx).edit().putString("update_skip", tag).apply()
+    fun currentVersion(ctx: Context): String =
+        ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0"
 
-    fun checkIfDue(ctx: Context, onDone: () -> Unit) {
-        if (!available || !Prefs.updates(ctx)) return
-        val p = Prefs.prefs(ctx)
-        val now = System.currentTimeMillis()
-        if (now - p.getLong("update_checked_at", 0) < DAY) return
-        p.edit().putLong("update_checked_at", now).apply()
-        val app = ctx.applicationContext
+    /** In the F-Droid version, F-Droid brings the updates; a download from GitHub would not install over it. */
+    val available: Boolean get() = !BuildConfig.FDROID
+
+    /** Tests put their own answer here, so that nothing goes to the network. */
+    internal var source: (() -> Info?)? = null
+
+    /** Asks in the background; [onDone] is called from that background thread. */
+    fun check(ctx: Context, onDone: (Result) -> Unit) {
+        val current = currentVersion(ctx)
+        val ask = source ?: ::fetch
         Thread {
-            fetch()?.let { info ->
-                Prefs.prefs(app).edit().putString("update_tag", info.tag).putString("update_url", info.url).apply()
-                onDone()
-            }
+            val info = ask()
+            onDone(
+                when {
+                    info == null -> Result.Failed
+                    Versions.newer(info.tag, current) -> Result.Newer(info)
+                    else -> Result.UpToDate
+                },
+            )
         }.start()
     }
 

@@ -32,8 +32,7 @@ class AppearanceLoopTest {
         MerksActivity::class.java.getDeclaredField("oledShown").apply { isAccessible = true }.getBoolean(a)
 
     private fun check(theme: String, oled: Boolean, phoneDark: Boolean, compact: Boolean) {
-        Prefs.prefs(app).edit().clear().putBoolean("compact", compact)
-            .putLong("update_checked_at", System.currentTimeMillis()).apply()
+        Prefs.prefs(app).edit().clear().putBoolean("compact", compact).apply()
         Prefs.setAskedPermissions(app)
         Prefs.setTheme(app, theme)
         Prefs.setOled(app, oled)

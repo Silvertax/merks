@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -107,28 +106,6 @@ class MainActivity : MerksActivity() {
     override fun onResume() {
         super.onResume()
         reload()
-        showUpdate()
-        Updater.checkIfDue(this) { runOnUiThread { if (!isDestroyed) showUpdate() } }
-    }
-
-    private fun showUpdate() {
-        val banner = findViewById<View>(R.id.update_banner)
-        val info = Updater.pending(this)
-        banner.visibility = if (info == null) View.GONE else View.VISIBLE
-        if (info == null) return
-        findViewById<TextView>(R.id.update_text).text =
-            getString(R.string.update_text, info.tag.removePrefix("v"))
-        findViewById<View>(R.id.update_get).setOnClickListener {
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.url)))
-            } catch (e: Exception) {
-                // No browser installed.
-            }
-        }
-        findViewById<View>(R.id.update_later).setOnClickListener {
-            Updater.skip(this, info.tag)
-            showUpdate()
-        }
     }
 
     private fun reload() {

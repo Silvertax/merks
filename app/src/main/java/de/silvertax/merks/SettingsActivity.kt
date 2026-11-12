@@ -1,5 +1,8 @@
 package de.silvertax.merks
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Button
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
@@ -70,7 +73,7 @@ class SettingsActivity : MerksActivity() {
             // Existing entries follow the switch right away.
             Thread { Scheduler.rescheduleAll(applicationContext) }.start()
         }
-        switchRow(R.id.row_updates, R.id.updates, Prefs.updates(this)) { on -> Prefs.setUpdates(this, on) }
+        setUpUpdateCheck()
         if (!Updater.available) {
             findViewById<View>(R.id.section_app).visibility = View.GONE
             findViewById<View>(R.id.card_app).visibility = View.GONE
@@ -111,6 +114,38 @@ class SettingsActivity : MerksActivity() {
             else -> R.string.settings_language_auto
         },
     )
+
+    /** No check runs by itself any more; this button asks GitHub once and says what it found. */
+    private fun setUpUpdateCheck() {
+        val check = findViewById<Button>(R.id.check_updates)
+        val state = findViewById<TextView>(R.id.update_state)
+        val get = findViewById<Button>(R.id.update_get)
+        val installed = Updater.currentVersion(this)
+        state.text = getString(R.string.update_installed, installed)
+        check.setOnClickListener {
+            check.isEnabled = false
+            get.visibility = View.GONE
+            state.setText(R.string.update_checking)
+            Updater.check(this) { result ->
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    check.isEnabled = true
+                    when (result) {
+                        is Updater.Result.Newer -> {
+                            state.text = getString(R.string.update_text, result.info.tag.removePrefix("v"))
+                            get.visibility = View.VISIBLE
+                            get.setOnClickListener {
+                                // Fails only without any browser.
+                                runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(result.info.url))) }
+                            }
+                        }
+                        Updater.Result.UpToDate -> state.text = getString(R.string.update_none, installed)
+                        Updater.Result.Failed -> state.setText(R.string.update_failed)
+                    }
+                }
+            }
+        }
+    }
 
     private fun themeName(choice: String): String = getString(
         when (choice) {
