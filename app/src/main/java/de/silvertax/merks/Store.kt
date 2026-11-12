@@ -109,6 +109,9 @@ object Prefs {
     /** Small info while listening, confirmation as a notification. */
     fun compact(ctx: Context): Boolean = p(ctx).getBoolean("compact", true)
     fun setCompact(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("compact", on).apply()
+    /** Pure black background, and the app always dark. */
+    fun oled(ctx: Context): Boolean = p(ctx).getBoolean("oled", false)
+    fun setOled(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("oled", on).apply()
     fun updates(ctx: Context): Boolean = p(ctx).getBoolean("updates", true)
     fun setUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("updates", on).apply()
 

@@ -12,6 +12,11 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatDelegate
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.database.sqlite.SQLiteDatabase
@@ -39,6 +44,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -372,6 +378,40 @@ class AppSmokeTest {
         assertEquals("Version 9.0.0 ist verfügbar.", activity.findViewById<TextView>(R.id.update_text).text.toString())
         activity.findViewById<View>(R.id.update_later).performClick()
         assertEquals(View.GONE, banner.visibility)
+    }
+
+    // ---------- OLED mode ----------
+
+    @After fun backToFollowingThePhone() = AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+
+    /** The screen then rebuilds itself, which the simulation cannot follow, so this stops at the switch. */
+    @Test fun oledSwitchInTheSettings() {
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        settings.findViewById<View>(R.id.row_oled).performClick()
+        assertTrue(Prefs.oled(app))
+        assertEquals(AppCompatDelegate.MODE_NIGHT_YES, AppCompatDelegate.getDefaultNightMode())
+    }
+
+    @Test fun oledModeMakesTheAppDarkAndBlack() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        Prefs.setOled(app, true)
+        // Forcing dark is AppCompat's part (see oledSwitchInTheSettings); here the phone is dark already.
+        RuntimeEnvironment.setQualifiers("+night")
+
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val root = main.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        assertEquals(Color.BLACK, (root.background as ColorDrawable).color)
+        val uiMode = main.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        assertEquals(Configuration.UI_MODE_NIGHT_YES, uiMode)
+    }
+
+    @Test fun withoutOledTheBackgroundIsNotBlack() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val root = main.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        assertTrue((root.background as ColorDrawable).color != Color.BLACK)
     }
 
     // ---------- Widget ----------

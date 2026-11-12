@@ -1,5 +1,7 @@
 package de.silvertax.merks
 
+import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
@@ -10,7 +12,6 @@ import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textfield.TextInputLayout
 import de.silvertax.merks.parse.AiParser
@@ -23,7 +24,7 @@ import java.util.Locale
 import kotlin.math.abs
 
 /** Settings: recording style, reminders, update check, and the optional AI sorting with its status. */
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : MerksActivity() {
     private lateinit var root: View
     private lateinit var key: EditText
     private lateinit var model: EditText
@@ -47,6 +48,15 @@ class SettingsActivity : AppCompatActivity() {
         root = findViewById(R.id.settings_root)
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
 
+        switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
+            fun night(c: Configuration) = (c.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            val darkNow = night(resources.configuration)
+            val darkWanted = on || night(Resources.getSystem().configuration)
+            Prefs.setOled(this, on)
+            Appearance.applyNightMode(this)
+            // Switching between light and dark redraws the screen by itself; black alone needs a push.
+            if (darkWanted == darkNow) recreate()
+        }
         switchRow(R.id.row_compact, R.id.compact, Prefs.compact(this)) { on -> Prefs.setCompact(this, on) }
         switchRow(R.id.row_eve, R.id.eve_before, Prefs.eveBefore(this)) { on ->
             Prefs.setEveBefore(this, on)

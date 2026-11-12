@@ -19,6 +19,7 @@ import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Parsed
 import de.silvertax.merks.parse.RuleParser
 import org.junit.Assume.assumeTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,6 +54,10 @@ class ScreenshotRender {
         Prefs.setAskedPermissions(app)
         Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
     }
+
+    @After fun reset() = androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
+    )
 
     private fun idle(ms: Long = 0) {
         val looper = shadowOf(Looper.getMainLooper())
@@ -101,6 +106,11 @@ class ScreenshotRender {
     @Test fun mainLight() = main(false, true, "1_main_light")
     @Test fun mainDark() = main(true, true, "2_main_dark")
     @Test fun mainEmpty() = main(false, false, "3_main_empty")
+
+    @Test fun mainOled() {
+        Prefs.setOled(app, true)
+        main(true, true, "2b_main_oled")
+    }
 
     private fun listening(nightMode: Boolean, name: String) {
         night(nightMode)

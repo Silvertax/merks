@@ -14,7 +14,6 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.R as M
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -22,7 +21,7 @@ import de.silvertax.merks.parse.Kind
 import java.time.ZoneId
 
 /** The list of everything that was dictated, plus a big button to speak. */
-class MainActivity : AppCompatActivity() {
+class MainActivity : MerksActivity() {
     private var entries: List<Entry> = emptyList()
     private var starts: Map<Long, Long?> = emptyMap()
     private lateinit var list: ListView

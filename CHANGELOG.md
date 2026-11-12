@@ -11,9 +11,10 @@ A new look.
 - **New icon:** a speech bubble with an "m" and an amber dot, instead of a microphone like any dictation app.
 - **Fresh design:** calm teal and warm amber on cream, the friendly Nunito font, rounded buttons and cards with a symbol for each kind of entry.
 - **Dark mode:** the app follows the phone's light or dark setting.
+- **OLED mode:** a switch in the settings for a pure black background, which saves power on OLED screens. The app then stays dark.
 - **Listening you can see:** the ring around the microphone grows with your voice.
 - **Clearer settings:** a title bar with a back arrow, settings grouped, and each row can be tapped as a whole.
-- **Widget and notifications** in the new style.
+- **Widget and notifications** in the new style; the widget shows the microphone on its own, in all sizes.
 
 ### Fixed
 

@@ -9,11 +9,9 @@
     android:padding="8dp">
 
     <ImageView
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="@drawable/widget_mic_bg"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:contentDescription="@string/speak"
-        android:padding="7dp"
         android:src="@drawable/ic_mic" />
 
     <!-- Shrinks on narrow widgets instead of cutting the word off. -->

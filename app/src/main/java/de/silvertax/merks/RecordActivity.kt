@@ -15,11 +15,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import java.util.Locale
 
 /** Opened by the widget: listens right away, sorts what was said and confirms it. */
-class RecordActivity : AppCompatActivity() {
+class RecordActivity : MerksActivity() {
     private var recognizer: SpeechRecognizer? = null
     private var saved: Entry? = null
     private var compact = false

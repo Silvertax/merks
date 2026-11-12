@@ -79,6 +79,9 @@
 
     <string name="settings_ai_title">Besser verstehen mit KI (freiwillig)</string>
     <string name="section_recording">Aufnahme</string>
+    <string name="section_look">Darstellung</string>
+    <string name="settings_oled">OLED-Modus</string>
+    <string name="settings_oled_hint">Tiefschwarzer Hintergrund, spart auf OLED-Bildschirmen Strom. Die App ist dann immer dunkel.</string>
     <string name="section_reminders">Erinnerungen</string>
     <string name="section_app">App</string>
     <string name="back">Zurück</string>

@@ -6,6 +6,14 @@
     <color name="brand_teal_dark">#0A5C54</color>
     <color name="brand_amber">#F4A63A</color>
 
+    <!-- OLED mode, on top of the dark colours. -->
+    <color name="oled_background">#000000</color>
+    <color name="oled_container_low">#0B0B0A</color>
+    <color name="oled_container">#121211</color>
+    <color name="oled_container_high">#1B1A19</color>
+    <color name="oled_container_highest">#252422</color>
+    <color name="oled_outline_variant">#2E2C29</color>
+
     <!-- Material roles, light. The dark values are in values-night/colors.xml. -->
     <color name="m_primary">#0D7A6F</color>
     <color name="m_on_primary">#FFFFFF</color>
