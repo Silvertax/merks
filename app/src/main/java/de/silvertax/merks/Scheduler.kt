@@ -49,6 +49,8 @@ object Scheduler {
 
     fun dismiss(ctx: Context, id: Long) = ctx.getSystemService(NotificationManager::class.java).cancel(id.toInt())
 
+    fun dismissConfirm(ctx: Context, id: Long) = ctx.getSystemService(NotificationManager::class.java).cancel(confirmId(id))
+
     fun rescheduleAll(ctx: Context) {
         for (e in Db(ctx).all()) schedule(ctx, e)
     }
@@ -97,8 +99,11 @@ object Scheduler {
     fun canConfirmByNotification(ctx: Context): Boolean =
         ctx.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
 
-    /** Tells the user what was just saved, with a way to take it back. */
-    fun confirm(ctx: Context, e: Entry) {
+    /**
+     * Tells the user what was just saved, with a way to take it back and one to change the date by voice.
+     * [changed]: the entry got a new date; then "Undo" puts the old one back instead of deleting it.
+     */
+    fun confirm(ctx: Context, e: Entry, changed: Boolean = false) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val texts = Lang.context(ctx)
         nm.createNotificationChannel(
@@ -107,13 +112,18 @@ object Scheduler {
         )
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, MainActivity::class.java), FLAGS)
         val undo = PendingIntent.getBroadcast(
-            ctx, confirmId(e.id), Intent(ctx, UndoReceiver::class.java).putExtra("id", e.id), FLAGS,
+            ctx, confirmId(e.id), Intent(ctx, UndoReceiver::class.java).putExtra("id", e.id).putExtra("changed", changed), FLAGS,
+        )
+        val change = PendingIntent.getActivity(
+            ctx, confirmId(e.id),
+            RecordActivity.changeIntent(ctx, e.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+            FLAGS,
         )
         val text = Format.oneLine(ctx, e)
         val n = Notification.Builder(ctx, CONFIRM_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_merks)
             .setColor(ctx.getColor(R.color.brand_teal))
-            .setContentTitle(texts.getString(Format.savedLabel(e)))
+            .setContentTitle(texts.getString(if (changed) R.string.changed_label else Format.savedLabel(e)))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))
             .setContentIntent(open)
@@ -121,6 +131,11 @@ object Scheduler {
             .addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(R.string.undo), undo,
+                ).build(),
+            )
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(R.string.change), change,
                 ).build(),
             )
             .build()
@@ -134,6 +149,7 @@ class AlarmReceiver : BroadcastReceiver() {
         if (!e.done) Scheduler.notify(ctx, e)
         // Line up the next one: the hour-before after the evening-before, or the next date of a series.
         Scheduler.schedule(ctx, e)
+        Glance.refresh(ctx)
     }
 }
 
@@ -153,6 +169,7 @@ class ActionReceiver : BroadcastReceiver() {
         }
         Scheduler.dismiss(ctx, id)
         db.get(id)?.let { Scheduler.schedule(ctx, it) }
+        Glance.refresh(ctx)
     }
 }
 
@@ -161,13 +178,23 @@ class UndoReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getLongExtra("id", -1)
         val e = Db(ctx).get(id)
-        if (e != null) Store.remove(ctx, e) else Scheduler.cancel(ctx, id)
+        val before = if (intent.getBooleanExtra("changed", false)) Prefs.takeBefore(ctx, id) else null
+        when {
+            e != null && before != null -> {
+                Store.restore(ctx, e, before)
+                Scheduler.dismissConfirm(ctx, id)
+            }
+            e != null -> Store.remove(ctx, e)
+            else -> Scheduler.cancel(ctx, id)
+        }
     }
 }
 
 /** Alarms are lost on reboot and on app updates, so they are set again here. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED && intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
         Scheduler.rescheduleAll(ctx)
+        Glance.refresh(ctx)
     }
 }

@@ -183,10 +183,13 @@ class AppSmokeTest {
         val n = notifications.allNotifications.single()
         assertEquals("Termin gemerkt (nicht im Kalender)", n.title())
         assertEquals("${shortDate.format(tomorrow)}, 10:00 Uhr Zahnarzt", n.text())
-        assertEquals("Rückgängig", n.actions.single().title.toString())
+        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
+        // "Ändern" opens the recording for this entry.
+        val change = shadowOf(n.actions[1].actionIntent).savedIntent
+        assertEquals(entry.id, change.getLongExtra("change_id", -1))
 
         // "Rückgängig" in the notification removes it again.
-        UndoReceiver().onReceive(app, shadowOf(n.actions.single().actionIntent).savedIntent)
+        UndoReceiver().onReceive(app, shadowOf(n.actions[0].actionIntent).savedIntent)
         assertTrue(Db(app).all().isEmpty())
         assertTrue(notifications.allNotifications.isEmpty())
         assertTrue(alarms.scheduledAlarms.isEmpty())
@@ -437,6 +440,150 @@ class AppSmokeTest {
         Prefs.setModel(app, "claude-haiku-5-5")
         assertEquals("", Prefs.prefs(app).getString("model", null))
         assertEquals("claude-haiku-5-5", Prefs.model(app))
+    }
+
+    // ---------- Changing the date or time by voice ----------
+
+    private fun ms(t: LocalDateTime) = t.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    private fun status(a: android.app.Activity) = a.findViewById<TextView>(R.id.status).text.toString()
+
+    @Test fun aNoteGetsADateByVoiceAndBecomesAnAppointment() {
+        val calendar = fakeCalendar()
+        speechAvailable()
+        Prefs.setCompact(app, false)
+        val note = Store.save(app, Parsed(Kind.NOTE, "Zahnarzt bei Neupert", null, null, false), "Zahnarzt bei Neupert")
+
+        val activity = Robolectric.buildActivity(RecordActivity::class.java, RecordActivity.changeIntent(app, note.id)).setup().get()
+        assertEquals("Ich höre zu …", status(activity))
+        assertEquals(
+            "Neue Zeit für „Zahnarzt bei Neupert“, z. B. „Freitag um 10“",
+            activity.findViewById<TextView>(R.id.detail).text.toString(),
+        )
+        say("morgen um 10")
+        waitFor { status(activity) == "Geändert" }
+
+        val changed = Db(app).get(note.id)!!
+        assertEquals(1, Db(app).all().size)
+        assertEquals(Kind.APPOINTMENT, changed.kind)
+        assertEquals("Zahnarzt bei Neupert", changed.title)
+        assertEquals(ms(LocalDate.now().plusDays(1).atTime(10, 0)), changed.start)
+        assertEquals("Zahnarzt bei Neupert → morgen um 10", changed.raw)
+        assertEquals(1, calendar.inserted.size)
+        assertEquals("Zahnarzt bei Neupert", calendar.inserted.single().getAsString(CalendarContract.Events.TITLE))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.change).visibility)
+
+        // "Undo" brings the note back, and the calendar entry goes again.
+        activity.findViewById<View>(R.id.undo).performClick()
+        val back = Db(app).get(note.id)!!
+        assertEquals(Kind.NOTE, back.kind)
+        assertNull(back.start)
+        assertNull(back.calendarEventId)
+        assertEquals(1, calendar.deleted.size)
+    }
+
+    @Test fun anAppointmentMovesWithItsCalendarEntry() {
+        val calendar = fakeCalendar()
+        speechAvailable()
+        val now = LocalDateTime.now()
+        val text = "Freitag um 15 Uhr Friseur"
+        val first = Store.save(app, RuleParser.parse(text, now), text)
+        assertEquals(1, calendar.inserted.size)
+        val firstCalendarId = first.calendarEventId!!
+
+        // Small mode: the info closes and a notification says what changed.
+        val activity = Robolectric.buildActivity(RecordActivity::class.java, RecordActivity.changeIntent(app, first.id)).setup().get()
+        say("Samstag um 11")
+        waitFor { activity.isFinishing }
+
+        val moved = Db(app).get(first.id)!!
+        assertEquals("Friseur", moved.title)
+        assertEquals(ms(RuleParser.parse("Samstag um 11", now).start!!), moved.start)
+        assertEquals(2, calendar.inserted.size)
+        assertTrue(calendar.deleted.single().toString().endsWith("/$firstCalendarId"))
+        val n = notifications.allNotifications.single { it.title() == "Geändert" }
+        assertTrue(n.text()!!.endsWith("Friseur"))
+        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
+
+        // "Undo" in the notification puts the old time back.
+        UndoReceiver().onReceive(app, Intent(app, UndoReceiver::class.java).putExtra("id", first.id).putExtra("changed", true))
+        val back = Db(app).get(first.id)!!
+        assertEquals(first.start, back.start)
+        assertEquals(3, calendar.inserted.size)
+        assertEquals(1, Db(app).all().size)
+    }
+
+    @Test fun withoutADateNothingIsChanged() {
+        speechAvailable()
+        Prefs.setCompact(app, false)
+        val note = Store.save(app, Parsed(Kind.NOTE, "Oma anrufen", null, null, false), "Oma anrufen")
+        val activity = Robolectric.buildActivity(RecordActivity::class.java, RecordActivity.changeIntent(app, note.id)).setup().get()
+        say("ach egal")
+        waitFor { status(activity) == "Ich habe kein Datum und keine Uhrzeit gehört." }
+        assertEquals(note, Db(app).get(note.id))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
+    }
+
+    @Test fun anEntryThatIsGoneSaysSo() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java, RecordActivity.changeIntent(app, 4711)).setup().get()
+        assertEquals("Diesen Eintrag gibt es nicht mehr.", status(activity))
+    }
+
+    @Test fun theEntryDialogOffersToChangeByVoice() {
+        Prefs.setAskedPermissions(app)
+        val note = Store.save(app, Parsed(Kind.NOTE, "Zahnarzt", null, null, false), "Zahnarzt")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+        list.adapter.getView(0, null, list).findViewById<View>(R.id.card).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        fun find(v: View): TextView? = when {
+            v is TextView && v.text.toString() == "Datum oder Uhrzeit ändern" -> v
+            v is ViewGroup -> (0 until v.childCount).firstNotNullOfOrNull { find(v.getChildAt(it)) }
+            else -> null
+        }
+        val button = find(dialog.window!!.decorView)!!
+        button.performClick()
+        val started = shadowOf(main).nextStartedActivity
+        assertEquals(RecordActivity::class.java.name, started.component!!.className)
+        assertEquals(note.id, started.getLongExtra("change_id", -1))
+    }
+
+    // ---------- What comes next, at a glance ----------
+
+    @Test fun theQuietNotificationShowsWhatComesNext() {
+        val tomorrow = LocalDate.now().plusDays(1).atTime(10, 0)
+        // Off unless switched on.
+        val first = Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", tomorrow, null, false), "Morgen um 10 Zahnarzt")
+        assertNull(notifications.getNotification(Glance.NOTIFICATION_ID))
+
+        Prefs.setNextUpNotification(app, true)
+        Glance.refresh(app)
+        val n = notifications.getNotification(Glance.NOTIFICATION_ID)!!
+        assertEquals("Zahnarzt", n.title())
+        assertEquals("Morgen, 10:00 Uhr", n.text())
+        assertTrue(n.flags and Notification.FLAG_ONGOING_EVENT != 0)
+        assertEquals(Notification.VISIBILITY_PUBLIC, n.visibility)
+
+        // Something sooner comes first.
+        val today = LocalDateTime.now().plusMinutes(90)
+        val sooner = Store.save(app, Parsed(Kind.REMINDER, "Tabletten nehmen", today, null, false), "Tabletten")
+        assertEquals("Tabletten nehmen", notifications.getNotification(Glance.NOTIFICATION_ID)!!.title())
+
+        Store.remove(app, sooner)
+        Store.remove(app, first)
+        assertNull(notifications.getNotification(Glance.NOTIFICATION_ID))
+    }
+
+    @Test fun theUpNextWidgetShowsWhatComesNext() {
+        val widgets = shadowOf(AppWidgetManager.getInstance(app))
+        val id = widgets.createWidget(NextWidget::class.java, R.layout.widget_next)
+        assertEquals("Nichts geplant", widgets.getViewFor(id).findViewById<TextView>(R.id.next_title).text.toString())
+
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", LocalDate.now().plusDays(1).atTime(9, 0), null, false), "Fußpflege")
+        val view = widgets.getViewFor(id)
+        assertEquals("Fußpflege", view.findViewById<TextView>(R.id.next_title).text.toString())
+        assertEquals("Morgen, 09:00 Uhr", view.findViewById<TextView>(R.id.next_when).text.toString())
     }
 
     // ---------- Main list ----------

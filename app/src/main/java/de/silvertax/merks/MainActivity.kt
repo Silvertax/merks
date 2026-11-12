@@ -106,6 +106,7 @@ class MainActivity : MerksActivity() {
     override fun onResume() {
         super.onResume()
         reload()
+        Glance.refresh(this)
     }
 
     private fun reload() {
@@ -137,9 +138,23 @@ class MainActivity : MerksActivity() {
             if (e.done) append("\n").append(getString(R.string.is_done))
             append("\n\n").append(getString(R.string.said, e.raw))
         }
+        // A big button for the most common fix: the date or time was missing or wrong.
+        val changeButton = com.google.android.material.button.MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonStyle,
+        ).apply {
+            setText(R.string.edit_voice)
+            setIconResource(R.drawable.ic_mic)
+            minHeight = (56 * resources.displayMetrics.density).toInt()
+        }
+        val box = android.widget.FrameLayout(this).apply {
+            val pad = (24 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad / 2, pad, 0)
+            addView(changeButton)
+        }
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(e.title)
             .setMessage(message)
+            .setView(box)
             .setPositiveButton(R.string.close, null)
             .setNegativeButton(R.string.delete) { _, _ ->
                 Store.remove(this, e)
@@ -153,10 +168,15 @@ class MainActivity : MerksActivity() {
                 db.setSnooze(e.id, null)
                 Scheduler.dismiss(this, e.id)
                 db.get(e.id)?.let { Scheduler.schedule(this, it) }
+                Glance.refresh(this)
                 reload()
             }
         }
-        dialog.show()
+        val shown = dialog.show()
+        changeButton.setOnClickListener {
+            shown.dismiss()
+            startActivity(RecordActivity.changeIntent(this, e.id))
+        }
     }
 
     private val adapter = object : BaseAdapter() {

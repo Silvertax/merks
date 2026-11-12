@@ -18,6 +18,20 @@
     <string name="retry">Speak again</string>
     <string name="done">Done</string>
     <string name="undo">Undo</string>
+    <string name="undone_change">Old time restored</string>
+    <string name="change">Change</string>
+    <string name="changed_label">Changed</string>
+    <string name="edit_voice">Change date or time</string>
+    <string name="edit_hint">New time for “%1$s”, e.g. “Friday at 10”</string>
+    <string name="err_no_date">I didn\'t hear a date or time.</string>
+    <string name="err_gone">This entry no longer exists.</string>
+    <string name="next_up_label">Up next</string>
+    <string name="next_up_none">Nothing planned</string>
+    <string name="next_up_widget_description">Shows what comes next</string>
+    <string name="channel_next_up">Up next</string>
+    <string name="settings_next_up">Always show what\'s next</string>
+    <string name="settings_next_up_hint">A quiet notification shows what comes next, also on the lock screen.</string>
+    <string name="notifications_off">Notifications are off for Merk\'s. Please allow them in the Android settings.</string>
     <string name="undone">Removed again</string>
 
     <string name="saved_appointment">Added to your calendar</string>

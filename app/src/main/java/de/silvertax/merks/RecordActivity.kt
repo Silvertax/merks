@@ -18,12 +18,21 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 
-/** Opened by the widget: listens right away, sorts what was said and confirms it. */
+/**
+ * Opened by the widget: listens right away, sorts what was said and confirms it.
+ * With [changeIntent] it listens for a new date or time for an existing entry instead.
+ */
 class RecordActivity : MerksActivity() {
     // A rebuild would stop the microphone; the recording is over in a few seconds anyway.
     override val followsOledChanges = false
     private var recognizer: SpeechRecognizer? = null
     private var saved: Entry? = null
+
+    /** The entry that gets a new date or time, or null when something new is spoken. */
+    private var changing: Entry? = null
+
+    /** The last result was a change, so "Undo" puts the old version back instead of deleting. */
+    private var savedWasChange = false
     private var compact = false
     private val handler = Handler(Looper.getMainLooper())
 
@@ -34,6 +43,7 @@ class RecordActivity : MerksActivity() {
     private lateinit var retry: Button
     private lateinit var done: Button
     private lateinit var undo: Button
+    private lateinit var change: Button
     private lateinit var pulse: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,15 +67,49 @@ class RecordActivity : MerksActivity() {
         undo = findViewById(R.id.undo)
         pulse = findViewById(R.id.pulse)
 
+        change = findViewById(R.id.change)
+        change.setOnClickListener {
+            saved?.let { changing = it }
+            saved = null
+            listen()
+        }
         stop.setOnClickListener { recognizer?.stopListening() }
         retry.setOnClickListener { retriedBusy = false; listen() }
         done.setOnClickListener { finish() }
         undo.setOnClickListener {
-            saved?.let { Store.remove(this, it) }
-            Toast.makeText(this, R.string.undone, Toast.LENGTH_SHORT).show()
+            val e = saved
+            val before = if (savedWasChange && e != null) Prefs.takeBefore(this, e.id) else null
+            when {
+                e != null && before != null -> {
+                    Store.restore(this, e, before)
+                    Toast.makeText(this, R.string.undone_change, Toast.LENGTH_SHORT).show()
+                }
+                e != null -> {
+                    Store.remove(this, e)
+                    Toast.makeText(this, R.string.undone, Toast.LENGTH_SHORT).show()
+                }
+            }
             finish()
         }
 
+        start(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        start(intent)
+    }
+
+    private fun start(intent: Intent) {
+        saved = null
+        val id = intent.getLongExtra(EXTRA_CHANGE, -1L)
+        changing = if (id > 0) Db(this).get(id) else null
+        if (id > 0 && changing == null) {
+            fail(getString(R.string.err_gone))
+            show(done)
+            return
+        }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             listen()
         } else {
@@ -79,7 +123,7 @@ class RecordActivity : MerksActivity() {
     }
 
     private fun show(vararg visible: View) {
-        for (b in listOf(stop, retry, done, undo)) b.visibility = if (b in visible) View.VISIBLE else View.GONE
+        for (b in listOf(stop, retry, done, undo, change)) b.visibility = if (b in visible) View.VISIBLE else View.GONE
     }
 
     /** Only language and region, e.g. "de-DE": recognisers stumble over extras such as "-u-fw-mon". */
@@ -126,7 +170,8 @@ class RecordActivity : MerksActivity() {
         }
         status.setText(R.string.listening)
         spoken.text = ""
-        detail.text = ""
+        // When changing, say what for and what to say.
+        detail.text = changing?.let { getString(R.string.edit_hint, it.title) } ?: ""
         show(stop)
 
         recognizer?.destroy()
@@ -150,7 +195,12 @@ class RecordActivity : MerksActivity() {
 
         override fun onResults(results: Bundle?) {
             val text = best(results)
-            if (text.isNullOrBlank()) fail(getString(R.string.err_nothing)) else sortAndSave(text)
+            val old = changing
+            when {
+                text.isNullOrBlank() -> fail(getString(R.string.err_nothing))
+                old != null -> sortAndChange(old, text)
+                else -> sortAndSave(text)
+            }
         }
 
         override fun onError(error: Int) {
@@ -209,6 +259,33 @@ class RecordActivity : MerksActivity() {
         show(retry, done)
     }
 
+    /** A new date, time or repetition for [old]; the title stays. */
+    private fun sortAndChange(old: Entry, text: String) {
+        ring(0f)
+        status.setText(R.string.working)
+        spoken.text = text
+        show()
+        Thread {
+            val result = try {
+                val p = Store.sort(this, text)
+                if (p.start == null) null else Store.reschedule(this, old, p, text)
+            } catch (e: Exception) {
+                null
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                when {
+                    result == null -> fail(getString(R.string.err_no_date), getString(R.string.edit_hint, old.title))
+                    compact && Scheduler.canConfirmByNotification(this) -> {
+                        Scheduler.confirm(this, result, changed = true)
+                        finish()
+                    }
+                    else -> confirm(result, changed = true)
+                }
+            }
+        }.start()
+    }
+
     private fun sortAndSave(text: String) {
         ring(0f)
         status.setText(R.string.working)
@@ -235,12 +312,14 @@ class RecordActivity : MerksActivity() {
         }.start()
     }
 
-    private fun confirm(e: Entry) {
+    private fun confirm(e: Entry, changed: Boolean = false) {
         saved = e
-        status.setText(Format.savedLabel(e))
+        savedWasChange = changed
+        changing = null
+        status.setText(if (changed) R.string.changed_label else Format.savedLabel(e))
         spoken.text = e.title
         detail.text = Format.whenText(this, e)
-        show(done, undo)
+        show(done, undo, change)
         handler.postDelayed({ finish() }, 8000)
     }
 
@@ -250,8 +329,12 @@ class RecordActivity : MerksActivity() {
         super.onDestroy()
     }
 
-    private companion object {
+    companion object {
         // MediaRecorder.AudioSource.HOTWORD, not public: "Hey Google" waiting in the background.
-        const val HOTWORD_SOURCE = 1999
+        private const val HOTWORD_SOURCE = 1999
+        private const val EXTRA_CHANGE = "change_id"
+
+        /** Opens the recording to speak a new date or time for entry [id]. */
+        fun changeIntent(ctx: Context, id: Long): Intent = Intent(ctx, RecordActivity::class.java).putExtra(EXTRA_CHANGE, id)
     }
 }

@@ -22,7 +22,7 @@ Not submitted yet; the app is distributed through GitHub releases for now. Prepa
 
 ## Tests
 
-`./gradlew testDebugUnitTest` runs the unit tests and the app tests in a simulated Android 15 (Robolectric), in German and English: update from an old database, speaking to confirmation, calendar series, reminder buttons, settings, language choice, list and widget. Nothing goes to the network.
+`./gradlew testDebugUnitTest` runs the unit tests and the app tests in a simulated Android 15 (Robolectric), in German and English: update from an old database, speaking to confirmation, changing a date by voice, the "Up next" widget and notification, calendar series, reminder buttons, settings, language choice, list and widget. Nothing goes to the network.
 
 - `MERKS_LIVE=1 ./gradlew testDebugUnitTest --tests '*LiveApiTest'` also talks to the real Anthropic API; with `MERKS_API_KEY` set it checks a working key as well.
 - `MERKS_SCREENSHOTS=<folder>` renders the screens as PNG files; `MERKS_SCREENSHOTS_LANG=en` renders the English app.

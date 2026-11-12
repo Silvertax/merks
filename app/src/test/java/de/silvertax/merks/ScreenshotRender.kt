@@ -184,6 +184,53 @@ class ScreenshotRender {
         }
     }
 
+    /** The "Up next" widget in its three shapes, drawn from the real RemoteViews. */
+    @Test fun nextWidget() {
+        sampleEntries()
+        val density = app.resources.displayMetrics.density
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        for ((shape, size, name) in listOf(
+            Triple(NextWidget.Companion.Shape.LINE, 250 to 70, "9_next_line"),
+            Triple(NextWidget.Companion.Shape.BLOCK, 250 to 110, "9_next_block"),
+            Triple(NextWidget.Companion.Shape.LIST, 250 to 170, "9_next_list"),
+        )) {
+            val v = NextWidget.views(app, next, now, shape).apply(app, null)
+            val w = (size.first * density).toInt()
+            val h = (size.second * density).toInt()
+            v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
+            v.layout(0, 0, w, h)
+            shot(v, name, android.graphics.Color.parseColor("#2B3D47"))
+        }
+    }
+
+    /** Confirmation after a change by voice, full-screen mode. */
+    @Test fun changedConfirmation() {
+        night(true)
+        Prefs.setCompact(app, false)
+        shadowOf(app).grantPermissions(android.Manifest.permission.RECORD_AUDIO)
+        val note = Store.save(app, Parsed(Kind.NOTE, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), null, null, false), "x")
+        val moved = Store.reschedule(app, note, Parsed(Kind.APPOINTMENT, "", LocalDate.now().plusDays(1).atTime(10, 0), null, false), "x")
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val confirm = RecordActivity::class.java.getDeclaredMethod("confirm", Entry::class.java, Boolean::class.javaPrimitiveType)
+        confirm.isAccessible = true
+        confirm.invoke(activity, moved, true)
+        shotActivity(activity, "10_changed_dark")
+    }
+
+    /** The entry dialog with its "change date or time" button. */
+    @Test fun entryDialog() {
+        night(true)
+        Store.save(app, Parsed(Kind.NOTE, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), null, null, false), t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"))
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<android.widget.ListView>(R.id.list)
+        list.adapter.getView(0, null, list).findViewById<View>(R.id.card).performClick()
+        idle(400)
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        val decor = dialog.window!!.decorView
+        shot(decor, "11_entry_dialog_dark", android.graphics.Color.parseColor("#101418"))
+    }
+
     @Test fun icon() {
         val icon = app.getDrawable(app.applicationInfo.icon) as AdaptiveIconDrawable
         val bmp = Bitmap.createBitmap(432, 432, Bitmap.Config.ARGB_8888)

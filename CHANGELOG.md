@@ -2,7 +2,13 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
-## 0.5.4
+## 0.6.0
+
+### What's new
+
+- **Change by voice:** forgot the date or said the wrong time? Tap "Change" on the confirmation, or tap the entry in the list and then "Change date or time", and say only the new date or time, e.g. "Friday at 10". The title stays, the calendar entry and the reminders move along, and "Undo" brings the old time back. A note that gets a date becomes an appointment.
+- **Up next at a glance:** a new widget "Up next" shows the next appointment or reminder on the home screen; made taller, it also lists the two after it.
+- **On the lock screen:** under Settings → "Always show what's next", a quiet notification shows what comes next, also on the lock screen.
 
 ### Changed
 

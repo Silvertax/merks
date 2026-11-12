@@ -73,6 +73,13 @@ class SettingsActivity : MerksActivity() {
             // Existing entries follow the switch right away.
             Thread { Scheduler.rescheduleAll(applicationContext) }.start()
         }
+        switchRow(R.id.row_next_up, R.id.next_up, Prefs.nextUpNotification(this)) { on ->
+            Prefs.setNextUpNotification(this, on)
+            Glance.refresh(this)
+            if (on && !Scheduler.canConfirmByNotification(this)) {
+                Toast.makeText(this, R.string.notifications_off, Toast.LENGTH_LONG).show()
+            }
+        }
         setUpUpdateCheck()
         if (!Updater.available) {
             findViewById<View>(R.id.section_app).visibility = View.GONE
@@ -182,6 +189,7 @@ class SettingsActivity : MerksActivity() {
                 if (choice == Prefs.lang(this)) return@setSingleChoiceItems
                 Prefs.setLang(this, choice)
                 SpeakWidget.updateAll(this)
+                Glance.refresh(this)
                 Lang.apply(choice)
             }
             .show()

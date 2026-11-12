@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/next_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_small"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="10dp">
+
+    <TextView
+        android:id="@+id/next_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/nunito_bold"
+        android:maxLines="1"
+        android:text="@string/next_up_label"
+        android:textColor="#CCEFE9"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/next_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="@font/nunito_extrabold"
+        android:maxLines="2"
+        android:text="@string/next_up_none"
+        android:textColor="#FFFFFF"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/next_when"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="@font/nunito_semibold"
+        android:maxLines="1"
+        android:textColor="#E6F7F4"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/next_more"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/next_line2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/nunito_semibold"
+            android:maxLines="1"
+            android:textColor="#E6F7F4"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/next_line3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/nunito_semibold"
+            android:maxLines="1"
+            android:textColor="#E6F7F4"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

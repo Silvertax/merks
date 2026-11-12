@@ -17,6 +17,20 @@
     <string name="done">Fertig</string>
     <string name="undo">Rückgängig</string>
     <string name="undone">Wieder gelöscht</string>
+    <string name="undone_change">Alte Zeit wiederhergestellt</string>
+    <string name="change">Ändern</string>
+    <string name="changed_label">Geändert</string>
+    <string name="edit_voice">Datum oder Uhrzeit ändern</string>
+    <string name="edit_hint">Neue Zeit für „%1$s“, z. B. „Freitag um 10“</string>
+    <string name="err_no_date">Ich habe kein Datum und keine Uhrzeit gehört.</string>
+    <string name="err_gone">Diesen Eintrag gibt es nicht mehr.</string>
+    <string name="next_up_label">Als Nächstes</string>
+    <string name="next_up_none">Nichts geplant</string>
+    <string name="next_up_widget_description">Zeigt, was als Nächstes ansteht</string>
+    <string name="channel_next_up">Als Nächstes</string>
+    <string name="settings_next_up">Nächsten Termin immer anzeigen</string>
+    <string name="settings_next_up_hint">Eine stille Benachrichtigung zeigt, was als Nächstes ansteht, auch auf dem Sperrbildschirm.</string>
+    <string name="notifications_off">Benachrichtigungen sind für Merk\'s ausgeschaltet. Bitte in den Android-Einstellungen erlauben.</string>
 
     <string name="saved_appointment">Termin im Kalender eingetragen</string>
     <string name="saved_appointment_local">Termin gemerkt (nicht im Kalender)</string>

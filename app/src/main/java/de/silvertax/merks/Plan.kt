@@ -71,6 +71,52 @@ object Plan {
         return snooze
     }
 
+    /** One thing coming up: the entry and the start of the occurrence that counts. */
+    data class Upcoming(val entry: Entry, val start: Long)
+
+    /** Until when an occurrence counts as coming up: its end, the end of its day, or an hour after it began. */
+    private fun over(e: Entry, occ: ZonedDateTime): Long {
+        val at = occ.toInstant().toEpochMilli()
+        return when {
+            e.kind == Kind.REMINDER -> at
+            e.allDay -> occ.toLocalDate().plusDays(1).atStartOfDay(occ.zone).toInstant().toEpochMilli()
+            e.end != null && e.start != null && e.end > e.start -> at + (e.end - e.start)
+            else -> at + HOUR
+        }
+    }
+
+    /** The occurrence of [e] that is next or still going on at [now], or null. Notes and done entries have none. */
+    fun upcoming(e: Entry, now: Long, zone: ZoneId): Upcoming? {
+        if (e.done || e.kind == Kind.NOTE || e.start == null) return null
+        // A snoozed reminder stays on the list until its new time.
+        e.snooze?.takeIf { it > now && e.kind == Kind.REMINDER }?.let { return Upcoming(e, it) }
+        for (occ in occurrences(e, zone)) {
+            if (over(e, occ) > now) return Upcoming(e, occ.toInstant().toEpochMilli())
+        }
+        return null
+    }
+
+    /** What comes next, soonest first. */
+    fun nextUp(entries: List<Entry>, now: Long, zone: ZoneId, limit: Int = 3): List<Upcoming> =
+        entries.mapNotNull { upcoming(it, now, zone) }.sortedBy { it.start }.take(limit)
+
+    /**
+     * When the "next up" display has to be drawn again: when one of the shown things is over,
+     * when the next one starts, and at midnight, when "tomorrow" turns into "today".
+     */
+    fun nextChange(entries: List<Entry>, now: Long, zone: ZoneId): Long {
+        val midnight = Instant.ofEpochMilli(now).atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        var next = midnight
+        for (e in entries) {
+            val u = upcoming(e, now, zone) ?: continue
+            val occ = Instant.ofEpochMilli(u.start).atZone(zone)
+            val end = if (e.snooze != null && u.start == e.snooze) u.start else over(e, occ)
+            if (end in (now + 1) until next) next = end
+            if (u.start in (now + 1) until next) next = u.start
+        }
+        return next
+    }
+
     /** Start of the occurrence that matters now: the first one today or later, else the last one. */
     fun currentStart(e: Entry, now: Long, zone: ZoneId): Long? {
         val today: LocalDate = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()

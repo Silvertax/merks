@@ -20,11 +20,15 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 2. Say what you want to remember, for example "Tomorrow at 10 dentist" or "Remind me in 20 minutes to take the laundry out".
 3. A notification shows what was saved. "Undo" removes it again.
 
+Forgot the date, or said the wrong time? Tap "Change" on the confirmation, or tap the entry in the app and then "Change date or time", and just say the new one, for example "Friday at 10". The title stays; the calendar entry and the reminders move along. A note that gets a date becomes an appointment.
+
 Repeating things work too: "Every Monday take out the trash", "Every day at 8 am take pills", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
 
 Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
 
-The widget can be resized from 2x2 down to 1x1. The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
+The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next; made taller, it also lists the two after it. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+
+The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 
 ## Language
 
@@ -40,7 +44,7 @@ German phones get German, all others English. You can also choose the language i
 No ads, no tracking, no account. Your entries stay on your phone and in your calendar.
 
 - Speech recognition is done by the recognizer installed on your phone.
-- Once a day the app asks GitHub whether a new version is out. No personal data is sent, and this can be switched off.
+- Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version. No personal data is sent.
 - Only if you enter an AI key, the spoken text is sent to Anthropic to be sorted.
 
 ## Status

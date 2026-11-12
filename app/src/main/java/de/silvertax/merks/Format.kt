@@ -89,6 +89,19 @@ object Format {
         return if (e.allDay) dayWord else c.getString(R.string.due_at, dayWord, time(ctx, t))
     }
 
+    /** Short "when" for the "Up next" display: "Heute, 10:00 Uhr", "Morgen", "Fr., 14. Nov., 10:00 Uhr". */
+    fun compactWhen(ctx: Context, e: Entry, start: Long, now: Long): String {
+        val c = Lang.context(ctx)
+        val t = zoned(start)
+        val days = ChronoUnit.DAYS.between(zoned(now).toLocalDate(), t.toLocalDate())
+        val day = when (days) {
+            0L -> c.getString(R.string.due_today)
+            1L -> c.getString(R.string.due_tomorrow)
+            else -> pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(t)
+        }
+        return if (e.allDay) day else day + ", " + time(ctx, t)
+    }
+
     fun stamp(ctx: Context, millis: Long): String = zoned(millis).let { shortDate(ctx, it) + ", " + time(ctx, it) }
 
     fun savedLabel(e: Entry): Int = when {

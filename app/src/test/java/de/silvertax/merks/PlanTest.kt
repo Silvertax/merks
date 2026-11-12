@@ -88,4 +88,57 @@ class PlanTest {
         assertEquals(at("2027-02-28T09:00"), next(e, "2027-01-31T09:00"))
         assertEquals(at("2027-03-31T09:00"), next(e, "2027-02-28T09:00"))
     }
+
+    // ---------- What comes next ----------
+
+    private fun item(
+        id: Long, kind: Kind, start: String?, allDay: Boolean = false, end: String? = null,
+        repeat: Repeat? = null, done: Boolean = false, snooze: String? = null,
+    ) = Entry(id, kind, "e$id", "e$id", start?.let { at(it) }, end?.let { at(it) }, allDay, null, at("2026-11-01T08:00"), done, snooze?.let { at(it) }, repeat)
+
+    private fun titles(list: List<Plan.Upcoming>) = list.map { it.entry.title }
+
+    @Test fun nextUpIsSoonestFirstWithoutNotesDoneOrPast() {
+        val entries = listOf(
+            item(1, Kind.APPOINTMENT, "2026-11-14T10:00"),
+            item(2, Kind.NOTE, null),
+            item(3, Kind.REMINDER, "2026-11-13T09:00"),
+            item(4, Kind.APPOINTMENT, "2026-11-12T08:00"), // over
+            item(5, Kind.APPOINTMENT, "2026-11-13T12:00", done = true),
+            item(6, Kind.APPOINTMENT, "2026-11-20T10:00"),
+            item(7, Kind.APPOINTMENT, "2026-11-25T10:00"),
+        )
+        assertEquals(listOf("e3", "e1", "e6"), titles(Plan.nextUp(entries, at("2026-11-12T20:00"), zone)))
+    }
+
+    @Test fun anAppointmentStaysUntilItIsOver() {
+        val timed = item(1, Kind.APPOINTMENT, "2026-11-13T10:00")
+        assertEquals(at("2026-11-13T10:00"), Plan.upcoming(timed, at("2026-11-13T10:30"), zone)?.start)
+        assertNull(Plan.upcoming(timed, at("2026-11-13T11:00"), zone))
+        val long = item(2, Kind.APPOINTMENT, "2026-11-13T10:00", end = "2026-11-13T14:00")
+        assertEquals(at("2026-11-13T10:00"), Plan.upcoming(long, at("2026-11-13T13:00"), zone)?.start)
+        val allDay = item(3, Kind.APPOINTMENT, "2026-11-13T00:00", allDay = true)
+        assertEquals(at("2026-11-13T00:00"), Plan.upcoming(allDay, at("2026-11-13T23:30"), zone)?.start)
+        assertNull(Plan.upcoming(allDay, at("2026-11-14T00:00"), zone))
+        // A reminder is gone once its time has come; snoozed, it shows its new time.
+        val reminder = item(4, Kind.REMINDER, "2026-11-13T09:00")
+        assertNull(Plan.upcoming(reminder, at("2026-11-13T09:00"), zone))
+        val snoozed = item(5, Kind.REMINDER, "2026-11-13T09:00", snooze = "2026-11-13T09:15")
+        assertEquals(at("2026-11-13T09:15"), Plan.upcoming(snoozed, at("2026-11-13T09:05"), zone)?.start)
+    }
+
+    @Test fun aSeriesShowsItsNextDate() {
+        val weekly = item(1, Kind.APPOINTMENT, "2026-11-02T07:00", repeat = Repeat(RepeatUnit.WEEK, 1))
+        assertEquals(at("2026-11-16T07:00"), Plan.upcoming(weekly, at("2026-11-12T20:00"), zone)?.start)
+    }
+
+    @Test fun redrawnWhenSomethingEndsStartsOrAtMidnight() {
+        val now = at("2026-11-13T09:30")
+        // Nothing today: at midnight "tomorrow" becomes "today".
+        assertEquals(at("2026-11-14T00:00"), Plan.nextChange(listOf(item(1, Kind.APPOINTMENT, "2026-11-15T10:00")), now, zone))
+        // A reminder at 11:00 today: then it is gone from the list.
+        assertEquals(at("2026-11-13T11:00"), Plan.nextChange(listOf(item(2, Kind.REMINDER, "2026-11-13T11:00")), now, zone))
+        // An appointment from 9:00 is shown until 10:00.
+        assertEquals(at("2026-11-13T10:00"), Plan.nextChange(listOf(item(3, Kind.APPOINTMENT, "2026-11-13T09:00")), now, zone))
+    }
 }

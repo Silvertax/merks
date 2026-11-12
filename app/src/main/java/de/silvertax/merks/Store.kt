@@ -59,6 +59,28 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
         },
     )
 
+    /** Writes all fields of [e] into its existing row. */
+    fun replace(e: Entry) {
+        writableDatabase.update(
+            "entries",
+            ContentValues().apply {
+                put("kind", e.kind.name)
+                put("title", e.title)
+                put("raw", e.raw)
+                put("start", e.start)
+                put("end_", e.end)
+                put("all_day", if (e.allDay) 1 else 0)
+                put("cal_id", e.calendarEventId)
+                put("created", e.created)
+                put("done", if (e.done) 1 else 0)
+                put("snooze", e.snooze)
+                put("repeat_unit", e.repeat?.unit?.name)
+                put("repeat_every", e.repeat?.every)
+            },
+            "id=?", arrayOf(e.id.toString()),
+        )
+    }
+
     fun delete(id: Long) {
         writableDatabase.delete("entries", "id=?", arrayOf(id.toString()))
     }
@@ -149,6 +171,24 @@ object Prefs {
     fun aiOk(ctx: Context): Boolean = p(ctx).getBoolean("ai_ok", false)
     fun aiError(ctx: Context): String? = p(ctx).getString("ai_error", null)
 
+    /** A quiet notification that always shows what comes next, also on the lock screen. */
+    fun nextUpNotification(ctx: Context): Boolean = p(ctx).getBoolean("next_up", false)
+    fun setNextUpNotification(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("next_up", on).apply()
+
+    /** How an entry looked before its last change by voice, so "Undo" can bring it back. One at a time. */
+    fun rememberBefore(ctx: Context, e: Entry) = p(ctx).edit().putString("before", EntryJson.write(e)).apply()
+
+    /** The remembered version of entry [id], if the last change was to that entry; it is forgotten either way. */
+    fun takeBefore(ctx: Context, id: Long): Entry? {
+        val json = p(ctx).getString("before", null) ?: return null
+        val e = EntryJson.read(json) ?: return null
+        if (e.id != id) return null
+        p(ctx).edit().remove("before").apply()
+        return e
+    }
+
+    fun forgetBefore(ctx: Context) = p(ctx).edit().remove("before").apply()
+
     fun askedPermissions(ctx: Context): Boolean = p(ctx).getBoolean("asked", false)
     fun setAskedPermissions(ctx: Context) = p(ctx).edit().putBoolean("asked", true).apply()
 }
@@ -189,20 +229,74 @@ object Store {
         )
         val entry = draft.copy(id = Db(ctx).insert(draft))
         Scheduler.schedule(ctx, entry)
+        Glance.refresh(ctx)
         return entry
     }
 
     fun remove(ctx: Context, e: Entry) {
         Scheduler.cancel(ctx, e.id)
         Db(ctx).delete(e.id)
-        if (e.calendarEventId != null && hasCalendarPermission(ctx)) {
-            try {
-                ctx.contentResolver.delete(
-                    ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, e.calendarEventId), null, null,
-                )
-            } catch (ex: Exception) {
-                // Calendar entry may already be gone.
-            }
+        deleteCalendarEvent(ctx, e.calendarEventId)
+        Glance.refresh(ctx)
+    }
+
+    /**
+     * Gives an entry a new date, time or repetition, spoken afterwards. The title stays. A note with a
+     * date becomes an appointment; "remind me ..." makes it a reminder. The calendar entry and the
+     * reminders move along; the version before is remembered for "Undo".
+     */
+    fun reschedule(ctx: Context, old: Entry, p: Parsed, said: String): Entry {
+        val zone = ZoneId.systemDefault()
+        val kind = when {
+            p.kind == Kind.REMINDER -> Kind.REMINDER
+            old.kind == Kind.NOTE -> Kind.APPOINTMENT
+            else -> old.kind
+        }
+        val start = p.start?.atZone(zone)?.toInstant()?.toEpochMilli()
+        val target = old.copy(
+            kind = kind,
+            raw = old.raw + " → " + said,
+            start = start,
+            end = p.end?.atZone(zone)?.toInstant()?.toEpochMilli(),
+            allDay = p.allDay,
+            repeat = if (start != null) p.repeat else null,
+            created = System.currentTimeMillis(),
+            done = false,
+            snooze = null,
+        )
+        Prefs.rememberBefore(ctx, old)
+        return rewrite(ctx, old, target)
+    }
+
+    /** Puts [current] back the way [before] was (the "Undo" of a change). */
+    fun restore(ctx: Context, current: Entry, before: Entry): Entry = rewrite(ctx, current, before.copy(id = current.id))
+
+    /** Replaces [current] with [target] under the same id, with a fresh calendar entry and alarms. */
+    private fun rewrite(ctx: Context, current: Entry, target: Entry): Entry {
+        Scheduler.cancel(ctx, current.id)
+        deleteCalendarEvent(ctx, current.calendarEventId)
+        val zone = ZoneId.systemDefault()
+        fun local(ms: Long?) = ms?.let { LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), zone) }
+        val calId = if (target.kind == Kind.APPOINTMENT && target.start != null) {
+            insertCalendarEvent(
+                ctx, Parsed(target.kind, target.title, local(target.start), local(target.end), target.allDay, target.repeat), target.raw,
+            )
+        } else {
+            null
+        }
+        val saved = target.copy(id = current.id, calendarEventId = calId)
+        Db(ctx).replace(saved)
+        Scheduler.schedule(ctx, saved)
+        Glance.refresh(ctx)
+        return saved
+    }
+
+    private fun deleteCalendarEvent(ctx: Context, id: Long?) {
+        if (id == null || !hasCalendarPermission(ctx)) return
+        try {
+            ctx.contentResolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id), null, null)
+        } catch (ex: Exception) {
+            // Calendar entry may already be gone.
         }
     }
 
@@ -266,5 +360,43 @@ object Store {
         } catch (e: Exception) {
             null
         }
+    }
+}
+
+/** An entry as text, for the one remembered version before a change. */
+object EntryJson {
+    fun write(e: Entry): String = org.json.JSONObject().apply {
+        put("id", e.id)
+        put("kind", e.kind.name)
+        put("title", e.title)
+        put("raw", e.raw)
+        e.start?.let { put("start", it) }
+        e.end?.let { put("end", it) }
+        put("allDay", e.allDay)
+        put("created", e.created)
+        put("done", e.done)
+        e.snooze?.let { put("snooze", it) }
+        e.repeat?.let { put("repeatUnit", it.unit.name); put("repeatEvery", it.every) }
+    }.toString()
+
+    fun read(json: String): Entry? = try {
+        val o = org.json.JSONObject(json)
+        fun long(k: String): Long? = if (o.has(k)) o.getLong(k) else null
+        Entry(
+            id = o.getLong("id"),
+            kind = Kind.valueOf(o.getString("kind")),
+            title = o.getString("title"),
+            raw = o.getString("raw"),
+            start = long("start"),
+            end = long("end"),
+            allDay = o.getBoolean("allDay"),
+            calendarEventId = null,
+            created = o.getLong("created"),
+            done = o.optBoolean("done"),
+            snooze = long("snooze"),
+            repeat = if (o.has("repeatUnit")) Repeat(RepeatUnit.valueOf(o.getString("repeatUnit")), o.getInt("repeatEvery")) else null,
+        )
+    } catch (e: Exception) {
+        null
     }
 }
