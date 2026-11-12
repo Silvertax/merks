@@ -471,7 +471,10 @@ class AppSmokeTest {
 
     // ---------- OLED mode ----------
 
-    @After fun backToFollowingThePhone() = AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+    @After fun backToFollowingThePhone() {
+        TestScreens.forgetLeftovers()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+    }
 
     /** The screen then rebuilds itself, which the simulation cannot follow, so this stops at the switch. */
     @Test fun oledSwitchInTheDarkSettings() {

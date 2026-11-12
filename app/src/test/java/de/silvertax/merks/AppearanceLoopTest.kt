@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -20,7 +21,12 @@ import org.robolectric.RuntimeEnvironment
 class AppearanceLoopTest {
     private val app get() = RuntimeEnvironment.getApplication()
 
-    @After fun reset() = AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+    @Before fun alone() = TestScreens.forgetLeftovers()
+
+    @After fun reset() {
+        TestScreens.forgetLeftovers()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+    }
 
     private fun shownBlack(a: Activity): Boolean =
         MerksActivity::class.java.getDeclaredField("oledShown").apply { isAccessible = true }.getBoolean(a)
@@ -43,6 +49,7 @@ class AppearanceLoopTest {
             assertEquals("${cls.simpleName} $label: black", oled && dark, shownBlack(a))
             c.destroy()
         }
+        TestScreens.forgetLeftovers()
     }
 
     @Test fun everyCombinationIsStable() {

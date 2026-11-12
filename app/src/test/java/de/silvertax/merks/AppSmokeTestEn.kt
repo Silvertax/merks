@@ -42,7 +42,10 @@ class AppSmokeTestEn {
     private fun Notification.title() = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
     private fun Notification.text() = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
 
-    @After fun followThePhoneAgain() = AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+    @After fun followThePhoneAgain() {
+        TestScreens.forgetLeftovers()
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+    }
 
     @Test fun speakingInEnglish() {
         shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO)
