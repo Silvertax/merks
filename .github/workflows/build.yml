@@ -36,6 +36,12 @@ jobs:
           if ! grep -qE "^## ${version//./\\.}( |$)" CHANGELOG.md; then
             echo "::warning::CHANGELOG.md has no section for $version; the release notes list the commit messages instead."
           fi
+          code=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)
+          for lang in en-US de-DE; do
+            if [ ! -f "fastlane/metadata/android/$lang/changelogs/$code.txt" ]; then
+              echo "::warning::fastlane/metadata/android/$lang/changelogs/$code.txt is missing; F-Droid shows no notes for this version."
+            fi
+          done
 
       - name: Unit tests
         run: ./gradlew testDebugUnitTest

@@ -6,6 +6,10 @@ plugins {
 // Release signing comes from environment variables (set locally or as CI secrets).
 val ksPath: String? = System.getenv("MERKS_KEYSTORE")
 
+// F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. It also brings
+// the updates, so that build leaves out the update check against GitHub releases.
+val fdroid = project.hasProperty("fdroid")
+
 android {
     namespace = "de.silvertax.merks"
     compileSdk = 35
@@ -14,8 +18,19 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.5.1"
+        versionCode = 12
+        versionName = "0.5.2"
+        buildConfigField("boolean", "FDROID", fdroid.toString())
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // No encrypted block of dependency data for Google in the APK; F-Droid asks for this.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     signingConfigs {
@@ -32,7 +47,11 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName(if (ksPath != null) "release" else "debug")
+            signingConfig = when {
+                ksPath != null -> signingConfigs.getByName("release")
+                fdroid -> null // F-Droid expects an unsigned APK
+                else -> signingConfigs.getByName("debug")
+            }
         }
     }
 

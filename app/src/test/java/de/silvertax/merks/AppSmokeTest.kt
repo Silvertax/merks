@@ -396,6 +396,14 @@ class AppSmokeTest {
         assertEquals(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, AppCompatDelegate.getDefaultNightMode())
     }
 
+    /** Only the F-Droid build (gradle -Pfdroid) leaves the update check out; F-Droid brings its updates. */
+    @Test fun updateCheckInTheGithubBuild() {
+        assertFalse(BuildConfig.FDROID)
+        assertTrue(Updater.available)
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals(View.VISIBLE, settings.findViewById<View>(R.id.card_app).visibility)
+    }
+
     @Test fun oledSwitchRestsInTheLightDesign() {
         val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
         assertFalse(settings.findViewById<View>(R.id.row_oled).isEnabled)

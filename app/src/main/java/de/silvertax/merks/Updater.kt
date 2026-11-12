@@ -33,9 +33,12 @@ object Updater {
     private fun currentVersion(ctx: Context): String =
         ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0"
 
+    /** In the F-Droid version, F-Droid brings the updates; a notice pointing to GitHub would not install over it. */
+    val available: Boolean get() = !BuildConfig.FDROID
+
     /** The update to point out right now, or null. */
     fun pending(ctx: Context): Info? {
-        if (!Prefs.updates(ctx)) return null
+        if (!available || !Prefs.updates(ctx)) return null
         val p = Prefs.prefs(ctx)
         val tag = p.getString("update_tag", null) ?: return null
         val url = p.getString("update_url", null) ?: return null
@@ -46,7 +49,7 @@ object Updater {
     fun skip(ctx: Context, tag: String) = Prefs.prefs(ctx).edit().putString("update_skip", tag).apply()
 
     fun checkIfDue(ctx: Context, onDone: () -> Unit) {
-        if (!Prefs.updates(ctx)) return
+        if (!available || !Prefs.updates(ctx)) return
         val p = Prefs.prefs(ctx)
         val now = System.currentTimeMillis()
         if (now - p.getLong("update_checked_at", 0) < DAY) return

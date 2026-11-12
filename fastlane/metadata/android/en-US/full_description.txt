@@ -1,0 +1,28 @@
+Tap once, say it, done. Merk's is for everyone who does not want to open an app, type, or think about where something belongs.
+
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time.
+
+What you can say, for example:
+• "Tomorrow at 10 dentist, Dr. Miller"
+• "Remind me in 20 minutes to take the laundry out"
+• "Every Monday take out the trash"
+• "Every year on December 3rd grandma's birthday"
+
+Features:
+• Big home screen widget, resizable from 2x2 down to 1x1
+• Appointments go straight into your calendar, repeating ones as a calendar series
+• Reminders come on time, appointments one hour ahead and, if you like, also the evening before
+• Every reminder has "Done", "In 15 min" and "In 1 hr" buttons
+• A notification shows what was saved; "Undo" removes it again
+• English and German, light and dark theme, OLED mode
+• Large, clear buttons, made with older people in mind
+
+Understanding what you say:
+Common date, time and repeat phrases in English and German are understood offline, without any account. Optionally, with your own Anthropic API key, Merk's also understands free-form speech. Without internet, the built-in rules take over.
+
+Privacy:
+No ads, no tracking, no account. Your entries stay on your phone and in your calendar.
+
+Good to know:
+• Merk's uses the speech recognition installed on your phone. Without one, it cannot listen.
+• Non-free network service: the optional AI sorting sends the spoken text to Anthropic, a proprietary service. It stays off unless you enter your own key.

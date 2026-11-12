@@ -1,0 +1,3 @@
+• Design: hell, dunkel oder wie das Handy, wählbar in den Einstellungen.
+• Der OLED-Modus macht das dunkle Design tiefschwarz.
+• Bereit für F-Droid: Diese Version bekommt ihre Updates über F-Droid und fragt nicht bei GitHub nach.

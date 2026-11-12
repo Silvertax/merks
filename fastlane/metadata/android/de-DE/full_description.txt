@@ -1,0 +1,28 @@
+Einmal tippen, sagen, fertig. Merk's ist für alle, die keine App öffnen, nichts tippen und nicht überlegen wollen, wo etwas hingehört.
+
+Ein Widget auf dem Startbildschirm hört sofort zu. Was du sagst, wird zu einem Termin, einer Erinnerung oder einer Notiz. Termine landen in deinem Kalender, und die App erinnert dich rechtzeitig.
+
+Was du zum Beispiel sagen kannst:
+• „Morgen um 10 Zahnarzt bei Neupert“
+• „Erinnere mich in 20 Minuten an die Wäsche“
+• „Jeden Montag Mülltonne rausstellen“
+• „Jedes Jahr am 3. Dezember Geburtstag von Oma“
+
+Funktionen:
+• Großes Widget für den Startbildschirm, von 2x2 bis 1x1 verkleinerbar
+• Termine kommen direkt in deinen Kalender, wiederkehrende als Serie
+• Erinnerungen kommen pünktlich, Termine eine Stunde vorher und auf Wunsch auch am Vorabend
+• Jede Erinnerung hat die Knöpfe „Erledigt“, „In 15 Min.“ und „In 1 Std.“
+• Eine Benachrichtigung zeigt, was eingetragen wurde; „Rückgängig“ löscht es wieder
+• Deutsch und Englisch, helles und dunkles Design, OLED-Modus
+• Große, klare Knöpfe, auch für ältere Menschen gedacht
+
+Wie die App dich versteht:
+Übliche Angaben zu Datum, Uhrzeit und Wiederholung versteht Merk's auf Deutsch und Englisch ohne Internet und ohne Konto. Mit einem eigenen Anthropic-API-Schlüssel versteht die App auf Wunsch auch frei Gesprochenes. Ohne Internet übernehmen wieder die eingebauten Regeln.
+
+Datenschutz:
+Keine Werbung, kein Tracking, kein Konto. Deine Einträge bleiben auf deinem Handy und in deinem Kalender.
+
+Gut zu wissen:
+• Merk's nutzt die Spracherkennung, die auf deinem Handy installiert ist. Ohne sie kann die App nicht zuhören.
+• Unfreier Netzwerkdienst: Die optionale KI-Sortierung schickt den gesprochenen Text an Anthropic, einen proprietären Dienst. Sie bleibt aus, solange du keinen eigenen Schlüssel einträgst.

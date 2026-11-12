@@ -262,10 +262,12 @@
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
+                android:id="@+id/section_app"
                 style="@style/Merks.SectionLabel"
                 android:text="@string/section_app" />
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_app"
                 style="@style/Widget.Material3.CardView.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

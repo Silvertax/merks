@@ -71,6 +71,10 @@ class SettingsActivity : MerksActivity() {
             Thread { Scheduler.rescheduleAll(applicationContext) }.start()
         }
         switchRow(R.id.row_updates, R.id.updates, Prefs.updates(this)) { on -> Prefs.setUpdates(this, on) }
+        if (!Updater.available) {
+            findViewById<View>(R.id.section_app).visibility = View.GONE
+            findViewById<View>(R.id.card_app).visibility = View.GONE
+        }
 
         key = findViewById(R.id.api_key)
         model = findViewById(R.id.model)

@@ -1,0 +1,3 @@
+• Theme: choose light, dark or like the phone in the settings.
+• OLED mode makes the dark theme pure black.
+• Ready for F-Droid: this version gets its updates from F-Droid and does not check GitHub.

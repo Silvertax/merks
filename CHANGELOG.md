@@ -2,6 +2,13 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.5.2
+
+### Changed
+
+- Prepared for F-Droid: the F-Droid version gets its updates from F-Droid and leaves out the update check on GitHub. The version from GitHub keeps telling you about new releases.
+- The APK no longer contains an encrypted block of dependency data meant for Google.
+
 ## 0.5.1
 
 ### What's new
