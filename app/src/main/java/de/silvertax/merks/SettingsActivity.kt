@@ -103,11 +103,13 @@ class SettingsActivity : Activity() {
                 downY = ev.rawY
             }
             MotionEvent.ACTION_UP -> {
-                val focused = currentFocus
+                // Asked of the two fields directly; the window's own focus answer is not always there.
+                val fields = listOf(key, model)
+                val focused = fields.firstOrNull { it.isFocused }
                 val slop = ViewConfiguration.get(this).scaledTouchSlop
                 val tap = abs(ev.rawX - downX) < slop && abs(ev.rawY - downY) < slop
                 // A tap into the other field just moves the focus there; that also starts the check.
-                if (tap && focused is EditText && listOf(key, model).none { hits(it, ev) }) leaveField(focused)
+                if (tap && focused != null && fields.none { hits(it, ev) }) leaveField(focused)
             }
         }
         return super.dispatchTouchEvent(ev)

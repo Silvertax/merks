@@ -14,8 +14,8 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.3.1"
+        versionCode = 6
+        versionName = "0.3.2"
     }
 
     signingConfigs {
@@ -46,10 +46,31 @@ android {
     lint {
         checkReleaseBuilds = false
     }
+    testOptions {
+        // Robolectric runs the app's screens and receivers on the JVM and needs the resources.
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// Robolectric needs a large Android jar. Gradle fetches it like any dependency (cached, with retries)
+// instead of Robolectric downloading it during the tests, which can fail a release build.
+val robolectricRuntime: Configuration by configurations.creating
+val robolectricDeps = layout.buildDirectory.dir("robolectric-deps")
+val copyRobolectricDeps by tasks.registering(Copy::class) {
+    from(robolectricRuntime)
+    into(robolectricDeps)
+}
+tasks.withType<Test>().configureEach {
+    dependsOn(copyRobolectricDeps)
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", robolectricDeps.get().asFile.absolutePath)
 }
 
 dependencies {
+    // Must match the Robolectric version below and the sdk in src/test/resources/robolectric.properties.
+    robolectricRuntime("org.robolectric:android-all-instrumented:15-robolectric-12650502-i7")
     testImplementation("junit:junit:4.13.2")
     // The Android stubs of org.json do nothing in unit tests; this is the real thing for them.
     testImplementation("org.json:json:20240303")
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }

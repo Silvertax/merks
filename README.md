@@ -29,7 +29,7 @@ Speech-to-text uses the recogniser installed on the phone (`SpeechRecognizer`). 
 
 ## Status
 
-Version 0.3.1 is an early test version. The interface and the offline rules are German only.
+Version 0.3.2 is an early test version. The interface and the offline rules are German only.
 
 ## Build
 
@@ -37,7 +37,13 @@ Version 0.3.1 is an early test version. The interface and the offline rules are 
 ./gradlew testDebugUnitTest assembleRelease
 ```
 
-Requires JDK 17 or newer and the Android SDK (platform 35). Release signing reads `MERKS_KEYSTORE`, `MERKS_KEYSTORE_PASSWORD`, `MERKS_KEY_ALIAS` and `MERKS_KEY_PASSWORD` from the environment; without them the debug key is used.
+Requires JDK 21 and the Android SDK (platform 35).
+
+## Tests
+
+`./gradlew testDebugUnitTest` runs the unit tests and the app tests in a simulated Android 15 (Robolectric): update from an old database, speaking to confirmation, calendar series, reminder buttons, settings, list and widget. Nothing goes to the network.
+
+`MERKS_LIVE=1 ./gradlew testDebugUnitTest --tests '*LiveApiTest'` also talks to the real Anthropic API; with `MERKS_API_KEY` set it checks a working key as well. Release signing reads `MERKS_KEYSTORE`, `MERKS_KEYSTORE_PASSWORD`, `MERKS_KEY_ALIAS` and `MERKS_KEY_PASSWORD` from the environment; without them the debug key is used.
 
 ## License
 
