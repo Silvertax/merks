@@ -110,8 +110,16 @@ object Prefs {
     /** Small info while listening, confirmation as a notification. */
     fun compact(ctx: Context): Boolean = p(ctx).getBoolean("compact", true)
     fun setCompact(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("compact", on).apply()
-    /** Pure black background, and the app always dark. */
+    /** Pure black background when the app is dark. */
     fun oled(ctx: Context): Boolean = p(ctx).getBoolean("oled", false)
+
+    /**
+     * Light, dark or like the phone. Until 0.5.0 the OLED mode made the app dark by itself;
+     * whoever had it on keeps a dark app.
+     */
+    fun theme(ctx: Context): String =
+        p(ctx).getString("theme", null) ?: if (oled(ctx)) Appearance.DARK else Appearance.AUTO
+    fun setTheme(ctx: Context, theme: String) = p(ctx).edit().putString("theme", theme).apply()
     fun setOled(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("oled", on).apply()
     fun updates(ctx: Context): Boolean = p(ctx).getBoolean("updates", true)
     fun setUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("updates", on).apply()

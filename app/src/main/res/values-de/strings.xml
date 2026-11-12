@@ -80,7 +80,11 @@
     <string name="section_recording">Aufnahme</string>
     <string name="section_look">Darstellung</string>
     <string name="settings_oled">OLED-Modus</string>
-    <string name="settings_oled_hint">Tiefschwarzer Hintergrund, spart auf OLED-Bildschirmen Strom. Die App ist dann immer dunkel.</string>
+    <string name="settings_oled_hint">Tiefschwarzer Hintergrund im dunklen Design, spart auf OLED-Bildschirmen Strom.</string>
+    <string name="settings_theme">Design</string>
+    <string name="theme_auto">Automatisch (wie das Handy)</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
     <string name="section_reminders">Erinnerungen</string>
     <string name="section_app">App</string>
     <string name="back">Zurück</string>

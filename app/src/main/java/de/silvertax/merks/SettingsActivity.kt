@@ -1,7 +1,5 @@
 package de.silvertax.merks
 
-import android.content.res.Configuration
-import android.content.res.Resources
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
@@ -52,15 +50,20 @@ class SettingsActivity : MerksActivity() {
         language.text = languageName(Prefs.lang(this))
         findViewById<View>(R.id.row_language).setOnClickListener { chooseLanguage() }
 
+        findViewById<TextView>(R.id.theme_value).text = themeName(Prefs.theme(this))
+        findViewById<View>(R.id.row_theme).setOnClickListener { chooseTheme() }
+
         switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
-            fun night(c: Configuration) = (c.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-            val darkNow = night(resources.configuration)
-            val darkWanted = on || night(Resources.getSystem().configuration)
             Prefs.setOled(this, on)
-            Appearance.applyNightMode(this)
-            // Switching between light and dark redraws the screen by itself; black alone needs a push.
-            if (darkWanted == darkNow) recreate()
+            // Black only shows in the dark design; then the screen is redrawn to show it.
+            if (Appearance.isDark(this)) recreate()
         }
+        // In the light design the OLED switch has nothing to do.
+        val light = !Appearance.isDark(this)
+        val oledRow = findViewById<View>(R.id.row_oled)
+        oledRow.isEnabled = !light
+        oledRow.alpha = if (light) 0.5f else 1f
+        findViewById<View>(R.id.oled).isEnabled = !light
         switchRow(R.id.row_compact, R.id.compact, Prefs.compact(this)) { on -> Prefs.setCompact(this, on) }
         switchRow(R.id.row_eve, R.id.eve_before, Prefs.eveBefore(this)) { on ->
             Prefs.setEveBefore(this, on)
@@ -104,6 +107,30 @@ class SettingsActivity : MerksActivity() {
             else -> R.string.settings_language_auto
         },
     )
+
+    private fun themeName(choice: String): String = getString(
+        when (choice) {
+            Appearance.LIGHT -> R.string.theme_light
+            Appearance.DARK -> R.string.theme_dark
+            else -> R.string.theme_auto
+        },
+    )
+
+    /** Like the phone, light or dark. AppCompat redraws the screens itself when that changes their look. */
+    private fun chooseTheme() {
+        val choices = arrayOf(Appearance.AUTO, Appearance.LIGHT, Appearance.DARK)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_theme)
+            .setSingleChoiceItems(choices.map { themeName(it) }.toTypedArray(), choices.indexOf(Prefs.theme(this))) { dialog, which ->
+                dialog.dismiss()
+                val choice = choices[which]
+                if (choice == Prefs.theme(this)) return@setSingleChoiceItems
+                Prefs.setTheme(this, choice)
+                findViewById<TextView>(R.id.theme_value).text = themeName(choice)
+                Appearance.applyNightMode(this)
+            }
+            .show()
+    }
 
     /** Automatic, Deutsch or English. AppCompat redraws all screens in the new language by itself. */
     private fun chooseLanguage() {

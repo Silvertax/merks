@@ -2,6 +2,13 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.5.1
+
+### What's new
+
+- **Theme:** choose light, dark or like the phone in the settings.
+- **OLED mode** now makes the dark theme pure black; it no longer switches the app to dark by itself. If you had it on, the app stays dark.
+
 ## 0.5.0
 
 ### What's new

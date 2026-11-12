@@ -83,7 +83,11 @@
     <string name="section_recording">Speaking</string>
     <string name="section_look">Appearance</string>
     <string name="settings_oled">OLED mode</string>
-    <string name="settings_oled_hint">Pure black background, saves power on OLED screens. The app then always stays dark.</string>
+    <string name="settings_oled_hint">Pure black background in the dark theme, saves power on OLED screens.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_auto">Automatic (like the phone)</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="section_reminders">Reminders</string>
     <string name="section_app">App</string>
     <string name="back">Back</string>

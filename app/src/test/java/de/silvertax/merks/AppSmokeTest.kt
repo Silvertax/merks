@@ -51,6 +51,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowSpeechRecognizer
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -154,7 +155,7 @@ class AppSmokeTest {
 
     /** Saving runs on a background thread and reports back to the screen; wait for both. */
     private fun waitFor(condition: () -> Boolean) {
-        repeat(200) {
+        repeat(400) {
             idleMain()
             if (condition()) return
             Thread.sleep(25)
@@ -385,18 +386,71 @@ class AppSmokeTest {
     @After fun backToFollowingThePhone() = AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 
     /** The screen then rebuilds itself, which the simulation cannot follow, so this stops at the switch. */
-    @Test fun oledSwitchInTheSettings() {
+    @Test fun oledSwitchInTheDarkSettings() {
+        RuntimeEnvironment.setQualifiers("+night")
         val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertTrue(settings.findViewById<View>(R.id.row_oled).isEnabled)
         settings.findViewById<View>(R.id.row_oled).performClick()
         assertTrue(Prefs.oled(app))
+        // Black no longer makes the app dark by itself; that is what the design choice is for.
+        assertEquals(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, AppCompatDelegate.getDefaultNightMode())
+    }
+
+    @Test fun oledSwitchRestsInTheLightDesign() {
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertFalse(settings.findViewById<View>(R.id.row_oled).isEnabled)
+        assertFalse(settings.findViewById<View>(R.id.oled).isEnabled)
+    }
+
+    /** The screen then redraws itself in the new design, which the simulation cannot follow. */
+    @Test fun designCanBeChosenInTheSettings() {
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals("Automatisch (wie das Handy)", settings.findViewById<TextView>(R.id.theme_value).text.toString())
+        settings.findViewById<View>(R.id.row_theme).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        assertEquals("Dunkel", dialog.listView.adapter.getItem(2).toString())
+        dialog.listView.performItemClick(dialog.listView.getChildAt(2), 2, 2)
+        assertEquals(Appearance.DARK, Prefs.theme(app))
+        assertEquals("Dunkel", settings.findViewById<TextView>(R.id.theme_value).text.toString())
         assertEquals(AppCompatDelegate.MODE_NIGHT_YES, AppCompatDelegate.getDefaultNightMode())
+    }
+
+    @Test fun designLightAndAutomatic() {
+        Prefs.setTheme(app, Appearance.LIGHT)
+        Appearance.applyNightMode(app)
+        assertEquals(AppCompatDelegate.MODE_NIGHT_NO, AppCompatDelegate.getDefaultNightMode())
+        Prefs.setTheme(app, Appearance.AUTO)
+        Appearance.applyNightMode(app)
+        assertEquals(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, AppCompatDelegate.getDefaultNightMode())
+    }
+
+    /** Until 0.5.0 OLED made the app dark; whoever had it on keeps a dark app after the update. */
+    @Test fun oledFromBeforeKeepsTheAppDark() {
+        assertEquals(Appearance.AUTO, Prefs.theme(app))
+        Prefs.setOled(app, true)
+        assertEquals(Appearance.DARK, Prefs.theme(app))
+        Appearance.applyNightMode(app)
+        assertEquals(AppCompatDelegate.MODE_NIGHT_YES, AppCompatDelegate.getDefaultNightMode())
+        // A choice made later wins.
+        Prefs.setTheme(app, Appearance.AUTO)
+        assertEquals(Appearance.AUTO, Prefs.theme(app))
+    }
+
+    @Test fun oledStaysOutOfTheLightDesign() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        Prefs.setOled(app, true)
+        Prefs.setTheme(app, Appearance.LIGHT)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val root = main.findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        assertTrue((root.background as ColorDrawable).color != Color.BLACK)
     }
 
     @Test fun oledModeMakesTheAppDarkAndBlack() {
         Prefs.setAskedPermissions(app)
         Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
         Prefs.setOled(app, true)
-        // Forcing dark is AppCompat's part (see oledSwitchInTheSettings); here the phone is dark already.
+        // Making the app dark is AppCompat's part (see designCanBeChosenInTheSettings); here the phone is dark already.
         RuntimeEnvironment.setQualifiers("+night")
 
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()

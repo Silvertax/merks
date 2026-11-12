@@ -25,7 +25,7 @@ Repeating things work too: "Every Monday take out the trash", "Every day at 8 am
 
 Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
 
-The widget can be resized from 2x2 down to 1x1. The app follows your phone's dark mode, and an OLED mode gives a pure black background.
+The widget can be resized from 2x2 down to 1x1. The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 
 ## Language
 
