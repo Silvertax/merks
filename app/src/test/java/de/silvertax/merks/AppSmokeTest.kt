@@ -211,11 +211,99 @@ class AppSmokeTest {
     @Test fun nothingUnderstoodOffersToTryAgain() {
         speechAvailable()
         val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
-        shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer()).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
+        val recognizer = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
+        recognizer.triggerOnRmsChanged(6f) // a voice was there
+        recognizer.triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
         idleMain()
         assertEquals("Ich habe nichts verstanden.", activity.findViewById<TextView>(R.id.status).text.toString())
+        assertEquals("", activity.findViewById<TextView>(R.id.detail).text.toString())
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
         assertTrue(Db(app).all().isEmpty())
+    }
+
+    /** A home screen that adds the button: nothing to explain. */
+    @Test fun widgetButtonStaysQuietWhenThePhoneAddsIt() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        main.findViewById<View>(R.id.add_widget).performClick()
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
+        assertTrue(ShadowDialog.getLatestDialog() == null)
+    }
+
+    /** Xiaomi's home screen takes the request and drops it silently: then the app explains the way by hand. */
+    @org.robolectric.annotation.Config(shadows = [SilentHomeScreen::class])
+    @Test fun widgetButtonExplainsWhenThePhoneDoesNothing() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
+        org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "Xiaomi")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        main.findViewById<View>(R.id.add_widget).performClick()
+        assertTrue(ShadowDialog.getLatestDialog() == null)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(text, text.startsWith("Das Handy hat den Knopf nicht von selbst hinzugefügt. Bei Xiaomi"))
+        assertTrue(text, text.endsWith("„Widgets“ wählen und „Merk's“ hinzufügen."))
+        assertEquals("App-Einstellungen", dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).text.toString())
+    }
+
+    @Test fun widgetButtonWithoutSupportExplainsRightAway() {
+        Prefs.setAskedPermissions(app)
+        Prefs.prefs(app).edit().putLong("update_checked_at", System.currentTimeMillis()).apply()
+        shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        main.findViewById<View>(R.id.add_widget).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(text, text.startsWith("Lange auf eine freie Stelle"))
+    }
+
+    /** No sound at all: the microphone was busy or blocked. Say that, not "nothing understood". */
+    @Test fun silenceIsNamedAsSilence() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val recognizer = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
+        recognizer.triggerOnRmsChanged(-2f) // silence only
+        recognizer.triggerOnError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+        idleMain()
+        assertEquals("Ich habe nichts gehört.", activity.findViewById<TextView>(R.id.status).text.toString())
+        assertEquals(
+            "Vom Mikrofon kam kein Ton. Ist es gesperrt, oder nutzt es gerade eine andere App?",
+            activity.findViewById<TextView>(R.id.detail).text.toString(),
+        )
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
+    }
+
+    @Test fun silenceDuringACallNamesTheCall() {
+        speechAvailable()
+        (app.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager).mode =
+            android.media.AudioManager.MODE_IN_COMMUNICATION
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer()).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
+        idleMain()
+        assertEquals("Ich habe nichts gehört.", activity.findViewById<TextView>(R.id.status).text.toString())
+        assertEquals(
+            "Gerade läuft ein Anruf. Solange ist das Mikrofon besetzt.",
+            activity.findViewById<TextView>(R.id.detail).text.toString(),
+        )
+    }
+
+    /** A recogniser that is still busy gets one fresh attempt by itself, then the error is shown. */
+    @Test fun busyRecogniserIsTriedOnceMore() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val first = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        shadowOf(first).triggerOnError(SpeechRecognizer.ERROR_RECOGNIZER_BUSY)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(1))
+        assertEquals("Ich höre zu …", activity.findViewById<TextView>(R.id.status).text.toString())
+        val second = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        assertTrue(second !== first)
+        shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_RECOGNIZER_BUSY)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(1))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
     }
 
     // ---------- Calendar ----------
@@ -488,4 +576,11 @@ class AppSmokeTest {
         val started = shadowOf(app).nextStartedActivity
         assertEquals(RecordActivity::class.java.name, started?.component?.className)
     }
+}
+
+/** A home screen that says yes to "add this widget" and then does nothing, as Xiaomi's does without its extra permission. */
+@org.robolectric.annotation.Implements(android.appwidget.AppWidgetManager::class)
+class SilentHomeScreen : org.robolectric.shadows.ShadowAppWidgetManager() {
+    @org.robolectric.annotation.Implementation
+    override fun requestPinAppWidget(provider: android.content.ComponentName, extras: android.os.Bundle?, callback: android.app.PendingIntent?): Boolean = true
 }

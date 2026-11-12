@@ -5,6 +5,9 @@
     <string name="speak">Speak</string>
     <string name="settings">Settings</string>
     <string name="add_widget">Put the button on the home screen</string>
+    <string name="widget_refused">The phone did not add the button by itself.</string>
+    <string name="widget_xiaomi">On Xiaomi phones, “Home screen shortcuts” must be allowed for this in the app settings under “Other permissions”.</string>
+    <string name="widget_app_settings">App settings</string>
     <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets” and add “Merk\'s”.</string>
     <string name="empty_title">Nothing noted yet</string>
     <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”.</string>
@@ -23,6 +26,11 @@
     <string name="saved_note">Note saved</string>
 
     <string name="err_nothing">I didn\'t catch that.</string>
+    <string name="err_silence">I didn\'t hear anything.</string>
+    <string name="hint_call">A call is running. The microphone is busy until it ends.</string>
+    <string name="hint_muted">The microphone is muted.</string>
+    <string name="hint_other_app">Another app is probably using the microphone right now.</string>
+    <string name="hint_silence">No sound came from the microphone. Is it blocked, or is another app using it?</string>
     <string name="err_network">Speech recognition needs internet right now.</string>
     <string name="err_mic">I can\'t listen without permission to use the microphone.</string>
     <string name="err_no_recognizer">No speech recognition is set up on this phone.</string>

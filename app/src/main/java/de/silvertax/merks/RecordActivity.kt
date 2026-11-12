@@ -1,8 +1,10 @@
 package de.silvertax.merks
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -56,7 +58,7 @@ class RecordActivity : MerksActivity() {
         pulse = findViewById(R.id.pulse)
 
         stop.setOnClickListener { recognizer?.stopListening() }
-        retry.setOnClickListener { listen() }
+        retry.setOnClickListener { retriedBusy = false; listen() }
         done.setOnClickListener { finish() }
         undo.setOnClickListener {
             saved?.let { Store.remove(this, it) }
@@ -89,8 +91,35 @@ class RecordActivity : MerksActivity() {
     // Set after the recogniser refused the language once; then it listens in its own default.
     private var plainLanguage = false
 
+    // Whether any sound arrived in this attempt. Without it, "nothing understood" would be the wrong
+    // message: the microphone was busy, muted or blocked, and speaking louder does not help.
+    private var heard = false
+    private var micWasBusy = false
+    private var retriedBusy = false
+
+    private val audio get() = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    /** Another app is recording (a call, a voice message, a screen recording). Hotword listeners don't count. */
+    private fun otherAppRecords(): Boolean = try {
+        audio.activeRecordingConfigurations.any { it.clientAudioSource != HOTWORD_SOURCE }
+    } catch (e: Exception) {
+        false
+    }
+
+    /** Why no sound arrived, as far as the phone tells. */
+    private fun silenceHint(): String = getString(
+        when {
+            audio.mode == AudioManager.MODE_IN_CALL || audio.mode == AudioManager.MODE_IN_COMMUNICATION -> R.string.hint_call
+            audio.isMicrophoneMute -> R.string.hint_muted
+            micWasBusy -> R.string.hint_other_app
+            else -> R.string.hint_silence
+        },
+    )
+
     private fun listen() {
         handler.removeCallbacksAndMessages(null)
+        heard = false
+        micWasBusy = otherAppRecords()
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             fail(getString(R.string.err_no_recognizer))
             return
@@ -116,7 +145,7 @@ class RecordActivity : MerksActivity() {
 
     private val listener = object : RecognitionListener {
         override fun onPartialResults(partial: Bundle?) {
-            best(partial)?.let { spoken.text = it }
+            best(partial)?.let { heard = true; spoken.text = it }
         }
 
         override fun onResults(results: Bundle?) {
@@ -131,6 +160,17 @@ class RecordActivity : MerksActivity() {
                 listen()
                 return
             }
+            // The recogniser was still busy or lost its service: one fresh attempt, shortly after.
+            if ((error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY || error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED) && !retriedBusy) {
+                retriedBusy = true
+                handler.postDelayed({ listen() }, 400)
+                return
+            }
+            val silent = !heard && (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+            if (silent) {
+                fail(getString(R.string.err_silence), silenceHint())
+                return
+            }
             fail(
                 when (error) {
                     SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> getString(R.string.err_nothing)
@@ -142,9 +182,12 @@ class RecordActivity : MerksActivity() {
         }
 
         override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() {}
+        override fun onBeginningOfSpeech() { heard = true }
         // Roughly -2 dB in silence and up to 10 dB when speaking up.
-        override fun onRmsChanged(rmsdB: Float) = ring((rmsdB + 2f) / 12f)
+        override fun onRmsChanged(rmsdB: Float) {
+            if (rmsdB > 1f) heard = true
+            ring((rmsdB + 2f) / 12f)
+        }
         override fun onBufferReceived(buffer: ByteArray?) {}
         override fun onEndOfSpeech() = ring(0f)
         override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -159,10 +202,10 @@ class RecordActivity : MerksActivity() {
         pulse.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
     }
 
-    private fun fail(message: String) {
+    private fun fail(message: String, hint: String = "") {
         ring(0f)
         status.text = message
-        detail.text = ""
+        detail.text = hint
         show(retry, done)
     }
 
@@ -205,5 +248,10 @@ class RecordActivity : MerksActivity() {
         handler.removeCallbacksAndMessages(null)
         recognizer?.destroy()
         super.onDestroy()
+    }
+
+    private companion object {
+        // MediaRecorder.AudioSource.HOTWORD, not public: "Hey Google" waiting in the background.
+        const val HOTWORD_SOURCE = 1999
     }
 }

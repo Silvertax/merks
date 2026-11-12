@@ -7,6 +7,9 @@ What changed for users, per version. When a GitHub release is created with an em
 ### Fixed
 
 - With OLED mode on and a theme different from the phone's, the recording restarted itself over and over and never listened.
+- When no sound reaches the app at all, it now says "I didn't hear anything" and why, as far as the phone tells: a running call, a muted microphone or another app using it. Before, it said "I didn't catch that", as if you had only mumbled.
+- If the speech recognition is still busy, the app tries once more by itself.
+- "Put button on home screen": some phones, Xiaomi above all, take the request and then do nothing. The app now notices that and explains how to add the widget, with a shortcut to the app settings on Xiaomi.
 - The speech recognition now gets a plain language code and, if it refuses the language, tries again in its own default.
 
 ## 0.5.2

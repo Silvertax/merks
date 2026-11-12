@@ -40,15 +40,7 @@ class MainActivity : MerksActivity() {
         findViewById<View>(R.id.settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
-        findViewById<View>(R.id.add_widget).setOnClickListener {
-            val awm = getSystemService(AppWidgetManager::class.java)
-            if (awm.isRequestPinAppWidgetSupported) {
-                awm.requestPinAppWidget(ComponentName(this, SpeakWidget::class.java), null, null)
-            } else {
-                MaterialAlertDialogBuilder(this).setMessage(R.string.widget_manual)
-                    .setPositiveButton(android.R.string.ok, null).show()
-            }
-        }
+        findViewById<View>(R.id.add_widget).setOnClickListener { addWidget() }
 
         if (!Prefs.askedPermissions(this)) {
             Prefs.setAskedPermissions(this)
@@ -60,6 +52,56 @@ class MainActivity : MerksActivity() {
             if (Build.VERSION.SDK_INT >= 33) wanted += Manifest.permission.POST_NOTIFICATIONS
             requestPermissions(wanted.toTypedArray(), 1)
         }
+    }
+
+    // Set when another screen comes to the front, e.g. the home screen's "add widget?" question.
+    private var paused = false
+
+    override fun onPause() {
+        super.onPause()
+        paused = true
+    }
+
+    /**
+     * Asks the home screen to add the button. Some phones (Xiaomi above all) accept the request and
+     * then drop it without a word, so if nothing visible happens the way by hand is explained.
+     */
+    private fun addWidget() {
+        val awm = getSystemService(AppWidgetManager::class.java)
+        val widget = ComponentName(this, SpeakWidget::class.java)
+        val before = awm.getAppWidgetIds(widget).size
+        val asked = awm.isRequestPinAppWidgetSupported &&
+            runCatching { awm.requestPinAppWidget(widget, null, null) }.getOrDefault(false)
+        if (!asked) {
+            explainWidget(refused = false)
+            return
+        }
+        paused = false
+        window.decorView.postDelayed({
+            val nothingHappened = !paused && awm.getAppWidgetIds(widget).size == before
+            if (nothingHappened && !isFinishing && !isDestroyed) explainWidget(refused = true)
+        }, 1500)
+    }
+
+    private fun explainWidget(refused: Boolean) {
+        val xiaomi = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
+        val text = buildString {
+            if (refused) append(getString(R.string.widget_refused)).append(' ')
+            if (refused && xiaomi) append(getString(R.string.widget_xiaomi)).append(' ')
+            if (refused) append("\n\n")
+            append(getString(R.string.widget_manual))
+        }
+        val dialog = MaterialAlertDialogBuilder(this).setMessage(text).setPositiveButton(android.R.string.ok, null)
+        if (refused && xiaomi) {
+            dialog.setNeutralButton(R.string.widget_app_settings) { _, _ ->
+                runCatching {
+                    startActivity(
+                        Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
+                    )
+                }
+            }
+        }
+        dialog.show()
     }
 
     override fun onResume() {
