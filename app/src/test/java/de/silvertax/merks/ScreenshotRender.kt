@@ -194,13 +194,14 @@ class ScreenshotRender {
             Triple(NextWidget.Companion.Shape.LINE, 250 to 70, "9_next_line"),
             Triple(NextWidget.Companion.Shape.BLOCK, 250 to 110, "9_next_block"),
             Triple(NextWidget.Companion.Shape.LIST, 250 to 170, "9_next_list"),
+            Triple(NextWidget.Companion.Shape.LIST, 345 to 150, "9_next_list_wide"),
         )) {
             val v = NextWidget.views(app, next, now, shape).apply(app, null)
             val w = (size.first * density).toInt()
             val h = (size.second * density).toInt()
             v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
             v.layout(0, 0, w, h)
-            shot(v, name, android.graphics.Color.parseColor("#2B3D47"))
+            shot(v, name)
         }
     }
 

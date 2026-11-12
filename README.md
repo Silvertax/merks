@@ -5,8 +5,9 @@ Tap once, say it, done. Merk's is an Android app for people who do not want to o
 A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time. Merk's speaks English and German.
 
 <p>
-  <img src="docs/screenshots/en-speaking.png" width="200" alt="Speaking via the widget">
+  <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next widget, speaking via the widget">
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries">
+  <img src="docs/screenshots/en-changed.png" width="200" alt="Date changed by voice">
   <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings">
 </p>
 
