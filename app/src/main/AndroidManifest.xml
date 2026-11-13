@@ -61,7 +61,8 @@
 
         <receiver
             android:name=".SpeakWidget"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/speak">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

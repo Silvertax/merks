@@ -122,22 +122,36 @@ object Format {
         return if (e.allDay) dayWord else c.getString(R.string.due_at, dayWord, time(ctx, t))
     }
 
-    /** Short "when" for the "Up next" display: "Heute, 10:00 Uhr", "Morgen", "Fr., 14. Nov., 10:00 Uhr". */
-    fun compactWhen(ctx: Context, e: Entry, start: Long, now: Long): String {
+    /** The day for the "Up next" display: "Heute", "Morgen", "Fr., 14. Nov."; [short] gives "14.11." / "Nov 14". */
+    fun compactDay(ctx: Context, e: Entry, start: Long, now: Long, short: Boolean = false): String {
         val c = Lang.context(ctx)
         val t = zoned(start)
         val days = ChronoUnit.DAYS.between(zoned(now).toLocalDate(), t.toLocalDate())
-        // A holiday that has already begun: "bis Fr., 20. Nov." / "until Fri, Nov 20".
-        lastDay(e, t)?.takeIf { days < 0 }?.let { last ->
-            return c.getString(R.string.until_day, pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(last))
+        val date = when {
+            !short -> pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d")
+            Lang.isGerman(ctx) -> pattern(ctx, "d.M.")
+            else -> pattern(ctx, "MMM d")
         }
-        val day = when (days) {
+        // A holiday that has already begun: "bis Fr., 20. Nov." / "until Fri, Nov 20".
+        lastDay(e, t)?.takeIf { days < 0 }?.let { last -> return c.getString(R.string.until_day, date.format(last)) }
+        return when (days) {
             0L -> c.getString(R.string.due_today)
             1L -> c.getString(R.string.due_tomorrow)
-            else -> pattern(ctx, if (Lang.isGerman(ctx)) "EEE, d. MMM" else "EEE, MMM d").format(t)
+            else -> date.format(t)
         }
-        return if (e.allDay) day else day + ", " + time(ctx, t)
     }
+
+    /** The time of day for the "Up next" display; nothing for all-day entries. */
+    fun compactTime(ctx: Context, e: Entry, start: Long): String? = if (e.allDay) null else time(ctx, zoned(start))
+
+    /** Short "when" for the "Up next" display: "Heute, 10:00 Uhr", "Morgen", "Fr., 14. Nov., 10:00 Uhr". */
+    fun compactWhen(ctx: Context, e: Entry, start: Long, now: Long, short: Boolean = false): String =
+        listOfNotNull(compactDay(ctx, e, start, now, short), compactTime(ctx, e, start)).joinToString(", ")
+
+    /** Day and month for the date tile of a list entry: "18" and "Nov". */
+    fun tileDay(start: Long): String = zoned(start).dayOfMonth.toString()
+
+    fun tileMonth(ctx: Context, start: Long): String = pattern(ctx, "MMM").format(zoned(start)).trimEnd('.')
 
     fun stamp(ctx: Context, millis: Long): String = zoned(millis).let { shortDate(ctx, it) + ", " + time(ctx, it) }
 

@@ -2,6 +2,18 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.6.2
+
+### What's new
+
+- **The date at a glance:** in the list, appointments and reminders now show the day and month, such as "18 Nov", in place of the calendar or bell symbol. You find a date without reading the lines.
+- **"Up next" as a second big button:** the "Up next" widget now fits two cells wide, next to the "Speak" button, with the day on top and the time below the title. A tap opens the list with all entries, so it is a large, easy-to-hit way into the app. New ones start at that size; wider or taller shows more.
+- **Both widgets from the app:** "Put on the home screen" now offers the "Speak" button and "Up next". In the phone's widget list, the button is now called "Speak".
+
+### Fixed
+
+- With large print set on the phone, the "Up next" widget could cut off its last line. It now shows only as much as fits.
+
 ## 0.6.1
 
 ### Better understanding without AI

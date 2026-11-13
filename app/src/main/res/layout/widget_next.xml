@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- As drawn here it is the preview, sized for two cells; NextWidget sets print and margins for the real size. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/next_root"
     android:layout_width="match_parent"
@@ -6,7 +7,7 @@
     android:background="@drawable/widget_bg_small"
     android:gravity="center_vertical"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
+    android:paddingHorizontal="12dp"
     android:paddingVertical="10dp">
 
     <TextView
@@ -17,7 +18,7 @@
         android:maxLines="1"
         android:text="@string/next_up_label"
         android:textColor="#CCEFE9"
-        android:textSize="12sp" />
+        android:textSize="13sp" />
 
     <TextView
         android:id="@+id/next_title"
@@ -28,7 +29,7 @@
         android:maxLines="2"
         android:text="@string/next_up_none"
         android:textColor="#FFFFFF"
-        android:textSize="17sp" />
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/next_when"

@@ -224,14 +224,39 @@ class AppSmokeTest {
         assertTrue(Db(app).all().isEmpty())
     }
 
+    /** Taps "Put on the home screen" and picks the button to speak (0) or "Up next" (1). */
+    private fun pickWidget(main: MainActivity, which: Int): android.app.Dialog {
+        main.findViewById<View>(R.id.add_widget).performClick()
+        val chooser = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val list = chooser.listView
+        assertEquals(2, list.adapter.count)
+        list.performItemClick(list.adapter.getView(which, null, list), which, list.adapter.getItemId(which))
+        return chooser
+    }
+
     /** A home screen that adds the button: nothing to explain. */
     @Test fun widgetButtonStaysQuietWhenThePhoneAddsIt() {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        main.findViewById<View>(R.id.add_widget).performClick()
+        val chooser = pickWidget(main, 0)
         shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
-        assertTrue(ShadowDialog.getLatestDialog() == null)
+        assertTrue(ShadowDialog.getLatestDialog() === chooser)
+        assertFalse(chooser.isShowing)
+    }
+
+    /** Both widgets are on offer, and the way by hand names the one that was picked. */
+    @Test fun widgetButtonOffersUpNextToo() {
+        Prefs.setAskedPermissions(app)
+        shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val chooser = pickWidget(main, 1)
+        val shown = (chooser as androidx.appcompat.app.AlertDialog).listView.adapter
+        assertTrue(shown.getItem(0).toString().startsWith("Knopf „Sprechen“"))
+        assertTrue(shown.getItem(1).toString().startsWith("„Als Nächstes“"))
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(text, text.endsWith("„Merk's“ suchen und „Als Nächstes“ hinzufügen."))
     }
 
     /** Xiaomi's home screen takes the request and drops it silently: then the app explains the way by hand. */
@@ -241,13 +266,13 @@ class AppSmokeTest {
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(true)
         org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "Xiaomi")
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        main.findViewById<View>(R.id.add_widget).performClick()
-        assertTrue(ShadowDialog.getLatestDialog() == null)
+        val chooser = pickWidget(main, 0)
+        assertTrue(ShadowDialog.getLatestDialog() === chooser)
         shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
-        assertTrue(text, text.startsWith("Das Handy hat den Knopf nicht von selbst hinzugefügt. Bei Xiaomi"))
-        assertTrue(text, text.endsWith("„Widgets“ wählen und „Merk's“ hinzufügen."))
+        assertTrue(text, text.startsWith("Das Handy hat es nicht von selbst hinzugefügt. Bei Xiaomi"))
+        assertTrue(text, text.endsWith("„Widgets“ wählen, „Merk's“ suchen und „Sprechen“ hinzufügen."))
         assertEquals("App-Einstellungen", dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).text.toString())
     }
 
@@ -255,7 +280,7 @@ class AppSmokeTest {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        main.findViewById<View>(R.id.add_widget).performClick()
+        pickWidget(main, 0)
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.startsWith("Lange auf eine freie Stelle"))
@@ -625,7 +650,74 @@ class AppSmokeTest {
         assertEquals("Morgen, 09:00 Uhr", view.findViewById<TextView>(R.id.next_when).text.toString())
     }
 
+    /** Two cells wide, next to the "Speak" button: the day on top, the time below, so nothing is cut off. */
+    @Test fun theUpNextWidgetFitsTwoCells() {
+        fun look(shape: NextWidget.Companion.Shape, narrow: Boolean = false, low: Boolean = false) =
+            NextWidget.Companion.Look(shape, narrow, low)
+        val line = NextWidget.Companion.Shape.LINE
+        val block = NextWidget.Companion.Shape.BLOCK
+        val list = NextWidget.Companion.Shape.LIST
+        assertEquals(look(line), NextWidget.lookFor(250f, 80f))
+        assertEquals(look(line, narrow = true), NextWidget.lookFor(161f, 80f))
+        assertEquals(look(line, narrow = true, low = true), NextWidget.lookFor(161f, 60f))
+        // Larger print needs more room before three lines fit.
+        assertEquals(look(line, narrow = true, low = true), NextWidget.lookFor(161f, 80f, fontScale = 1.3f))
+        assertEquals(look(block, narrow = true), NextWidget.lookFor(161f, 110f))
+        assertEquals(look(list, narrow = true), NextWidget.lookFor(161f, 180f))
+        assertEquals(look(block), NextWidget.lookFor(0f, 0f))
+
+        val day = LocalDate.now().plusDays(5)
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", day.atTime(9, 0), null, false), "Fußpflege")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Oma zu Besuch", day.plusDays(1).atStartOfDay(), null, true), "Oma")
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        fun visible(v: View): Boolean = v.visibility == View.VISIBLE && ((v.parent as? View)?.let { visible(it) } ?: true)
+        fun texts(l: NextWidget.Companion.Look): List<String> {
+            val v = NextWidget.views(app, next, now, l).apply(app, null)
+            return listOf(R.id.next_label, R.id.next_title, R.id.next_when, R.id.next_line2).map { id ->
+                v.findViewById<TextView>(id).let { if (visible(it)) it.text.toString() else "" }
+            }
+        }
+        val date = java.time.format.DateTimeFormatter.ofPattern("EEE, d. MMM", Locale.GERMANY).format(day)
+        val short = java.time.format.DateTimeFormatter.ofPattern("d.M.", Locale.GERMANY)
+        assertEquals(listOf(date, "Fußpflege", "09:00 Uhr", ""), texts(look(line, narrow = true)))
+        assertEquals(listOf("", "Fußpflege", short.format(day) + ", 09:00 Uhr", ""), texts(look(line, narrow = true, low = true)))
+        assertEquals(
+            listOf(date, "Fußpflege", "09:00 Uhr", short.format(day.plusDays(1)) + " · Oma zu Besuch"),
+            texts(look(list, narrow = true)),
+        )
+        // Wide stays as it was.
+        assertEquals(listOf("", "Fußpflege", "$date, 09:00 Uhr", ""), texts(look(line)))
+    }
+
     // ---------- Main list ----------
+
+    /** What has a date shows day and month in place of the symbol; notes and done things keep their symbol. */
+    @Test fun mainListShowsTheDateAtAGlance() {
+        Prefs.setAskedPermissions(app)
+        val day = LocalDate.now().plusDays(5)
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", day.atTime(10, 0), null, false), "Zahnarzt")
+        val done = Store.save(app, Parsed(Kind.REMINDER, "Rezept abholen", day.plusDays(1).atTime(9, 0), null, false), "Rezept")
+        Db(app).setDone(done.id, true)
+
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = activity.findViewById<ListView>(R.id.list)
+        fun row(title: String): View = (0 until list.adapter.count).map { list.adapter.getView(it, null, list) }
+            .first { it.findViewById<TextView>(R.id.title).text.toString() == title }
+
+        val dated = row("Zahnarzt")
+        assertEquals(View.VISIBLE, dated.findViewById<View>(R.id.badge_date).visibility)
+        assertEquals(View.GONE, dated.findViewById<View>(R.id.badge_icon).visibility)
+        assertEquals(day.dayOfMonth.toString(), dated.findViewById<TextView>(R.id.badge_day).text.toString())
+        val month = java.time.format.DateTimeFormatter.ofPattern("MMM", Locale.GERMANY).format(day).trimEnd('.')
+        assertEquals(month, dated.findViewById<TextView>(R.id.badge_month).text.toString())
+
+        for (title in listOf("Milch kaufen", "Rezept abholen")) {
+            assertEquals(title, View.GONE, row(title).findViewById<View>(R.id.badge_date).visibility)
+            assertEquals(title, View.VISIBLE, row(title).findViewById<View>(R.id.badge_icon).visibility)
+        }
+    }
 
     @Test fun mainListShowsEntries() {
         Prefs.setAskedPermissions(app)

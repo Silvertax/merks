@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Starts two cells wide, so it fits next to the "Speak" button; made wider or taller it shows more. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/next_up_widget_description"
     android:initialLayout="@layout/widget_next"
-    android:minWidth="180dp"
+    android:minWidth="110dp"
     android:minHeight="50dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="40dp"
     android:previewLayout="@layout/widget_next"
     android:resizeMode="horizontal|vertical"
-    android:targetCellWidth="3"
+    android:targetCellWidth="2"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

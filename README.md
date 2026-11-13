@@ -29,7 +29,9 @@ Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "De
 
 Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
 
-The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next; made taller, it also lists the two after it. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers both.
+
+In the list, everything with a date shows the day and month up front, so you find a date at a glance. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 

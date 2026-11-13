@@ -4,11 +4,13 @@
     <string name="app_name" translatable="false">Merk\'s</string>
     <string name="speak">Speak</string>
     <string name="settings">Settings</string>
-    <string name="add_widget">Put the button on the home screen</string>
-    <string name="widget_refused">The phone did not add the button by itself.</string>
+    <string name="add_widget">Put on the home screen</string>
+    <string name="widget_pick_speak">“Speak” button: one tap, then speak</string>
+    <string name="widget_pick_next">“Up next”: shows what comes next, a tap opens all entries</string>
+    <string name="widget_refused">The phone did not add it by itself.</string>
     <string name="widget_xiaomi">On Xiaomi phones, “Home screen shortcuts” must be allowed for this in the app settings under “Other permissions”.</string>
     <string name="widget_app_settings">App settings</string>
-    <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets” and add “Merk\'s”.</string>
+    <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets”, look for “Merk\'s” and add “%1$s”.</string>
     <string name="empty_title">Nothing noted yet</string>
     <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”.</string>
 

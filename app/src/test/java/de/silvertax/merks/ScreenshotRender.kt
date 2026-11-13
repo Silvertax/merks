@@ -190,13 +190,19 @@ class ScreenshotRender {
         val density = app.resources.displayMetrics.density
         val next = Glance.nextUp(app)
         val now = System.currentTimeMillis()
-        for ((shape, size, name) in listOf(
-            Triple(NextWidget.Companion.Shape.LINE, 250 to 70, "9_next_line"),
-            Triple(NextWidget.Companion.Shape.BLOCK, 250 to 110, "9_next_block"),
-            Triple(NextWidget.Companion.Shape.LIST, 250 to 170, "9_next_list"),
-            Triple(NextWidget.Companion.Shape.LIST, 345 to 150, "9_next_list_wide"),
+        for ((size, name) in listOf(
+            (250 to 70) to "9_next_line",
+            (250 to 110) to "9_next_block",
+            (250 to 170) to "9_next_list",
+            (345 to 160) to "9_next_list_wide",
+            // Two cells wide, as it sits next to the "Speak" button.
+            (161 to 60) to "9_next_2x1_low",
+            (161 to 81) to "9_next_2x1",
+            (161 to 110) to "9_next_2x1_tall",
+            (161 to 180) to "9_next_2x2",
         )) {
-            val v = NextWidget.views(app, next, now, shape).apply(app, null)
+            val look = NextWidget.lookFor(size.first.toFloat(), size.second.toFloat(), app.resources.configuration.fontScale)
+            val v = NextWidget.views(app, next, now, look).apply(app, null)
             val w = (size.first * density).toInt()
             val h = (size.second * density).toInt()
             v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))

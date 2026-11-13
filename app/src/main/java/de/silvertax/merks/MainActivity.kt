@@ -61,34 +61,46 @@ class MainActivity : MerksActivity() {
         paused = true
     }
 
+    /** There are two things for the home screen: the button to speak, and what comes next. */
+    private fun addWidget() {
+        val choices = arrayOf(getString(R.string.widget_pick_speak), getString(R.string.widget_pick_next))
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.add_widget)
+            .setItems(choices) { _, which ->
+                if (which == 0) pinWidget(SpeakWidget::class.java, getString(R.string.speak))
+                else pinWidget(NextWidget::class.java, getString(R.string.next_up_label))
+            }
+            .show()
+    }
+
     /**
-     * Asks the home screen to add the button. Some phones (Xiaomi above all) accept the request and
+     * Asks the home screen to add the widget. Some phones (Xiaomi above all) accept the request and
      * then drop it without a word, so if nothing visible happens the way by hand is explained.
      */
-    private fun addWidget() {
+    private fun pinWidget(provider: Class<*>, name: String) {
         val awm = getSystemService(AppWidgetManager::class.java)
-        val widget = ComponentName(this, SpeakWidget::class.java)
+        val widget = ComponentName(this, provider)
         val before = awm.getAppWidgetIds(widget).size
         val asked = awm.isRequestPinAppWidgetSupported &&
             runCatching { awm.requestPinAppWidget(widget, null, null) }.getOrDefault(false)
         if (!asked) {
-            explainWidget(refused = false)
+            explainWidget(name, refused = false)
             return
         }
         paused = false
         window.decorView.postDelayed({
             val nothingHappened = !paused && awm.getAppWidgetIds(widget).size == before
-            if (nothingHappened && !isFinishing && !isDestroyed) explainWidget(refused = true)
+            if (nothingHappened && !isFinishing && !isDestroyed) explainWidget(name, refused = true)
         }, 1500)
     }
 
-    private fun explainWidget(refused: Boolean) {
+    private fun explainWidget(name: String, refused: Boolean) {
         val xiaomi = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
         val text = buildString {
             if (refused) append(getString(R.string.widget_refused)).append(' ')
             if (refused && xiaomi) append(getString(R.string.widget_xiaomi)).append(' ')
             if (refused) append("\n\n")
-            append(getString(R.string.widget_manual))
+            append(getString(R.string.widget_manual, name))
         }
         val dialog = MaterialAlertDialogBuilder(this).setMessage(text).setPositiveButton(android.R.string.ok, null)
         if (refused && xiaomi) {
@@ -201,10 +213,26 @@ class MainActivity : MerksActivity() {
                     Triple(R.drawable.ic_bell, M.attr.colorSecondaryContainer, M.attr.colorOnSecondaryContainer)
                 else -> Triple(R.drawable.ic_note, M.attr.colorSurfaceContainerHigh, M.attr.colorOnSurfaceVariant)
             }
-            v.findViewById<ImageView>(R.id.badge).apply {
+            val badge = v.findViewById<View>(R.id.badge)
+            val ink = MaterialColors.getColor(badge, foreground)
+            badge.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(badge, background))
+            // What has a date shows it in place of the symbol, so the day is found without reading the lines.
+            val day = starts[e.id].takeIf { !e.done }
+            v.findViewById<View>(R.id.badge_date).visibility = if (day != null) View.VISIBLE else View.GONE
+            v.findViewById<ImageView>(R.id.badge_icon).apply {
+                visibility = if (day != null) View.GONE else View.VISIBLE
                 setImageResource(icon)
-                backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(this, background))
-                imageTintList = ColorStateList.valueOf(MaterialColors.getColor(this, foreground))
+                imageTintList = ColorStateList.valueOf(ink)
+            }
+            if (day != null) {
+                v.findViewById<TextView>(R.id.badge_day).apply {
+                    text = Format.tileDay(day)
+                    setTextColor(ink)
+                }
+                v.findViewById<TextView>(R.id.badge_month).apply {
+                    text = Format.tileMonth(this@MainActivity, day)
+                    setTextColor(ink)
+                }
             }
             v.findViewById<View>(R.id.card).alpha = if (e.done) 0.6f else 1f
             return v

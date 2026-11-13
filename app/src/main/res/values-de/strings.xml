@@ -2,11 +2,13 @@
 <resources>
     <string name="speak">Sprechen</string>
     <string name="settings">Einstellungen</string>
-    <string name="add_widget">Knopf auf den Startbildschirm legen</string>
-    <string name="widget_refused">Das Handy hat den Knopf nicht von selbst hinzugefügt.</string>
+    <string name="add_widget">Auf den Startbildschirm legen</string>
+    <string name="widget_pick_speak">Knopf „Sprechen“: ein Tipp, dann sprechen</string>
+    <string name="widget_pick_next">„Als Nächstes“: zeigt, was ansteht, ein Tipp öffnet alle Einträge</string>
+    <string name="widget_refused">Das Handy hat es nicht von selbst hinzugefügt.</string>
     <string name="widget_xiaomi">Bei Xiaomi muss dafür in den App-Einstellungen unter „Weitere Berechtigungen“ die Erlaubnis für Startbildschirm-Verknüpfungen eingeschaltet sein.</string>
     <string name="widget_app_settings">App-Einstellungen</string>
-    <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen und „Merk\'s“ hinzufügen.</string>
+    <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen, „Merk\'s“ suchen und „%1$s“ hinzufügen.</string>
     <string name="empty_title">Noch nichts gemerkt</string>
     <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
 
