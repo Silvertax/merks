@@ -73,7 +73,7 @@ class RecordActivity : MerksActivity() {
             saved = null
             listen()
         }
-        stop.setOnClickListener { recognizer?.stopListening() }
+        stop.setOnClickListener { stopSpeaking() }
         retry.setOnClickListener { retriedBusy = false; listen() }
         done.setOnClickListener { finish() }
         undo.setOnClickListener {
@@ -160,9 +160,42 @@ class RecordActivity : MerksActivity() {
         },
     )
 
+    /*
+     * Many recognisers end after half a second of silence, whatever they are asked for. So a pause to
+     * think does not end the recording: what was said so far is kept in [pieces] and the app listens
+     * on. Only when nothing more comes for [PAUSE_MS], or "Done speaking" is tapped, it is saved.
+     */
+    private val pieces = mutableListOf<String>()
+
+    // The current attempt listens on after a pause, and whether speaking has begun again in it.
+    private var goingOn = false
+    private var resumed = false
+
+    // "Done speaking" was tapped while words were still coming: save with the next result.
+    private var stopAsked = false
+
+    private val pauseOver = Runnable {
+        if (goingOn && !resumed) {
+            recognizer?.cancel()
+            finishSpeaking()
+        }
+    }
+
+    private fun speechIntent() = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        // Listen in the app's language, which is the one people speak to it.
+        .apply { if (!plainLanguage) putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechTag()) }
+        .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        // Asked for, though not every recogniser honours it; listening on after a pause does the rest.
+        .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+
     private fun listen() {
         handler.removeCallbacksAndMessages(null)
         heard = false
+        pieces.clear()
+        goingOn = false
+        stopAsked = false
         micWasBusy = otherAppRecords()
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             fail(getString(R.string.err_no_recognizer))
@@ -176,34 +209,94 @@ class RecordActivity : MerksActivity() {
 
         recognizer?.destroy()
         recognizer = SpeechRecognizer.createSpeechRecognizer(this).also { it.setRecognitionListener(listener) }
-        recognizer?.startListening(
-            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                // Listen in the app's language, which is the one people speak to it.
-                .apply { if (!plainLanguage) putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechTag()) }
-                .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                // Give people time to think; not every recogniser honours these.
-                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
-                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L),
-        )
+        recognizer?.startListening(speechIntent())
+    }
+
+    /** After a pause: keeps what was said and listens for more. */
+    private fun listenOn() {
+        goingOn = true
+        resumed = false
+        status.setText(R.string.listening_on)
+        spoken.text = pieces.joinToString(" ")
+        detail.setText(R.string.listening_on_hint)
+        show(stop)
+        ring(0f)
+        handler.removeCallbacks(pauseOver)
+        // Counted from when the microphone is open again; this one covers a recogniser that never says so.
+        handler.postDelayed(pauseOver, PAUSE_MS + 1500)
+        val r = recognizer
+        if (r == null) {
+            finishSpeaking()
+            return
+        }
+        r.startListening(speechIntent())
+    }
+
+    /** "Done speaking": right away after a pause, otherwise with the words still being recognised. */
+    private fun stopSpeaking() {
+        if (goingOn && !resumed) {
+            handler.removeCallbacks(pauseOver)
+            recognizer?.cancel()
+            finishSpeaking()
+        } else {
+            stopAsked = true
+            recognizer?.stopListening()
+        }
+    }
+
+    /** Everything said in this recording, sorted and saved, or the change made. */
+    private fun finishSpeaking() {
+        handler.removeCallbacks(pauseOver)
+        goingOn = false
+        val text = pieces.joinToString(" ").trim()
+        val old = changing
+        when {
+            text.isEmpty() -> fail(getString(R.string.err_nothing))
+            old != null -> sortAndChange(old, text)
+            else -> sortAndSave(text)
+        }
+    }
+
+    /** Speaking has begun again after a pause: the wait is over. */
+    private fun speakingAgain() {
+        if (goingOn && !resumed) {
+            resumed = true
+            handler.removeCallbacks(pauseOver)
+            status.setText(R.string.listening)
+        }
     }
 
     private val listener = object : RecognitionListener {
+        // Only the spoken words put together, nothing to translate.
+        @android.annotation.SuppressLint("SetTextI18n")
         override fun onPartialResults(partial: Bundle?) {
-            best(partial)?.let { heard = true; spoken.text = it }
+            best(partial)?.let {
+                heard = true
+                speakingAgain()
+                spoken.text = (pieces + it).joinToString(" ")
+            }
         }
 
         override fun onResults(results: Bundle?) {
-            val text = best(results)
-            val old = changing
+            best(results)?.let { pieces += it.trim() }
             when {
-                text.isNullOrBlank() -> fail(getString(R.string.err_nothing))
-                old != null -> sortAndChange(old, text)
-                else -> sortAndSave(text)
+                // Nothing at all, "Done speaking" tapped, or enough for one entry: save what there is.
+                pieces.isEmpty() || stopAsked || pieces.size >= MAX_PIECES -> finishSpeaking()
+                else -> listenOn()
             }
         }
 
         override fun onError(error: Int) {
+            // Listening on after a pause: silence or any trouble now just means it was all.
+            if (goingOn) {
+                if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY && !retriedBusy) {
+                    retriedBusy = true
+                    handler.postDelayed({ if (goingOn) listenOn() }, 300)
+                    return
+                }
+                finishSpeaking()
+                return
+            }
             // 12/13: language not supported or not installed. Try once more in the recogniser's own language.
             if ((error == 12 || error == 13) && !plainLanguage) {
                 plainLanguage = true
@@ -231,8 +324,16 @@ class RecordActivity : MerksActivity() {
             )
         }
 
-        override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() { heard = true }
+        override fun onReadyForSpeech(params: Bundle?) {
+            if (goingOn && !resumed) {
+                handler.removeCallbacks(pauseOver)
+                handler.postDelayed(pauseOver, PAUSE_MS)
+            }
+        }
+        override fun onBeginningOfSpeech() {
+            heard = true
+            speakingAgain()
+        }
         // Roughly -2 dB in silence and up to 10 dB when speaking up.
         override fun onRmsChanged(rmsdB: Float) {
             if (rmsdB > 1f) heard = true
@@ -333,6 +434,12 @@ class RecordActivity : MerksActivity() {
         // MediaRecorder.AudioSource.HOTWORD, not public: "Hey Google" waiting in the background.
         private const val HOTWORD_SOURCE = 1999
         private const val EXTRA_CHANGE = "change_id"
+
+        /** How long a pause to think may be before what was said is saved. */
+        const val PAUSE_MS = 3000L
+
+        /** Pauses in one recording; more than that is not one entry any more. */
+        private const val MAX_PIECES = 8
 
         /** Opens the recording to speak a new date or time for entry [id]. */
         fun changeIntent(ctx: Context, id: Long): Intent = Intent(ctx, RecordActivity::class.java).putExtra(EXTRA_CHANGE, id)

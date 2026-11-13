@@ -142,6 +142,20 @@ class ScreenshotRender {
         shotActivity(activity, name)
     }
 
+    /** After a pause: it keeps listening, with the words so far. */
+    @Test fun listeningOn() {
+        night(true)
+        shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO)
+        val service = ComponentName("com.example.speech", "com.example.speech.Recognizer")
+        shadowOf(app.packageManager).addServiceIfNotPresent(service)
+        shadowOf(app.packageManager).addIntentFilterForService(service, IntentFilter(RecognitionService.SERVICE_INTERFACE))
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer()).triggerOnResults(
+            Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(t("Morgen um 10", "Tomorrow at 10"))) },
+        )
+        shotActivity(activity, "5b_listening_on_dark")
+    }
+
     @Test fun listeningLight() = listening(false, "4_listening_light")
     @Test fun listeningDark() = listening(true, "5_listening_dark")
 

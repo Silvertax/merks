@@ -2,6 +2,12 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.6.3
+
+### What's new
+
+- **Time to think while speaking:** a short pause no longer ends the recording. Many phones stop listening after half a second of silence; Merk's now keeps listening, shows "Still listening …" with what you said so far, and puts it all together. Only after about three seconds without a word is it saved. Tap "Done speaking" to save right away.
+
 ## 0.6.2
 
 ### What's new

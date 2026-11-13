@@ -21,6 +21,8 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 2. Say what you want to remember, for example "Tomorrow at 10 dentist" or "Remind me in 20 minutes to take the laundry out".
 3. A notification shows what was saved. "Undo" removes it again.
 
+Take your time: a pause to think does not end the recording. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking".
+
 Forgot the date, or said the wrong time? Tap "Change" on the confirmation, or tap the entry in the app and then "Change date or time", and just say the new one, for example "Friday at 10". The title stays; the calendar entry and the reminders move along. A note that gets a date becomes an appointment.
 
 Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by typing": there you correct the text and pick the day and time.

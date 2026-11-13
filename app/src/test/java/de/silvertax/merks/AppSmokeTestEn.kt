@@ -62,6 +62,9 @@ class AppSmokeTestEn {
         recognizer.triggerOnResults(
             Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf("Tomorrow at 10 dentist")) },
         )
+        // It listens on for a while in case more comes; then it saves.
+        assertEquals("Still listening …", activity.findViewById<TextView>(R.id.status).text.toString())
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(5))
         repeat(200) {
             shadowOf(Looper.getMainLooper()).idle()
             if (activity.isFinishing) return@repeat

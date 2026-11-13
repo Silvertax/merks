@@ -13,6 +13,8 @@
     <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
 
     <string name="listening">Ich höre zu …</string>
+    <string name="listening_on">Ich höre weiter zu …</string>
+    <string name="listening_on_hint">Noch etwas? Sprich einfach weiter.</string>
     <string name="stop">Fertig gesprochen</string>
     <string name="working">Einen Moment …</string>
     <string name="retry">Nochmal sprechen</string>

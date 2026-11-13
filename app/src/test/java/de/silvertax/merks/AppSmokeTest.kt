@@ -146,12 +146,19 @@ class AppSmokeTest {
         pm.addIntentFilterForService(service, IntentFilter(RecognitionService.SERVICE_INTERFACE))
     }
 
-    private fun say(text: String) {
+    /** The recogniser hears [text] and ends, as after a short pause. */
+    private fun sayPart(text: String) {
         val recognizer = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
         val results = Bundle().apply {
             putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(text))
         }
         shadowOf(recognizer).triggerOnResults(results)
+    }
+
+    /** Says [text] and then nothing more, so the app stops waiting for more and goes on. */
+    private fun say(text: String) {
+        sayPart(text)
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(RecordActivity.PAUSE_MS + 2000))
     }
 
     /** Saving runs on a background thread and reports back to the screen; wait for both. */
@@ -194,6 +201,59 @@ class AppSmokeTest {
         assertTrue(Db(app).all().isEmpty())
         assertTrue(notifications.allNotifications.isEmpty())
         assertTrue(alarms.scheduledAlarms.isEmpty())
+    }
+
+    /** A pause to think does not end the recording: it listens on and puts the parts together. */
+    @Test fun aPauseToThinkDoesNotEndTheRecording() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val status = activity.findViewById<TextView>(R.id.status)
+        val recognizer = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
+
+        sayPart("Morgen um 10")
+        assertEquals("Ich höre weiter zu …", status.text.toString())
+        assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
+        assertTrue(activity.findViewById<TextView>(R.id.detail).text.toString().startsWith("Noch etwas?"))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.stop).visibility)
+        assertTrue(Db(app).all().isEmpty())
+
+        // Two seconds of thinking, the microphone open again: still waiting.
+        recognizer.triggerOnReadyForSpeech(Bundle())
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
+        assertFalse(activity.isFinishing)
+        assertTrue(Db(app).all().isEmpty())
+
+        // Speaking again: the words so far stay on the screen.
+        recognizer.triggerOnPartialResults(Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf("Zahn")) })
+        assertEquals("Ich höre zu …", status.text.toString())
+        assertEquals("Morgen um 10 Zahn", activity.findViewById<TextView>(R.id.spoken).text.toString())
+        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(10))
+        assertTrue(Db(app).all().isEmpty())
+
+        // Then nothing more: both parts become one entry.
+        say("Zahnarzt")
+        waitFor { activity.isFinishing }
+        val entry = Db(app).all().single()
+        assertEquals("Zahnarzt", entry.title)
+        assertEquals(millis(LocalDate.now().plusDays(1).atTime(10, 0)), entry.start)
+        assertEquals("Morgen um 10 Zahnarzt", entry.raw)
+    }
+
+    /** "Done speaking" during the wait saves at once; silence in the new attempt is no error. */
+    @Test fun doneSpeakingDuringThePauseSavesAtOnce() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        sayPart("Milch kaufen")
+        activity.findViewById<View>(R.id.stop).performClick()
+        waitFor { activity.isFinishing }
+        assertEquals("Milch kaufen", Db(app).all().single().title)
+
+        val again = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        sayPart("Brot kaufen")
+        shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer()).triggerOnError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+        waitFor { again.isFinishing }
+        assertEquals(2, Db(app).all().size)
+        assertTrue(Db(app).all().any { it.title == "Brot kaufen" })
     }
 
     @Test fun speakingInFullScreenModeConfirmsOnScreen() {
