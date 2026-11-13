@@ -7,6 +7,8 @@ import de.silvertax.merks.parse.Repeat
 import de.silvertax.merks.parse.RepeatUnit
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -147,6 +149,17 @@ object Format {
     /** Short "when" for the "Up next" display: "Heute, 10:00 Uhr", "Morgen", "Fr., 14. Nov., 10:00 Uhr". */
     fun compactWhen(ctx: Context, e: Entry, start: Long, now: Long, short: Boolean = false): String =
         listOfNotNull(compactDay(ctx, e, start, now, short), compactTime(ctx, e, start)).joinToString(", ")
+
+    /** "Freitag, 20. November 2026" / "Friday, November 20, 2026", for choosing a day. */
+    fun fullDate(ctx: Context, day: LocalDate): String =
+        pattern(ctx, if (Lang.isGerman(ctx)) "EEEE, d. MMMM yyyy" else "EEEE, MMMM d, yyyy").format(day)
+
+    /** "14:30 Uhr" / "2:30 PM", for choosing a time. */
+    fun clockTime(ctx: Context, t: LocalTime): String = when {
+        Lang.isGerman(ctx) -> pattern(ctx, "HH:mm 'Uhr'")
+        DateFormat.is24HourFormat(ctx) -> pattern(ctx, "HH:mm")
+        else -> pattern(ctx, "h:mm a")
+    }.format(t)
 
     /** Day and month for the date tile of a list entry: "18" and "Nov". */
     fun tileDay(start: Long): String = zoned(start).dayOfMonth.toString()

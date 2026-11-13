@@ -16,7 +16,9 @@ import de.silvertax.merks.parse.RepeatUnit
 import de.silvertax.merks.parse.RuleParser
 import de.silvertax.merks.parse.RuleParserEn
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -281,6 +283,38 @@ object Store {
             snooze = null,
         )
         Prefs.rememberBefore(ctx, old)
+        return rewrite(ctx, old, target)
+    }
+
+    /**
+     * A change made by typing: another text and, when [day] is given, another day and time ([time] null
+     * means the whole day). Kind and series stay as they are; a note that gets a date becomes an
+     * appointment. The calendar entry and the reminders follow.
+     */
+    fun edit(ctx: Context, old: Entry, title: String, day: LocalDate?, time: LocalTime?): Entry {
+        var target = old.copy(title = title.trim().ifEmpty { old.title })
+        if (day != null) {
+            val zone = ZoneId.systemDefault()
+            // A reminder needs a time to ring at.
+            val at = time ?: if (old.kind == Kind.REMINDER) LocalTime.of(9, 0) else null
+            val allDay = at == null
+            val start = (if (at == null) day.atStartOfDay() else day.atTime(at)).atZone(zone).toInstant().toEpochMilli()
+            val end = when {
+                old.start == null || old.end == null || old.end <= old.start || old.allDay != allDay -> null
+                // Several days stay as many days, a time span as long as it was.
+                allDay -> day.plusDays(Plan.extraDays(old, zone)).atStartOfDay(zone).toInstant().toEpochMilli().takeIf { it > start }
+                else -> start + (old.end - old.start)
+            }
+            target = target.copy(
+                kind = if (old.kind == Kind.NOTE) Kind.APPOINTMENT else old.kind,
+                start = start,
+                end = end,
+                allDay = allDay,
+                created = System.currentTimeMillis(),
+                done = false,
+                snooze = null,
+            )
+        }
         return rewrite(ctx, old, target)
     }
 

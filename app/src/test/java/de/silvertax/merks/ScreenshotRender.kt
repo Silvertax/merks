@@ -226,6 +226,18 @@ class ScreenshotRender {
     }
 
     /** The entry dialog with its "change date or time" button. */
+    private fun editScreen(nightMode: Boolean, name: String) {
+        night(nightMode)
+        val start = LocalDate.now().plusDays(1).atTime(10, 0)
+        val text = t("Zahnarzt bei Neupert", "Dentist, Dr. Miller")
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, text, start, null, false), text)
+        val activity = Robolectric.buildActivity(EditActivity::class.java, EditActivity.intent(app, e.id)).setup().get()
+        shotActivity(activity, name)
+    }
+
+    @Test fun editLight() = editScreen(false, "12_edit_light")
+    @Test fun editDark() = editScreen(true, "12_edit_dark")
+
     @Test fun entryDialog() {
         night(true)
         Store.save(app, Parsed(Kind.NOTE, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), null, null, false), t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"))

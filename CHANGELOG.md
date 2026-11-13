@@ -8,6 +8,7 @@ What changed for users, per version. When a GitHub release is created with an em
 
 - **The date at a glance:** in the list, appointments and reminders now show the day and month, such as "18 Nov", in place of the calendar or bell symbol. You find a date without reading the lines.
 - **"Up next" as a second big button:** the "Up next" widget now fits two cells wide, next to the "Speak" button, with the day on top and the time below the title. A tap opens the list with all entries, so it is a large, easy-to-hit way into the app. New ones start at that size; wider or taller shows more.
+- **Edit by typing:** tap an entry and choose "Edit by typing" to correct its text, for example a name the speech recognition got wrong, or to pick another day and time. The calendar entry and the reminders follow. Changing by voice works as before.
 - **Share:** the new share button at the top of the list passes on everything that is coming up as plain text, for example by WhatsApp or mail. To pass on a single entry, tap it and choose "Share".
 - **Update in the app:** when "Check for updates now" finds a new version, "Update now" downloads it right in the app and opens the phone's installer. No more looking for the file on a web page. The first time, the phone asks you to allow Merk's to install its update; the app explains that step. If the download fails, the button offers the browser instead.
 - **Both widgets from the app:** "Put on the home screen" now offers the "Speak" button and "Up next". In the phone's widget list, the button is now called "Speak".

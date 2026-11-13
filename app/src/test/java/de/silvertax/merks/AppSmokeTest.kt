@@ -55,6 +55,7 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowSpeechRecognizer
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -730,6 +731,141 @@ class AppSmokeTest {
         assertEquals(2, list.adapter.count)
         assertEquals("Mülltonne rausstellen", (list.adapter.getItem(0) as Entry).title)
         assertEquals("Milch kaufen", (list.adapter.getItem(1) as Entry).title)
+    }
+
+    // ---------- Changing by typing ----------
+
+    private fun editScreen(e: Entry) = Robolectric.buildActivity(EditActivity::class.java, EditActivity.intent(app, e.id)).setup()
+
+    /** A word the recognition got wrong is fixed by typing; date and calendar entry follow along. */
+    @Test fun entryTextCanBeFixedByTyping() {
+        val calendar = fakeCalendar()
+        val start = LocalDate.now().plusDays(3).atTime(14, 30)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt bei Neubert", start, start.plusHours(2), false), "Zahnarzt bei Neubert")
+        val screen = editScreen(e).get()
+        val text = screen.findViewById<TextView>(R.id.edit_text)
+        assertEquals("Zahnarzt bei Neubert", text.text.toString())
+        assertEquals(Format.fullDate(app, start.toLocalDate()), screen.findViewById<TextView>(R.id.date_value).text.toString())
+        assertEquals("14:30 Uhr", screen.findViewById<TextView>(R.id.time_value).text.toString())
+
+        text.text = "Zahnarzt bei Neupert"
+        screen.findViewById<View>(R.id.save).performClick()
+        assertTrue(screen.isFinishing)
+
+        val saved = Db(app).get(e.id)!!
+        assertEquals("Zahnarzt bei Neupert", saved.title)
+        assertEquals(millis(start), saved.start)
+        assertEquals(millis(start.plusHours(2)), saved.end)
+        assertEquals(e.created, saved.created)
+        // The calendar shows the new text: old event out, new one in.
+        assertEquals(1, calendar.deleted.size)
+        assertEquals("Zahnarzt bei Neupert", calendar.inserted.last().getAsString(CalendarContract.Events.TITLE))
+    }
+
+    /** Day and time are picked instead of spoken; a time span keeps its length. */
+    @Test fun entryDayAndTimeCanBeChangedByTyping() {
+        fakeCalendar()
+        val start = LocalDate.now().plusDays(3).atTime(14, 30)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Handwerker", start, start.plusHours(2), false), "Handwerker")
+        val screen = editScreen(e).get()
+
+        // The rows open the pickers.
+        screen.findViewById<View>(R.id.row_date).performClick()
+        idleMain()
+        assertNotNull(screen.supportFragmentManager.findFragmentByTag("day"))
+        screen.findViewById<View>(R.id.row_time).performClick()
+        idleMain()
+        assertNotNull(screen.supportFragmentManager.findFragmentByTag("time"))
+
+        val day = LocalDate.now().plusDays(10)
+        screen.setDay(day)
+        screen.setTime(LocalTime.of(9, 15))
+        assertEquals(Format.fullDate(app, day), screen.findViewById<TextView>(R.id.date_value).text.toString())
+        assertEquals("09:15 Uhr", screen.findViewById<TextView>(R.id.time_value).text.toString())
+        screen.findViewById<View>(R.id.save).performClick()
+
+        val saved = Db(app).get(e.id)!!
+        assertEquals("Handwerker", saved.title)
+        assertEquals(millis(day.atTime(9, 15)), saved.start)
+        assertEquals(millis(day.atTime(11, 15)), saved.end)
+        assertFalse(saved.allDay)
+
+        // "Remove the time" makes it a whole day.
+        val again = editScreen(saved).get()
+        assertEquals(View.VISIBLE, again.findViewById<View>(R.id.remove_time).visibility)
+        again.findViewById<View>(R.id.remove_time).performClick()
+        assertEquals("Ohne Uhrzeit (ganztägig)", again.findViewById<TextView>(R.id.time_value).text.toString())
+        again.findViewById<View>(R.id.save).performClick()
+        val wholeDay = Db(app).get(e.id)!!
+        assertTrue(wholeDay.allDay)
+        assertEquals(millis(day.atStartOfDay()), wholeDay.start)
+        assertNull(wholeDay.end)
+    }
+
+    /** A note has no day; given one, it becomes an appointment. Without one it stays a note with a new text. */
+    @Test fun noteGetsADayByTyping() {
+        fakeCalendar()
+        val note = Store.save(app, Parsed(Kind.NOTE, "Friseur", null, null, false), "Friseur")
+        val screen = editScreen(note).get()
+        assertEquals("Kein Tag", screen.findViewById<TextView>(R.id.date_value).text.toString())
+        assertFalse(screen.findViewById<View>(R.id.row_time).isEnabled)
+        assertEquals("Mit einem Tag wird aus der Notiz ein Termin.", screen.findViewById<TextView>(R.id.edit_note).text.toString())
+        screen.findViewById<TextView>(R.id.edit_text).text = "Friseur Schmidt"
+        screen.findViewById<View>(R.id.save).performClick()
+        assertEquals(Kind.NOTE, Db(app).get(note.id)!!.kind)
+        assertEquals("Friseur Schmidt", Db(app).get(note.id)!!.title)
+
+        val day = LocalDate.now().plusDays(4)
+        val again = editScreen(note).get()
+        again.setDay(day)
+        assertTrue(again.findViewById<View>(R.id.row_time).isEnabled)
+        again.setTime(LocalTime.of(16, 0))
+        again.findViewById<View>(R.id.save).performClick()
+        val saved = Db(app).get(note.id)!!
+        assertEquals(Kind.APPOINTMENT, saved.kind)
+        assertEquals(millis(day.atTime(16, 0)), saved.start)
+        assertNotNull(saved.calendarEventId)
+    }
+
+    /** A reminder always keeps a time, and a series its rhythm; an empty text is not saved. */
+    @Test fun editingKeepsWhatMustStay() {
+        val at = LocalDate.now().plusDays(2).atTime(8, 0)
+        val reminder = Store.save(app, Parsed(Kind.REMINDER, "Tabletten", at, null, false, Repeat(RepeatUnit.DAY, 1)), "Tabletten")
+        val screen = editScreen(reminder).get()
+        assertEquals(View.GONE, screen.findViewById<View>(R.id.remove_time).visibility)
+        assertTrue(screen.findViewById<TextView>(R.id.edit_note).text.toString().startsWith("Wiederholt sich: täglich."))
+        screen.setTime(null)
+        assertEquals("08:00 Uhr", screen.findViewById<TextView>(R.id.time_value).text.toString())
+
+        screen.findViewById<TextView>(R.id.edit_text).text = "   "
+        screen.findViewById<View>(R.id.save).performClick()
+        assertFalse(screen.isFinishing)
+        assertEquals("Tabletten", Db(app).get(reminder.id)!!.title)
+
+        screen.findViewById<TextView>(R.id.edit_text).text = "Tabletten nehmen"
+        screen.setTime(LocalTime.of(7, 30))
+        screen.findViewById<View>(R.id.save).performClick()
+        val saved = Db(app).get(reminder.id)!!
+        assertEquals("Tabletten nehmen", saved.title)
+        assertEquals(Kind.REMINDER, saved.kind)
+        assertEquals(Repeat(RepeatUnit.DAY, 1), saved.repeat)
+        assertEquals(millis(at.toLocalDate().atTime(7, 30)), saved.start)
+    }
+
+    /** The way in: tap the entry, then "Schriftlich ändern". */
+    @Test fun entryDialogOpensTheEditScreen() {
+        Prefs.setAskedPermissions(app)
+        val note = Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+        list.adapter.getView(0, null, list).findViewById<View>(R.id.card).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val button = dialog.findViewById<TextView>(R.id.edit_entry)!!
+        assertEquals("Schriftlich ändern", button.text.toString())
+        button.performClick()
+        val opened = shadowOf(app).nextStartedActivity
+        assertEquals(EditActivity::class.java.name, opened.component!!.className)
+        assertEquals(note.id, opened.getLongExtra("id", -1))
     }
 
     // ---------- Sharing ----------

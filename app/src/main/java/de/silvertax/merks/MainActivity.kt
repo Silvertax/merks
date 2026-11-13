@@ -165,6 +165,16 @@ class MainActivity : MerksActivity() {
             iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
             minHeight = (56 * resources.displayMetrics.density).toInt()
         }
+        // The same by typing, and the text as well: for a word that was understood wrongly.
+        val editButton = com.google.android.material.button.MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle,
+        ).apply {
+            id = R.id.edit_entry
+            setText(R.string.edit_write)
+            setIconResource(R.drawable.ic_edit)
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+            minHeight = (56 * resources.displayMetrics.density).toInt()
+        }
         // And one to pass this entry on.
         val shareButton = com.google.android.material.button.MaterialButton(
             this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle,
@@ -180,6 +190,7 @@ class MainActivity : MerksActivity() {
             val pad = (24 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad / 2, pad, 0)
             addView(changeButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            addView(editButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             addView(shareButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
         val dialog = MaterialAlertDialogBuilder(this)
@@ -207,6 +218,10 @@ class MainActivity : MerksActivity() {
         changeButton.setOnClickListener {
             shown.dismiss()
             startActivity(RecordActivity.changeIntent(this, e.id))
+        }
+        editButton.setOnClickListener {
+            shown.dismiss()
+            startActivity(EditActivity.intent(this, e.id))
         }
         shareButton.setOnClickListener {
             shown.dismiss()
