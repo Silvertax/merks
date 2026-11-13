@@ -818,14 +818,157 @@ class AppSmokeTest {
         return settings
     }
 
-    @Test fun updateButtonFindsANewerVersion() {
-        val settings = checkForUpdates(Updater.Info("v9.0.0", "https://github.com/Silvertax/merks/releases/tag/v9.0.0"))
+    @After fun realDownload() {
+        Updater.download = null
+        Updater.cleanUp(app)
+        // The simulation keeps this permission from one test to the next.
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(false)
+        // FileProvider remembers its folders for good; here every test has a cache folder of its own.
+        org.robolectric.util.ReflectionHelpers
+            .getStaticField<MutableMap<String, Any>>(androidx.core.content.FileProvider::class.java, "sCache").clear()
+    }
+
+    private val newer = Updater.Info("v9.0.0", "https://github.com/Silvertax/merks/releases/tag/v9.0.0")
+    private val apkAddress = "https://github.com/Silvertax/merks/releases/download/v9.0.0/merks.apk"
+    private val updateFile get() = java.io.File(app.cacheDir, "update/merks-9.0.0.apk")
+
+    /** Stands in for the download: writes a file that the phone takes for the given app. */
+    private fun downloadGives(packageName: String = app.packageName, works: Boolean = true): MutableList<String> {
+        val asked = mutableListOf<String>()
+        val here = app.packageManager.getPackageInfo(app.packageName, 0)
+        shadowOf(app.packageManager).setPackageArchiveInfo(
+            updateFile.path,
+            android.content.pm.PackageInfo().apply {
+                this.packageName = packageName
+                longVersionCode = here.longVersionCode + 1
+            },
+        )
+        Updater.download = { address, file, progress ->
+            asked += address
+            if (works) {
+                file.writeText("apk")
+                progress(100)
+            }
+            works
+        }
+        return asked
+    }
+
+    private fun installerOpened(intent: Intent?) {
+        assertNotNull(intent)
+        assertEquals(Intent.ACTION_VIEW, intent!!.action)
+        assertEquals("application/vnd.android.package-archive", intent.type)
+        assertEquals("content://de.silvertax.merks.files/update/merks-9.0.0.apk", intent.dataString)
+        assertTrue(intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
+    }
+
+    /** "Update now" loads the new version in the app and opens the phone's installer; no web page to find a file on. */
+    @Test fun updateButtonDownloadsAndOpensTheInstaller() {
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(true)
+        val asked = downloadGives()
+        val settings = checkForUpdates(newer)
         assertEquals("Version 9.0.0 ist verfügbar.", settings.findViewById<TextView>(R.id.update_state).text.toString())
-        val get = settings.findViewById<View>(R.id.update_get)
+        val get = settings.findViewById<TextView>(R.id.update_get)
         assertEquals(View.VISIBLE, get.visibility)
+        assertEquals("Jetzt aktualisieren", get.text.toString())
         get.performClick()
-        val opened = shadowOf(app).nextStartedActivity
-        assertEquals("https://github.com/Silvertax/merks/releases/tag/v9.0.0", opened.dataString)
+        assertFalse(get.isEnabled)
+        waitFor { get.isEnabled }
+
+        assertEquals(listOf(apkAddress), asked)
+        installerOpened(shadowOf(app).nextStartedActivity)
+        assertTrue(settings.findViewById<TextView>(R.id.update_state).text.toString().startsWith("Das Handy fragt jetzt"))
+
+        // A second tap, e.g. after backing out of the installer, does not download again.
+        get.performClick()
+        waitFor { get.isEnabled }
+        assertEquals(1, asked.size)
+        installerOpened(shadowOf(app).nextStartedActivity)
+    }
+
+    /** The first time, the phone must allow it: said in plain words, then straight on once the switch is on. */
+    @Test fun updateAsksOnceForThePermissionToInstall() {
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(false)
+        downloadGives()
+        Updater.source = { newer }
+        val controller = Robolectric.buildActivity(SettingsActivity::class.java).setup()
+        val settings = controller.get()
+        settings.findViewById<View>(R.id.check_updates).performClick()
+        val get = settings.findViewById<TextView>(R.id.update_get)
+        waitFor { get.visibility == View.VISIBLE }
+        get.performClick()
+        waitFor { get.isEnabled }
+
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        assertTrue(dialog.findViewById<TextView>(android.R.id.message)!!.text.toString().startsWith("Damit Merk's das Update selbst installieren kann"))
+        dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick()
+        idleMain()
+        val page = shadowOf(app).nextStartedActivity
+        assertEquals(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, page.action)
+        assertEquals("package:de.silvertax.merks", page.dataString)
+        assertNull(shadowOf(app).nextStartedActivity)
+
+        // Back with the switch on: the installer opens by itself.
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(true)
+        controller.pause().resume()
+        installerOpened(shadowOf(app).nextStartedActivity)
+        assertNull(Prefs.pendingUpdate(app))
+
+        // And not again on the next visit.
+        controller.pause().resume()
+        assertNull(shadowOf(app).nextStartedActivity)
+    }
+
+    /** Some phones restart the app when the permission is given; the installation carries on all the same. */
+    @Test fun updateCarriesOnAfterTheAppWasRestarted() {
+        downloadGives()
+        updateFile.parentFile!!.mkdirs()
+        updateFile.writeText("apk")
+        Prefs.setPendingUpdate(app, "v9.0.0")
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(true)
+        Robolectric.buildActivity(SettingsActivity::class.java).setup()
+        installerOpened(shadowOf(app).nextStartedActivity)
+    }
+
+    /** Back without the switch on: nothing opens, and the button is there for another try. */
+    @Test fun updateWithoutThePermissionStaysPut() {
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(false)
+        downloadGives()
+        updateFile.parentFile!!.mkdirs()
+        updateFile.writeText("apk")
+        Prefs.setPendingUpdate(app, "v9.0.0")
+        Robolectric.buildActivity(SettingsActivity::class.java).setup()
+        assertNull(shadowOf(app).nextStartedActivity)
+        assertNull(Prefs.pendingUpdate(app))
+    }
+
+    /** No download, or a file that is not this app: the browser is the way left, straight to the file. */
+    @Test fun updateFallsBackToTheBrowser() {
+        for (wrongApp in listOf(false, true)) {
+            val asked = if (wrongApp) downloadGives(packageName = "com.example.other") else downloadGives(works = false)
+            shadowOf(app.packageManager).setCanRequestPackageInstalls(true)
+            val settings = checkForUpdates(newer)
+            val get = settings.findViewById<TextView>(R.id.update_get)
+            get.performClick()
+            waitFor { get.isEnabled }
+            assertEquals(1, asked.size)
+            assertTrue(settings.findViewById<TextView>(R.id.update_state).text.toString().startsWith("Das Herunterladen hat nicht geklappt."))
+            assertEquals("Mit dem Browser herunterladen", get.text.toString())
+            assertNull(shadowOf(app).nextStartedActivity)
+            assertFalse(updateFile.exists())
+            get.performClick()
+            val opened = shadowOf(app).nextStartedActivity
+            assertEquals(Intent.ACTION_VIEW, opened.action)
+            assertEquals(apkAddress, opened.dataString)
+        }
+    }
+
+    /** Once the new version runs, the downloaded file is thrown away. */
+    @Test fun downloadedUpdateIsRemovedAfterUpdating() {
+        updateFile.parentFile!!.mkdirs()
+        updateFile.writeText("apk")
+        BootReceiver().onReceive(app, Intent(Intent.ACTION_MY_PACKAGE_REPLACED))
+        assertFalse(updateFile.exists())
     }
 
     @Test fun updateButtonSaysWhenNothingIsNewer() {

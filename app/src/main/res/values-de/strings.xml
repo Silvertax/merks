@@ -66,7 +66,16 @@
 
     <string name="channel_confirm">Bestätigungen</string>
     <string name="update_text">Version %1$s ist verfügbar.</string>
-    <string name="update_get">Herunterladen</string>
+    <string name="update_get">Jetzt aktualisieren</string>
+    <string name="update_downloading">Lade Version %1$s herunter …</string>
+    <string name="update_downloading_percent">Lade Version %1$s herunter … %2$d %%</string>
+    <string name="update_installing">Das Handy fragt jetzt, ob es Merk\'s aktualisieren soll. Dort auf „Aktualisieren“ tippen.</string>
+    <string name="update_download_failed">Das Herunterladen hat nicht geklappt. Prüfe die Internetverbindung oder hol die Datei mit dem Browser.</string>
+    <string name="update_get_browser">Mit dem Browser herunterladen</string>
+    <string name="update_allow_title">Einmal erlauben</string>
+    <string name="update_allow_text">Damit Merk\'s das Update selbst installieren kann, braucht es einmal deine Erlaubnis. Auf der nächsten Seite den Schalter einschalten und dann zurückgehen.</string>
+    <string name="update_allow_go">Weiter</string>
+    <string name="update_not_allowed">Ohne diese Erlaubnis kann Merk\'s das Update nicht selbst installieren.</string>
     <string name="update_installed">Installiert: Version %1$s</string>
     <string name="update_checking">Suche …</string>
     <string name="update_none">Du hast die neueste Version (%1$s).</string>
@@ -75,7 +84,7 @@
     <string name="settings_compact">Kleine Anzeige beim Aufnehmen</string>
     <string name="settings_compact_hint">Beim Sprechen erscheint nur eine kleine Karte unten, danach zeigt eine Benachrichtigung, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
     <string name="settings_updates">Jetzt nach Updates suchen</string>
-    <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version, nur wenn du auf den Knopf tippst. Dabei werden keine persönlichen Daten gesendet.</string>
+    <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version, nur wenn du auf den Knopf tippst. Gibt es eine neuere, lädt „Jetzt aktualisieren“ sie herunter und installiert sie. Dabei werden keine persönlichen Daten gesendet.</string>
 
     <string name="settings_eve">Am Vorabend erinnern</string>
     <string name="settings_eve_hint">Termine melden sich zusätzlich am Tag davor um 18 Uhr.</string>

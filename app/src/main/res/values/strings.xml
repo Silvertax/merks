@@ -68,7 +68,16 @@
 
     <string name="channel_confirm">Confirmations</string>
     <string name="update_text">Version %1$s is available.</string>
-    <string name="update_get">Download</string>
+    <string name="update_get">Update now</string>
+    <string name="update_downloading">Downloading version %1$s …</string>
+    <string name="update_downloading_percent">Downloading version %1$s … %2$d %%</string>
+    <string name="update_installing">The phone now asks whether to update Merk\'s. Tap “Update” there.</string>
+    <string name="update_download_failed">The download did not work. Check your internet connection, or get the file with the browser.</string>
+    <string name="update_get_browser">Download with the browser</string>
+    <string name="update_allow_title">Allow once</string>
+    <string name="update_allow_text">To install the update itself, Merk\'s needs your permission once. On the next page, turn the switch on and then go back.</string>
+    <string name="update_allow_go">Continue</string>
+    <string name="update_not_allowed">Without that permission, Merk\'s cannot install the update itself.</string>
     <string name="update_installed">Installed: version %1$s</string>
     <string name="update_checking">Checking …</string>
     <string name="update_none">You have the latest version (%1$s).</string>
@@ -77,7 +86,7 @@
     <string name="settings_compact">Small display while speaking</string>
     <string name="settings_compact_hint">While you speak, only a small card appears at the bottom; afterwards a notification shows what was added. Off: listening and confirmation fill the whole screen.</string>
     <string name="settings_updates">Check for updates now</string>
-    <string name="settings_updates_hint">Asks GitHub for the latest version, only when you tap the button. No personal data is sent.</string>
+    <string name="settings_updates_hint">Asks GitHub for the latest version, only when you tap the button. If there is a newer one, “Update now” downloads and installs it. No personal data is sent.</string>
 
     <string name="settings_eve">Remind the evening before</string>
     <string name="settings_eve_hint">Appointments also notify you at 6 pm on the day before.</string>

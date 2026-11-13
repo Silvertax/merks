@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only folder the app hands out: the downloaded update, for the phone's installer to read. -->
+<paths>
+    <cache-path
+        name="update"
+        path="update/" />
+</paths>

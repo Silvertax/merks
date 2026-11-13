@@ -13,7 +13,7 @@ A home screen widget starts listening right away. What you say becomes an appoin
 
 ## Install
 
-Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. To look for a new version, tap “Check for updates now” in the settings.
+Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. To look for a new version, tap “Check for updates now” in the settings; “Update now” then downloads it and opens the phone's installer. The first time, the phone asks you to allow Merk's to do that.
 
 ## How it works
 
@@ -49,7 +49,7 @@ German phones get German, all others English. You can also choose the language i
 No ads, no tracking, no account. Your entries stay on your phone and in your calendar, unless you share them yourself.
 
 - Speech recognition is done by the recognizer installed on your phone.
-- Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version. No personal data is sent.
+- Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version, and only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
 - Only if you enter an AI key, the spoken text is sent to Anthropic to be sorted.
 
 ## Status

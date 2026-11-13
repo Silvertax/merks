@@ -176,6 +176,21 @@ object Prefs {
     fun nextUpNotification(ctx: Context): Boolean = p(ctx).getBoolean("next_up", false)
     fun setNextUpNotification(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("next_up", on).apply()
 
+    /**
+     * The version whose downloaded update waits for the permission to install, e.g. "v0.7.0". Kept here
+     * because some phones restart the app when that permission is given.
+     */
+    fun pendingUpdate(ctx: Context): String? {
+        val raw = p(ctx).getString("pending_update", null) ?: return null
+        val since = System.currentTimeMillis() - (raw.substringAfter('|', "").toLongOrNull() ?: 0L)
+        // Only for the few minutes that step takes; later the installer should not pop up out of nowhere.
+        return raw.substringBefore('|').takeIf { since in 0..10 * 60_000L }
+    }
+
+    fun setPendingUpdate(ctx: Context, tag: String?) = p(ctx).edit()
+        .apply { if (tag == null) remove("pending_update") else putString("pending_update", tag + "|" + System.currentTimeMillis()) }
+        .apply()
+
     /** How an entry looked before its last change by voice, so "Undo" can bring it back. One at a time. */
     fun rememberBefore(ctx: Context, e: Entry) = p(ctx).edit().putString("before", EntryJson.write(e)).apply()
 

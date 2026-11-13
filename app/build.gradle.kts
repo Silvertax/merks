@@ -14,7 +14,9 @@ fun secret(env: String, key: String): String? = System.getenv(env) ?: localKeys.
 val ksPath: String? = secret("MERKS_KEYSTORE", "storeFile")
 
 // F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. It also brings
-// the updates, so that build leaves out the update check against GitHub releases.
+// the updates, so that build leaves out the update check against GitHub releases. Before the app goes
+// to F-Droid or Google Play, REQUEST_INSTALL_PACKAGES and the FileProvider must leave the manifest of
+// that build too: neither store accepts an app that installs its own updates.
 val fdroid = project.hasProperty("fdroid")
 
 android {
@@ -25,7 +27,7 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 18
+        versionCode = 19
         versionName = "0.6.2"
         buildConfigField("boolean", "FDROID", fdroid.toString())
     }

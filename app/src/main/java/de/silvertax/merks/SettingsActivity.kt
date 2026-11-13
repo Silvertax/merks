@@ -140,11 +140,10 @@ class SettingsActivity : MerksActivity() {
                     when (result) {
                         is Updater.Result.Newer -> {
                             state.text = getString(R.string.update_text, result.info.tag.removePrefix("v"))
+                            get.setText(R.string.update_get)
+                            get.isEnabled = true
                             get.visibility = View.VISIBLE
-                            get.setOnClickListener {
-                                // Fails only without any browser.
-                                runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(result.info.url))) }
-                            }
+                            get.setOnClickListener { update(result.info) }
                         }
                         Updater.Result.UpToDate -> state.text = getString(R.string.update_none, installed)
                         Updater.Result.Failed -> state.setText(R.string.update_failed)
@@ -152,6 +151,88 @@ class SettingsActivity : MerksActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * "Update now": downloads the new version here in the app and hands it to the phone's installer,
+     * so nobody has to find the file on a web page. If that fails, the browser is the way left.
+     */
+    private fun update(info: Updater.Info) {
+        val check = findViewById<Button>(R.id.check_updates)
+        val state = findViewById<TextView>(R.id.update_state)
+        val get = findViewById<Button>(R.id.update_get)
+        val version = info.tag.removePrefix("v")
+        check.isEnabled = false
+        get.isEnabled = false
+        state.text = getString(R.string.update_downloading, version)
+        Updater.fetchApk(
+            this, info,
+            onProgress = { percent ->
+                runOnUiThread {
+                    if (!isDestroyed && percent >= 0) state.text = getString(R.string.update_downloading_percent, version, percent)
+                }
+            },
+            onDone = { apk ->
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    check.isEnabled = true
+                    get.isEnabled = true
+                    if (apk == null) {
+                        state.setText(R.string.update_download_failed)
+                        get.setText(R.string.update_get_browser)
+                        // Fails only without any browser.
+                        get.setOnClickListener { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.apk))) } }
+                    } else {
+                        install(info.tag)
+                    }
+                }
+            },
+        )
+    }
+
+    /** Hands the downloaded update to the installer; the first time, the phone wants to be allowed to. */
+    private fun install(tag: String) {
+        val state = findViewById<TextView>(R.id.update_state)
+        val apk = Updater.downloaded(this, tag)
+        if (apk == null) {
+            Prefs.setPendingUpdate(this, null)
+            return
+        }
+        if (Updater.mayInstall(this)) {
+            Prefs.setPendingUpdate(this, null)
+            state.setText(R.string.update_installing)
+            if (runCatching { startActivity(Updater.installIntent(this, apk)) }.isFailure) state.setText(R.string.update_download_failed)
+            return
+        }
+        // Said in plain words first; the phone's own notice about "unknown apps" reads like a warning.
+        state.setText(R.string.update_not_allowed)
+        Prefs.setPendingUpdate(this, tag)
+        allowDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.update_allow_title)
+            .setMessage(R.string.update_allow_text)
+            .setPositiveButton(R.string.update_allow_go) { _, _ ->
+                // Kept beyond this screen: some phones restart the app when the permission is given.
+                Prefs.setPendingUpdate(this, tag)
+                if (runCatching { startActivity(Updater.allowIntent(this)) }.isFailure) {
+                    // No such settings page: the installer then asks for it by itself.
+                    Prefs.setPendingUpdate(this, null)
+                    runCatching { startActivity(Updater.installIntent(this, apk)) }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> Prefs.setPendingUpdate(this, null) }
+            .setOnCancelListener { Prefs.setPendingUpdate(this, null) }
+            .show()
+    }
+
+    private var allowDialog: android.app.Dialog? = null
+
+    /** Back from the page with the permission, or restarted because of it: carry on with the installation. */
+    override fun onResume() {
+        super.onResume()
+        val tag = Prefs.pendingUpdate(this) ?: return
+        // The explanation is still on the screen; its buttons decide.
+        if (allowDialog?.isShowing == true) return
+        if (Updater.mayInstall(this)) install(tag) else Prefs.setPendingUpdate(this, null)
     }
 
     private fun themeName(choice: String): String = getString(
