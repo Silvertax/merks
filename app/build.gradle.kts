@@ -25,7 +25,7 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 17
+        versionCode = 18
         versionName = "0.6.2"
         buildConfigField("boolean", "FDROID", fdroid.toString())
     }

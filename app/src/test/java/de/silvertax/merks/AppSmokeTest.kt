@@ -732,6 +732,71 @@ class AppSmokeTest {
         assertEquals("Milch kaufen", (list.adapter.getItem(1) as Entry).title)
     }
 
+    // ---------- Sharing ----------
+
+    /** The text the share sheet was handed, or null if nothing was shared. */
+    private fun sharedText(): String? {
+        val chooser = shadowOf(app).nextStartedActivity ?: return null
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        @Suppress("DEPRECATION")
+        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        assertEquals(Intent.ACTION_SEND, send.action)
+        assertEquals("text/plain", send.type)
+        return send.getStringExtra(Intent.EXTRA_TEXT)
+    }
+
+    /** One tap passes on everything that is coming up, soonest first; notes and done things stay out. */
+    @Test fun upcomingEntriesCanBeShared() {
+        Prefs.setAskedPermissions(app)
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val onlyNotes = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertEquals(View.GONE, onlyNotes.findViewById<View>(R.id.share).visibility)
+
+        val day = LocalDate.now().plusDays(5)
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Oma zu Besuch", day.plusDays(2).atStartOfDay(), null, true), "Oma")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", day.atTime(10, 0), day.atTime(11, 0), false), "Zahnarzt")
+        val done = Store.save(app, Parsed(Kind.REMINDER, "Rezept abholen", day.plusDays(1).atTime(9, 0), null, false), "Rezept")
+        Db(app).setDone(done.id, true)
+
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val share = main.findViewById<View>(R.id.share)
+        assertEquals(View.VISIBLE, share.visibility)
+        assertEquals("Termine teilen", share.contentDescription.toString())
+        share.performClick()
+
+        val short = java.time.format.DateTimeFormatter.ofPattern("EEE, d. MMM", Locale.GERMANY)
+        val long = java.time.format.DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.GERMANY)
+        assertEquals(
+            "Das steht an:\n\n" +
+                "• ${short.format(day)}, 10:00–11:00 Uhr: Zahnarzt\n" +
+                "• ${long.format(day.plusDays(2))}: Oma zu Besuch",
+            sharedText(),
+        )
+    }
+
+    /** A single entry is passed on from its dialog; a note is just its text. */
+    @Test fun singleEntryCanBeShared() {
+        Prefs.setAskedPermissions(app)
+        val day = LocalDate.now().plusDays(5)
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", day.atTime(10, 0), null, false), "Zahnarzt")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+
+        fun shareRow(position: Int): String? {
+            list.adapter.getView(position, null, list).findViewById<View>(R.id.card).performClick()
+            val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+            val button = dialog.findViewById<TextView>(R.id.share_entry)!!
+            assertEquals("Teilen", button.text.toString())
+            button.performClick()
+            assertFalse(dialog.isShowing)
+            return sharedText()
+        }
+        val date = java.time.format.DateTimeFormatter.ofPattern("EEE, d. MMM", Locale.GERMANY).format(day)
+        assertEquals("$date, 10:00 Uhr: Zahnarzt", shareRow(0))
+        assertEquals("Milch kaufen", shareRow(1))
+    }
+
     // ---------- Updates: only on request ----------
 
     @After fun realUpdateSource() { Updater.source = null }

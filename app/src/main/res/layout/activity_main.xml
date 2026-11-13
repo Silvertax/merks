@@ -7,7 +7,7 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
-    <!-- Header: mark, name, settings. -->
+    <!-- Header: mark, name, sharing what is coming up (only when something is), settings. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,6 +32,17 @@
             android:text="@string/app_name"
             android:textAppearance="?attr/textAppearanceHeadlineMedium"
             android:textColor="?attr/colorOnSurface" />
+
+        <ImageButton
+            android:id="@+id/share"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/share_upcoming"
+            android:src="@drawable/ic_share"
+            android:tooltipText="@string/share_upcoming"
+            android:visibility="gone"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <ImageButton
             android:id="@+id/settings"

@@ -31,7 +31,7 @@ Reminders come on time, appointments one hour ahead and, if you like, also the e
 
 The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers both.
 
-In the list, everything with a date shows the day and month up front, so you find a date at a glance. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+In the list, everything with a date shows the day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 
@@ -46,7 +46,7 @@ German phones get German, all others English. You can also choose the language i
 
 ## Privacy
 
-No ads, no tracking, no account. Your entries stay on your phone and in your calendar.
+No ads, no tracking, no account. Your entries stay on your phone and in your calendar, unless you share them yourself.
 
 - Speech recognition is done by the recognizer installed on your phone.
 - Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version. No personal data is sent.

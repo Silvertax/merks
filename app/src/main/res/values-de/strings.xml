@@ -56,6 +56,9 @@
     <string name="kind_note">Notiz</string>
     <string name="said">Gesagt: „%1$s“</string>
     <string name="close">Schließen</string>
+    <string name="share">Teilen</string>
+    <string name="share_upcoming">Termine teilen</string>
+    <string name="share_heading">Das steht an:</string>
     <string name="delete">Löschen</string>
 
     <string name="channel_name">Erinnerungen</string>

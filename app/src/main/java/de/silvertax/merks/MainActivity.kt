@@ -22,6 +22,7 @@ import java.time.ZoneId
 /** The list of everything that was dictated, plus a big button to speak. */
 class MainActivity : MerksActivity() {
     private var entries: List<Entry> = emptyList()
+    private var upcoming: List<Entry> = emptyList()
     private var starts: Map<Long, Long?> = emptyMap()
     private lateinit var list: ListView
     private lateinit var empty: View
@@ -40,6 +41,10 @@ class MainActivity : MerksActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         findViewById<View>(R.id.add_widget).setOnClickListener { addWidget() }
+        // Everything that is coming up as a text, e.g. for the family chat.
+        findViewById<View>(R.id.share).setOnClickListener {
+            Share.send(this, Share.list(this, upcoming.map { it to starts[it.id] }))
+        }
 
         if (!Prefs.askedPermissions(this)) {
             Prefs.setAskedPermissions(this)
@@ -128,9 +133,10 @@ class MainActivity : MerksActivity() {
         // For a series the date that counts is its next one.
         starts = all.associate { it.id to Plan.currentStart(it, now, zone) }
         // Upcoming things first (soonest on top), then notes, then everything done or passed.
-        val upcoming = all.filter { e -> !e.done && (starts[e.id] ?: 0) + DAY > now }.sortedBy { starts[it.id] }
+        upcoming = all.filter { e -> !e.done && (starts[e.id] ?: 0) + DAY > now }.sortedBy { starts[it.id] }
         entries = upcoming + (all - upcoming.toSet()).sortedBy { it.done }
         adapter.notifyDataSetChanged()
+        findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE
         empty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
         list.visibility = if (entries.isEmpty()) View.GONE else View.VISIBLE
     }
@@ -156,12 +162,25 @@ class MainActivity : MerksActivity() {
         ).apply {
             setText(R.string.edit_voice)
             setIconResource(R.drawable.ic_mic)
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
             minHeight = (56 * resources.displayMetrics.density).toInt()
         }
-        val box = android.widget.FrameLayout(this).apply {
+        // And one to pass this entry on.
+        val shareButton = com.google.android.material.button.MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle,
+        ).apply {
+            id = R.id.share_entry
+            setText(R.string.share)
+            setIconResource(R.drawable.ic_share)
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+            minHeight = (56 * resources.displayMetrics.density).toInt()
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
             val pad = (24 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad / 2, pad, 0)
-            addView(changeButton)
+            addView(changeButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            addView(shareButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(e.title)
@@ -188,6 +207,10 @@ class MainActivity : MerksActivity() {
         changeButton.setOnClickListener {
             shown.dismiss()
             startActivity(RecordActivity.changeIntent(this, e.id))
+        }
+        shareButton.setOnClickListener {
+            shown.dismiss()
+            Share.send(this, Share.line(this, e, starts[e.id]))
         }
     }
 
