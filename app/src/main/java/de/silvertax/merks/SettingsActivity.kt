@@ -68,6 +68,8 @@ class SettingsActivity : MerksActivity() {
         oledRow.alpha = if (light) 0.5f else 1f
         findViewById<View>(R.id.oled).isEnabled = !light
         switchRow(R.id.row_compact, R.id.compact, Prefs.compact(this)) { on -> Prefs.setCompact(this, on) }
+        findViewById<TextView>(R.id.pause_value).text = pauseName(Prefs.speechPauseChoice(this))
+        findViewById<View>(R.id.row_pause).setOnClickListener { choosePause() }
         switchRow(R.id.row_eve, R.id.eve_before, Prefs.eveBefore(this)) { on ->
             Prefs.setEveBefore(this, on)
             // Existing entries follow the switch right away.
@@ -233,6 +235,27 @@ class SettingsActivity : MerksActivity() {
         // The explanation is still on the screen; its buttons decide.
         if (allowDialog?.isShowing == true) return
         if (Updater.mayInstall(this)) install(tag) else Prefs.setPendingUpdate(this, null)
+    }
+
+    private fun pauseName(choice: String): String = getString(
+        when (choice) {
+            Prefs.PAUSE_SHORT -> R.string.pause_short
+            Prefs.PAUSE_LONG -> R.string.pause_long
+            else -> R.string.pause_normal
+        },
+    )
+
+    /** How long the recording waits for more after a pause: longer for people who like to think it over. */
+    private fun choosePause() {
+        val choices = arrayOf(Prefs.PAUSE_SHORT, Prefs.PAUSE_NORMAL, Prefs.PAUSE_LONG)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_pause)
+            .setSingleChoiceItems(choices.map { pauseName(it) }.toTypedArray(), choices.indexOf(Prefs.speechPauseChoice(this))) { dialog, which ->
+                dialog.dismiss()
+                Prefs.setSpeechPause(this, choices[which])
+                findViewById<TextView>(R.id.pause_value).text = pauseName(choices[which])
+            }
+            .show()
     }
 
     private fun themeName(choice: String): String = getString(

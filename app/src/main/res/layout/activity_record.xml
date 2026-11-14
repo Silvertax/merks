@@ -110,6 +110,15 @@
         android:visibility="gone" />
 
     <Button
+        android:id="@+id/note"
+        style="@style/Widget.Merks.Button.Big.Tonal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/note_add"
+        android:visibility="gone" />
+
+    <Button
         android:id="@+id/undo"
         style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"

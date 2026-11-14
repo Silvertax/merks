@@ -22,6 +22,8 @@ data class Entry(
     /** "Später erinnern": notify again at this time. */
     val snooze: Long? = null,
     val repeat: Repeat? = null,
+    /** Added afterwards, e.g. what to bring; one line per addition. */
+    val note: String? = null,
 )
 
 /** Works out when an entry happens next and when to notify. Pure Kotlin so it can be unit-tested. */

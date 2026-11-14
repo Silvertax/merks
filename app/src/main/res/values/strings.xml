@@ -53,12 +53,22 @@
     <string name="err_mic">I can\'t listen without permission to use the microphone.</string>
     <string name="err_no_recognizer">No speech recognition is set up on this phone.</string>
     <string name="err_generic">Speech recognition didn\'t work (error %1$d).</string>
+    <string name="err_not_ready">Speech recognition wasn\'t ready. Please try again.</string>
     <string name="err_save">Saving didn\'t work.</string>
 
     <string name="kind_appointment">Appointment</string>
     <string name="kind_reminder">Reminder</string>
     <string name="kind_note">Note</string>
     <string name="said">Said: “%1$s”</string>
+    <string name="note_label">Note: %1$s</string>
+    <string name="note_add">Add a note by voice</string>
+    <string name="note_add_short">Add note</string>
+    <string name="note_hint">What goes with “%1$s”, e.g. what to bring?</string>
+    <string name="note_added">Note added</string>
+    <string name="note_attach">Add to an appointment</string>
+    <string name="note_attach_title">Which one does it go with?</string>
+    <string name="note_attached">Noted with “%1$s”</string>
+    <string name="edit_note_field">Note, e.g. what to bring</string>
     <string name="close">Close</string>
     <string name="edit_write">Edit by typing</string>
     <string name="edit_title">Edit entry</string>
@@ -99,6 +109,11 @@
     <string name="update_failed">The check did not work. Check your internet connection.</string>
 
     <string name="settings_compact">Small display while speaking</string>
+    <string name="settings_pause">Pauses while speaking</string>
+    <string name="settings_pause_hint">How long Merk\'s waits for you to go on after a pause, before it saves.</string>
+    <string name="pause_short">Short (1.5 seconds)</string>
+    <string name="pause_normal">Normal (3 seconds)</string>
+    <string name="pause_long">Long (6 seconds)</string>
     <string name="settings_compact_hint">While you speak, only a small card appears at the bottom; afterwards a notification shows what was added. Off: listening and confirmation fill the whole screen.</string>
     <string name="settings_updates">Check for updates now</string>
     <string name="settings_updates_hint">Asks GitHub for the latest version, only when you tap the button. If there is a newer one, “Update now” downloads and installs it. No personal data is sent.</string>

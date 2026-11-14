@@ -161,7 +161,9 @@ object Format {
         else -> pattern(ctx, "h:mm a")
     }.format(t)
 
-    /** Day and month for the date tile of a list entry: "18" and "Nov". */
+    /** Weekday, day and month for the date tile of a list entry: "Mi", "18" and "Nov". */
+    fun tileWeekday(ctx: Context, start: Long): String = pattern(ctx, "EEE").format(zoned(start)).trimEnd('.')
+
     fun tileDay(start: Long): String = zoned(start).dayOfMonth.toString()
 
     fun tileMonth(ctx: Context, start: Long): String = pattern(ctx, "MMM").format(zoned(start)).trimEnd('.')

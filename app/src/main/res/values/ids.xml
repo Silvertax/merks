@@ -3,4 +3,5 @@
     <!-- For views that are built in code. -->
     <item name="share_entry" type="id" />
     <item name="edit_entry" type="id" />
+    <item name="note_entry" type="id" />
 </resources>

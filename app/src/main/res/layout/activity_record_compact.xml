@@ -75,6 +75,7 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Two rows, so that after saving "Undo", "Change" and "Add note" fit next to each other. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -97,6 +98,21 @@
             android:layout_height="wrap_content"
             android:text="@string/change"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/note"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/note_add_short"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/retry"

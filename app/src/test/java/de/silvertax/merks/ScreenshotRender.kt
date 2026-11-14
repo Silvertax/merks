@@ -97,7 +97,8 @@ class ScreenshotRender {
 
     private fun sampleEntries() {
         val today = LocalDate.now()
-        Store.save(app, Parsed(Kind.APPOINTMENT, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), today.plusDays(1).atTime(10, 0), null, false), "x")
+        val dentist = Store.save(app, Parsed(Kind.APPOINTMENT, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), today.plusDays(1).atTime(10, 0), null, false), "x")
+        Store.addNote(app, dentist, t("Versichertenkarte mitnehmen", "Bring the insurance card"))
         Store.save(app, Parsed(Kind.REMINDER, t("Wäsche aufhängen", "Hang up the laundry"), LocalDateTime.now().plusHours(2).withMinute(0), null, false), "x")
         val series = t("Jeden Montag Mülltonne rausstellen", "Every Monday take out the trash")
         Store.save(app, Store.sort(app, series), series)
@@ -233,10 +234,27 @@ class ScreenshotRender {
         val note = Store.save(app, Parsed(Kind.NOTE, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), null, null, false), "x")
         val moved = Store.reschedule(app, note, Parsed(Kind.APPOINTMENT, "", LocalDate.now().plusDays(1).atTime(10, 0), null, false), "x")
         val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
-        val confirm = RecordActivity::class.java.getDeclaredMethod("confirm", Entry::class.java, Boolean::class.javaPrimitiveType)
-        confirm.isAccessible = true
-        confirm.invoke(activity, moved, true)
+        confirmOn(activity, moved, Scheduler.Confirm.CHANGED)
         shotActivity(activity, "10_changed_dark")
+    }
+
+    private fun confirmOn(activity: RecordActivity, e: Entry, how: Scheduler.Confirm, added: String? = null) {
+        val confirm = RecordActivity::class.java.getDeclaredMethod("confirm", Entry::class.java, Scheduler.Confirm::class.java, String::class.java)
+        confirm.isAccessible = true
+        confirm.invoke(activity, e, how, added)
+    }
+
+    /** The small card after saving, when no notification can be shown: undo, change, add a note. */
+    @Test fun compactConfirmations() {
+        night(true)
+        shadowOf(app).grantPermissions(android.Manifest.permission.RECORD_AUDIO)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), LocalDate.now().plusDays(1).atTime(10, 0), null, false), "x")
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        confirmOn(activity, e, Scheduler.Confirm.NEW)
+        shotActivity(activity, "13_saved_compact_dark")
+        val noted = Store.addNote(app, e, t("Versichertenkarte mitnehmen", "Bring the insurance card"))
+        confirmOn(activity, noted, Scheduler.Confirm.NOTED, t("Versichertenkarte mitnehmen", "Bring the insurance card"))
+        shotActivity(activity, "13b_noted_compact_dark")
     }
 
     /** The entry dialog with its "change date or time" button. */
@@ -254,14 +272,19 @@ class ScreenshotRender {
 
     @Test fun entryDialog() {
         night(true)
-        Store.save(app, Parsed(Kind.NOTE, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), null, null, false), t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"))
+        val text = t("Zahnarzt bei Neupert", "Dentist, Dr. Miller")
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, text, LocalDate.now().plusDays(1).atTime(10, 0), null, false), t("Morgen um 10 Zahnarzt bei Neupert", "Tomorrow at 10 dentist, Dr. Miller"))
+        Store.addNote(app, e, t("Versichertenkarte mitnehmen", "Bring the insurance card"))
+        Store.save(app, Parsed(Kind.NOTE, t("Brot und Milch besorgen", "Get bread and milk"), null, null, false), "x")
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val list = main.findViewById<android.widget.ListView>(R.id.list)
-        list.adapter.getView(0, null, list).findViewById<View>(R.id.card).performClick()
-        idle(400)
-        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
-        val decor = dialog.window!!.decorView
-        shot(decor, "11_entry_dialog_dark", android.graphics.Color.parseColor("#101418"))
+        for ((position, name) in listOf(0 to "11_entry_dialog_dark", 1 to "11b_note_dialog_dark")) {
+            list.adapter.getView(position, null, list).findViewById<View>(R.id.card).performClick()
+            idle(400)
+            val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+            shot(dialog.window!!.decorView, name, android.graphics.Color.parseColor("#101418"))
+            dialog.dismiss()
+        }
     }
 
     @Test fun icon() {

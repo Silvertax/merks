@@ -2,6 +2,20 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.7.0
+
+### What's new
+
+- **Notes that go with an appointment:** say what belongs to it, for example what to bring or to buy for it. Tap "Add note" on the confirmation right after saving, or tap the entry and choose "Add a note by voice". The note shows below the appointment in the list, in the calendar entry, in the reminder and when sharing. A note spoken on its own can join an appointment afterwards with "Add to an appointment", and "Edit by typing" has a field for it.
+- **The weekday at a glance:** the date in front of each entry now shows the weekday too, such as "Sat 14 Nov".
+- **Choose how long to think:** under Settings → Pauses while speaking, the wait after a pause is short (1.5 s), normal (3 s) or long (6 s).
+
+### Fixed
+
+- **Speaking stopped too soon on some phones.** When the phone's speech recognition refused to start listening again right after a pause, or gave up early, Merk's saved at once. It now starts a fresh recognizer each time, tries again until the pause is really over, and ignores late messages of the one before.
+- **Words could get lost:** when speech recognition ended without a final result, the words already shown on screen were thrown away. They now count. Tapping "Done speaking" saves what was understood even if the recognizer does not answer any more.
+- **"Error 5":** this hiccup of the speech recognition is now tried again once by itself, and otherwise explained in plain words instead of a number.
+
 ## 0.6.3
 
 ### What's new

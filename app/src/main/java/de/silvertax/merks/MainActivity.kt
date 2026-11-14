@@ -154,6 +154,7 @@ class MainActivity : MerksActivity() {
             append(label(e))
             if (e.start != null) append(" · ").append(Format.whenText(this@MainActivity, e, starts[e.id]))
             if (e.done) append("\n").append(getString(R.string.is_done))
+            e.note?.takeIf { it.isNotBlank() }?.let { append("\n\n").append(getString(R.string.note_label, it)) }
             append("\n\n").append(getString(R.string.said, e.raw))
         }
         // A big button for the most common fix: the date or time was missing or wrong.
@@ -175,6 +176,18 @@ class MainActivity : MerksActivity() {
             iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
             minHeight = (56 * resources.displayMetrics.density).toInt()
         }
+        // What goes with an appointment, e.g. what to bring; a note on its own can join one instead.
+        val attachTo = upcoming.filter { it.kind != Kind.NOTE && it.id != e.id }
+        val noteButton = com.google.android.material.button.MaterialButton(
+            this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle,
+        ).apply {
+            id = R.id.note_entry
+            setText(if (e.kind == Kind.NOTE) R.string.note_attach else R.string.note_add)
+            setIconResource(if (e.kind == Kind.NOTE) R.drawable.ic_event else R.drawable.ic_note)
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+            minHeight = (56 * resources.displayMetrics.density).toInt()
+            visibility = if (e.kind == Kind.NOTE && attachTo.isEmpty()) View.GONE else View.VISIBLE
+        }
         // And one to pass this entry on.
         val shareButton = com.google.android.material.button.MaterialButton(
             this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle,
@@ -190,13 +203,16 @@ class MainActivity : MerksActivity() {
             val pad = (24 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad / 2, pad, 0)
             addView(changeButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            addView(noteButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             addView(editButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             addView(shareButton, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
+        // On a small screen with large print the buttons can scroll instead of being cut off.
+        val scroll = androidx.core.widget.NestedScrollView(this).apply { addView(box) }
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(e.title)
             .setMessage(message)
-            .setView(box)
+            .setView(scroll)
             .setPositiveButton(R.string.close, null)
             .setNegativeButton(R.string.delete) { _, _ ->
                 Store.remove(this, e)
@@ -223,10 +239,32 @@ class MainActivity : MerksActivity() {
             shown.dismiss()
             startActivity(EditActivity.intent(this, e.id))
         }
+        noteButton.setOnClickListener {
+            shown.dismiss()
+            if (e.kind == Kind.NOTE) attach(e, attachTo) else startActivity(RecordActivity.noteIntent(this, e.id))
+        }
         shareButton.setOnClickListener {
             shown.dismiss()
             Share.send(this, Share.line(this, e, starts[e.id]))
         }
+    }
+
+    /** A note spoken on its own goes with one of the coming appointments, e.g. what to bring there. */
+    private fun attach(note: Entry, choices: List<Entry>) {
+        val names = choices.map { it.title + " · " + Format.whenText(this, it, starts[it.id]) }.toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.note_attach_title)
+            .setItems(names) { _, which ->
+                val target = Db(this).get(choices[which].id)
+                val current = Db(this).get(note.id)
+                if (target != null && current != null) {
+                    Store.attachNote(this, current, target)
+                    android.widget.Toast.makeText(this, getString(R.string.note_attached, target.title), android.widget.Toast.LENGTH_SHORT).show()
+                }
+                reload()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private val adapter = object : BaseAdapter() {
@@ -263,6 +301,10 @@ class MainActivity : MerksActivity() {
                 imageTintList = ColorStateList.valueOf(ink)
             }
             if (day != null) {
+                v.findViewById<TextView>(R.id.badge_weekday).apply {
+                    text = Format.tileWeekday(this@MainActivity, day)
+                    setTextColor(ink)
+                }
                 v.findViewById<TextView>(R.id.badge_day).apply {
                     text = Format.tileDay(day)
                     setTextColor(ink)
@@ -271,6 +313,17 @@ class MainActivity : MerksActivity() {
                     text = Format.tileMonth(this@MainActivity, day)
                     setTextColor(ink)
                 }
+            }
+            v.findViewById<TextView>(R.id.entry_note).apply {
+                text = e.note
+                visibility = if (e.note.isNullOrBlank()) View.GONE else View.VISIBLE
+                // A small note symbol in front, in the colour of the text.
+                val icon = androidx.core.content.ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_note)?.mutate()?.apply {
+                    val size = (18 * resources.displayMetrics.density).toInt()
+                    setBounds(0, 0, size, size)
+                    setTint(currentTextColor)
+                }
+                setCompoundDrawablesRelative(icon, null, null, null)
             }
             v.findViewById<View>(R.id.card).alpha = if (e.done) 0.6f else 1f
             return v

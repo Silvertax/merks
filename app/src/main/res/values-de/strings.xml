@@ -51,12 +51,22 @@
     <string name="err_mic">Ohne Mikrofon-Erlaubnis kann ich nicht zuhören.</string>
     <string name="err_no_recognizer">Auf diesem Handy ist keine Spracherkennung eingerichtet.</string>
     <string name="err_generic">Die Spracherkennung hat nicht geklappt (Fehler %1$d).</string>
+    <string name="err_not_ready">Die Spracherkennung war gerade nicht bereit. Bitte noch einmal versuchen.</string>
     <string name="err_save">Das Speichern hat nicht geklappt.</string>
 
     <string name="kind_appointment">Termin</string>
     <string name="kind_reminder">Erinnerung</string>
     <string name="kind_note">Notiz</string>
     <string name="said">Gesagt: „%1$s“</string>
+    <string name="note_label">Notiz: %1$s</string>
+    <string name="note_add">Notiz dazu sprechen</string>
+    <string name="note_add_short">Notiz dazu</string>
+    <string name="note_hint">Was gehört zu „%1$s“, z. B. was du mitbringen musst?</string>
+    <string name="note_added">Notiz hinzugefügt</string>
+    <string name="note_attach">Zu einem Termin legen</string>
+    <string name="note_attach_title">Zu welchem gehört das?</string>
+    <string name="note_attached">Bei „%1$s“ notiert</string>
+    <string name="edit_note_field">Notiz, z. B. was du mitbringen musst</string>
     <string name="close">Schließen</string>
     <string name="edit_write">Schriftlich ändern</string>
     <string name="edit_title">Eintrag ändern</string>
@@ -97,6 +107,11 @@
     <string name="update_failed">Die Suche hat nicht geklappt. Prüfe die Internetverbindung.</string>
 
     <string name="settings_compact">Kleine Anzeige beim Aufnehmen</string>
+    <string name="settings_pause">Pausen beim Sprechen</string>
+    <string name="settings_pause_hint">So lange wartet Merk\'s nach einer Pause, ob du weitersprichst, bevor es speichert.</string>
+    <string name="pause_short">Kurz (1,5 Sekunden)</string>
+    <string name="pause_normal">Normal (3 Sekunden)</string>
+    <string name="pause_long">Lang (6 Sekunden)</string>
     <string name="settings_compact_hint">Beim Sprechen erscheint nur eine kleine Karte unten, danach zeigt eine Benachrichtigung, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
     <string name="settings_updates">Jetzt nach Updates suchen</string>
     <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version, nur wenn du auf den Knopf tippst. Gibt es eine neuere, lädt „Jetzt aktualisieren“ sie herunter und installiert sie. Dabei werden keine persönlichen Daten gesendet.</string>

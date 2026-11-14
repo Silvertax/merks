@@ -79,6 +79,7 @@ class AppSmokeTest {
     class FakeCalendar : ContentProvider() {
         val inserted = mutableListOf<ContentValues>()
         val deleted = mutableListOf<Uri>()
+        val updated = mutableListOf<Pair<Uri, ContentValues>>()
 
         override fun onCreate() = true
         override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor =
@@ -91,7 +92,10 @@ class AppSmokeTest {
             deleted += uri
             return 1
         }
-        override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = 0
+        override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?): Int {
+            updated += uri to ContentValues(v ?: ContentValues())
+            return 1
+        }
         override fun getType(uri: Uri): String? = null
     }
 
@@ -101,6 +105,32 @@ class AppSmokeTest {
     }
 
     // ---------- Update from an older version ----------
+
+    /** Entries saved with 0.3 to 0.6 (database version 2) keep everything and can get a note. */
+    @Test fun version2DatabaseGetsNotes() {
+        val old = object : SQLiteOpenHelper(app, "merks.db", null, 2) {
+            override fun onCreate(db: SQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE entries(id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, title TEXT, raw TEXT, " +
+                        "start INTEGER, end_ INTEGER, all_day INTEGER, cal_id INTEGER, created INTEGER, " +
+                        "done INTEGER NOT NULL DEFAULT 0, snooze INTEGER, repeat_unit TEXT, repeat_every INTEGER)",
+                )
+            }
+            override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+        }
+        old.writableDatabase.execSQL(
+            "INSERT INTO entries(kind,title,raw,start,end_,all_day,cal_id,created,done,repeat_unit,repeat_every) " +
+                "VALUES ('APPOINTMENT','Chor','Jeden Mittwoch Chor',1763024400000,NULL,0,NULL,1762970000000,0,'WEEK',1)",
+        )
+        old.close()
+
+        val choir = Db(app).all().single()
+        assertEquals("Chor", choir.title)
+        assertEquals(Repeat(RepeatUnit.WEEK, 1), choir.repeat)
+        assertNull(choir.note)
+        Store.addNote(app, choir, "noten mitbringen")
+        assertEquals("Noten mitbringen", Db(app).get(choir.id)!!.note)
+    }
 
     /** Entries saved with 0.1 / 0.2 (database version 1) must survive the update to 0.3. */
     @Test fun oldDatabaseIsUpgradedWithoutLosingEntries() {
@@ -131,6 +161,7 @@ class AppSmokeTest {
         assertFalse(dentist.done)
         assertNull(dentist.snooze)
         assertNull(dentist.repeat)
+        assertNull(dentist.note)
         // The new columns work on the upgraded database.
         Db(app).setDone(dentist.id, true)
         assertTrue(Db(app).get(dentist.id)!!.done)
@@ -191,10 +222,14 @@ class AppSmokeTest {
         val n = notifications.allNotifications.single()
         assertEquals("Termin gemerkt (nicht im Kalender)", n.title())
         assertEquals("${shortDate.format(tomorrow)}, 10:00 Uhr Zahnarzt", n.text())
-        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
-        // "Ändern" opens the recording for this entry.
+        assertEquals(listOf("Rückgängig", "Ändern", "Notiz dazu"), n.actions.map { it.title.toString() })
+        // "Ändern" opens the recording for a new date of this entry, "Notiz dazu" for a note to it.
         val change = shadowOf(n.actions[1].actionIntent).savedIntent
         assertEquals(entry.id, change.getLongExtra("change_id", -1))
+        assertEquals(-1L, change.getLongExtra("note_id", -1))
+        val note = shadowOf(n.actions[2].actionIntent).savedIntent
+        assertEquals(entry.id, note.getLongExtra("note_id", -1))
+        assertEquals(-1L, note.getLongExtra("change_id", -1))
 
         // "Rückgängig" in the notification removes it again.
         UndoReceiver().onReceive(app, shadowOf(n.actions[0].actionIntent).savedIntent)
@@ -203,31 +238,42 @@ class AppSmokeTest {
         assertTrue(alarms.scheduledAlarms.isEmpty())
     }
 
+    /** The recogniser now in use: every attempt gets a fresh one. */
+    private fun latest() = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
+
+    private fun words(text: String) = Bundle().apply {
+        putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(text))
+    }
+
+    private fun idleFor(ms: Long) = shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(ms))
+
     /** A pause to think does not end the recording: it listens on and puts the parts together. */
     @Test fun aPauseToThinkDoesNotEndTheRecording() {
         speechAvailable()
         val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
-        val status = activity.findViewById<TextView>(R.id.status)
-        val recognizer = shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
+        val first = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
 
         sayPart("Morgen um 10")
-        assertEquals("Ich höre weiter zu …", status.text.toString())
+        assertEquals("Ich höre weiter zu …", status(activity))
         assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
         assertTrue(activity.findViewById<TextView>(R.id.detail).text.toString().startsWith("Noch etwas?"))
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.stop).visibility)
         assertTrue(Db(app).all().isEmpty())
+        // A fresh recogniser listens on; the first one is let go.
+        assertTrue(ShadowSpeechRecognizer.getLatestSpeechRecognizer() !== first)
+        assertTrue(shadowOf(first).isDestroyed)
 
-        // Two seconds of thinking, the microphone open again: still waiting.
-        recognizer.triggerOnReadyForSpeech(Bundle())
-        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(2))
+        // The microphone open again, two seconds of thinking: still waiting.
+        latest().triggerOnReadyForSpeech(Bundle())
+        idleFor(2000)
         assertFalse(activity.isFinishing)
         assertTrue(Db(app).all().isEmpty())
 
         // Speaking again: the words so far stay on the screen.
-        recognizer.triggerOnPartialResults(Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf("Zahn")) })
-        assertEquals("Ich höre zu …", status.text.toString())
+        latest().triggerOnPartialResults(words("Zahn"))
+        assertEquals("Ich höre zu …", status(activity))
         assertEquals("Morgen um 10 Zahn", activity.findViewById<TextView>(R.id.spoken).text.toString())
-        shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(10))
+        idleFor(10_000)
         assertTrue(Db(app).all().isEmpty())
 
         // Then nothing more: both parts become one entry.
@@ -239,7 +285,49 @@ class AppSmokeTest {
         assertEquals("Morgen um 10 Zahnarzt", entry.raw)
     }
 
-    /** "Done speaking" during the wait saves at once; silence in the new attempt is no error. */
+    /**
+     * Some phones refuse to start listening again at once (error 5), others give up on silence early.
+     * During the pause that is no reason to stop: it tries again until the pause is over.
+     */
+    @Test fun troubleWhileListeningOnIsNoReasonToStop() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        sayPart("Morgen um 10")
+        val second = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_CLIENT)
+        idleFor(400)
+        assertEquals("Ich höre weiter zu …", status(activity))
+        val third = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        assertTrue(third !== second)
+
+        // A late call of the one before changes nothing.
+        shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
+        shadowOf(second).triggerOnResults(words("Unsinn"))
+        assertEquals("Ich höre weiter zu …", status(activity))
+
+        shadowOf(third).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
+        idleFor(400)
+        assertTrue(Db(app).all().isEmpty())
+
+        // Speaking on still works.
+        say("Zahnarzt")
+        waitFor { activity.isFinishing }
+        assertEquals("Morgen um 10 Zahnarzt", Db(app).all().single().raw)
+    }
+
+    /** The words shown while speaking count, even when the recogniser ends without a result. */
+    @Test fun wordsSoFarCountWhenTheRecogniserFails() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        latest().triggerOnPartialResults(words("Milch kaufen"))
+        latest().triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
+        assertEquals("Ich höre weiter zu …", status(activity))
+        idleFor(RecordActivity.PAUSE_MS + 2000)
+        waitFor { activity.isFinishing }
+        assertEquals("Milch kaufen", Db(app).all().single().title)
+    }
+
+    /** "Done speaking" during the wait saves at once. */
     @Test fun doneSpeakingDuringThePauseSavesAtOnce() {
         speechAvailable()
         val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
@@ -247,13 +335,79 @@ class AppSmokeTest {
         activity.findViewById<View>(R.id.stop).performClick()
         waitFor { activity.isFinishing }
         assertEquals("Milch kaufen", Db(app).all().single().title)
+    }
 
-        val again = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
-        sayPart("Brot kaufen")
-        shadowOf(ShadowSpeechRecognizer.getLatestSpeechRecognizer()).triggerOnError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
-        waitFor { again.isFinishing }
-        assertEquals(2, Db(app).all().size)
-        assertTrue(Db(app).all().any { it.title == "Brot kaufen" })
+    /** "Done speaking" while talking, and the recogniser never answers: the words so far are saved. */
+    @Test fun doneSpeakingWhileTalkingKeepsTheWordsSoFar() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        latest().triggerOnPartialResults(words("Brot kaufen"))
+        activity.findViewById<View>(R.id.stop).performClick()
+        idleFor(1000)
+        assertTrue(Db(app).all().isEmpty())
+        idleFor(RecordActivity.STOP_WAIT_MS)
+        waitFor { activity.isFinishing }
+        assertEquals("Brot kaufen", Db(app).all().single().title)
+    }
+
+    /** "Error 5" at the start: tried once more without a word, then named in plain words. */
+    @Test fun recogniserNotReadyIsTriedOnceMoreThenNamed() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val first = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        shadowOf(first).triggerOnError(SpeechRecognizer.ERROR_CLIENT)
+        idleFor(500)
+        assertEquals("Ich höre zu …", status(activity))
+        val second = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        assertTrue(second !== first)
+        shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_CLIENT)
+        idleFor(500)
+        assertEquals("Die Spracherkennung war gerade nicht bereit. Bitte noch einmal versuchen.", status(activity))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
+    }
+
+    /** "Done speaking" at once and the recogniser complains: no second attempt, just the message. */
+    @Test fun doneSpeakingIsNotUndoneByARetry() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val first = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
+        activity.findViewById<View>(R.id.stop).performClick()
+        shadowOf(first).triggerOnError(SpeechRecognizer.ERROR_CLIENT)
+        idleFor(1000)
+        assertTrue(ShadowSpeechRecognizer.getLatestSpeechRecognizer() === first)
+        assertEquals("Die Spracherkennung war gerade nicht bereit. Bitte noch einmal versuchen.", status(activity))
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.retry).visibility)
+        idleFor(RecordActivity.STOP_WAIT_MS)
+        assertTrue(Db(app).all().isEmpty())
+    }
+
+    /** People who like to think it over can choose a longer pause. */
+    @Test fun aLongPauseCanBeChosen() {
+        speechAvailable()
+        Prefs.setSpeechPause(app, Prefs.PAUSE_LONG)
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        sayPart("Morgen um 10 Zahnarzt")
+        latest().triggerOnReadyForSpeech(Bundle())
+        idleFor(5000)
+        assertEquals("Ich höre weiter zu …", status(activity))
+        assertTrue(Db(app).all().isEmpty())
+        idleFor(1500)
+        waitFor { activity.isFinishing }
+        assertEquals(1, Db(app).all().size)
+    }
+
+    /** The settings offer the pause in three lengths. */
+    @Test fun pauseLengthInTheSettings() {
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val value = settings.findViewById<TextView>(R.id.pause_value)
+        assertEquals("Normal (3 Sekunden)", value.text.toString())
+        settings.findViewById<View>(R.id.row_pause).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val list = dialog.listView
+        assertEquals(3, list.adapter.count)
+        list.performItemClick(list.adapter.getView(2, null, list), 2, list.adapter.getItemId(2))
+        assertEquals("Lang (6 Sekunden)", value.text.toString())
+        assertEquals(6000L, Prefs.speechPause(app))
     }
 
     @Test fun speakingInFullScreenModeConfirmsOnScreen() {
@@ -628,7 +782,7 @@ class AppSmokeTest {
         assertTrue(calendar.deleted.single().toString().endsWith("/$firstCalendarId"))
         val n = notifications.allNotifications.single { it.title() == "Geändert" }
         assertTrue(n.text()!!.endsWith("Friseur"))
-        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
+        assertEquals(listOf("Rückgängig", "Ändern", "Notiz dazu"), n.actions.map { it.title.toString() })
 
         // "Undo" in the notification puts the old time back.
         UndoReceiver().onReceive(app, Intent(app, UndoReceiver::class.java).putExtra("id", first.id).putExtra("changed", true))
@@ -771,6 +925,8 @@ class AppSmokeTest {
         assertEquals(View.VISIBLE, dated.findViewById<View>(R.id.badge_date).visibility)
         assertEquals(View.GONE, dated.findViewById<View>(R.id.badge_icon).visibility)
         assertEquals(day.dayOfMonth.toString(), dated.findViewById<TextView>(R.id.badge_day).text.toString())
+        val weekday = java.time.format.DateTimeFormatter.ofPattern("EEE", Locale.GERMANY).format(day).trimEnd('.')
+        assertEquals(weekday, dated.findViewById<TextView>(R.id.badge_weekday).text.toString())
         val month = java.time.format.DateTimeFormatter.ofPattern("MMM", Locale.GERMANY).format(day).trimEnd('.')
         assertEquals(month, dated.findViewById<TextView>(R.id.badge_month).text.toString())
 
@@ -928,6 +1084,128 @@ class AppSmokeTest {
         assertEquals(note.id, opened.getLongExtra("id", -1))
     }
 
+    // ---------- Notes that go with an entry ----------
+
+    /** Right after an appointment, say what goes with it; it is kept with it, also in the calendar. */
+    @Test fun aNoteCanBeSpokenForAnAppointment() {
+        speechAvailable()
+        val calendar = fakeCalendar()
+        val day = LocalDate.now().plusDays(1)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Arzt", day.atTime(10, 0), null, false), "Morgen um 10 Arzt")
+        val activity = Robolectric.buildActivity(RecordActivity::class.java, RecordActivity.noteIntent(app, e.id)).setup().get()
+        assertEquals(
+            "Was gehört zu „Arzt“, z. B. was du mitbringen musst?",
+            activity.findViewById<TextView>(R.id.detail).text.toString(),
+        )
+        // Nothing in it is taken for a date: it is the note as said.
+        say("versichertenkarte und überweisung für morgen")
+        waitFor { activity.isFinishing }
+
+        val after = Db(app).get(e.id)!!
+        assertEquals("Versichertenkarte und überweisung für morgen", after.note)
+        assertEquals("Arzt", after.title)
+        assertEquals(e.start, after.start)
+        assertEquals(1, Db(app).all().size)
+        val (uri, values) = calendar.updated.single()
+        assertEquals(e.calendarEventId, ContentUris.parseId(uri))
+        assertEquals(
+            "Versichertenkarte und überweisung für morgen\n\nMorgen um 10 Arzt",
+            values.getAsString(CalendarContract.Events.DESCRIPTION),
+        )
+
+        // The confirmation says so; more can be added, and "Undo" takes it back.
+        val n = notifications.allNotifications.single()
+        assertEquals("Notiz hinzugefügt", n.title())
+        assertEquals("Arzt: Versichertenkarte und überweisung für morgen", n.text())
+        assertEquals(listOf("Rückgängig", "Ändern", "Notiz dazu"), n.actions.map { it.title.toString() })
+        UndoReceiver().onReceive(app, shadowOf(n.actions[0].actionIntent).savedIntent)
+        assertNull(Db(app).get(e.id)!!.note)
+    }
+
+    /** A second note goes below the first; a note on its own gets no "Add note". */
+    @Test fun notesAddUpAndNotesHaveNone() {
+        val day = LocalDate.now().plusDays(1)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Arzt", day.atTime(10, 0), null, false), "Arzt")
+        Store.addNote(app, Store.addNote(app, e, "Versichertenkarte"), "  überweisung ")
+        assertEquals("Versichertenkarte\nÜberweisung", Db(app).get(e.id)!!.note)
+
+        val memo = Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        Scheduler.confirm(app, memo)
+        val n = notifications.allNotifications.single()
+        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
+    }
+
+    /** A note spoken on its own can go with an appointment afterwards; the list shows it below it. */
+    @Test fun aNoteOnItsOwnCanJoinAnAppointment() {
+        Prefs.setAskedPermissions(app)
+        val day = LocalDate.now().plusDays(1)
+        val appointment = Store.save(app, Parsed(Kind.APPOINTMENT, "Arzt", day.atTime(10, 0), null, false), "Arzt")
+        Store.save(app, Parsed(Kind.NOTE, "Brot, Milch und Butter besorgen", null, null, false), "x")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+        fun row(title: String): View = (0 until list.adapter.count).map { list.adapter.getView(it, null, list) }
+            .first { it.findViewById<TextView>(R.id.title).text.toString() == title }
+        fun open(title: String): androidx.appcompat.app.AlertDialog {
+            row(title).findViewById<View>(R.id.card).performClick()
+            return ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        }
+
+        // The appointment offers a note by voice.
+        val add = open("Arzt").findViewById<TextView>(R.id.note_entry)!!
+        assertEquals("Notiz dazu sprechen", add.text.toString())
+        add.performClick()
+        val started = shadowOf(app).nextStartedActivity
+        assertEquals(RecordActivity::class.java.name, started.component!!.className)
+        assertEquals(appointment.id, started.getLongExtra("note_id", -1))
+
+        // The note on its own can join it.
+        val attach = open("Brot, Milch und Butter besorgen").findViewById<TextView>(R.id.note_entry)!!
+        assertEquals("Zu einem Termin legen", attach.text.toString())
+        attach.performClick()
+        val chooser = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val choices = chooser.listView
+        assertEquals(1, choices.adapter.count)
+        assertTrue(choices.adapter.getItem(0).toString().startsWith("Arzt · "))
+        choices.performItemClick(choices.adapter.getView(0, null, choices), 0, choices.adapter.getItemId(0))
+
+        val after = Db(app).all().single()
+        assertEquals("Arzt", after.title)
+        assertEquals("Brot, Milch und Butter besorgen", after.note)
+        val shown = row("Arzt").findViewById<TextView>(R.id.entry_note)
+        assertEquals(View.VISIBLE, shown.visibility)
+        assertEquals("Brot, Milch und Butter besorgen", shown.text.toString())
+        // And the details say it too.
+        val details = open("Arzt").findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(details, details.contains("Notiz: Brot, Milch und Butter besorgen"))
+    }
+
+    /** Typing works for notes too; a note on its own has no extra field. */
+    @Test fun aNoteCanBeTyped() {
+        val day = LocalDate.now().plusDays(1)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Arzt", day.atTime(10, 0), null, false), "Arzt")
+        val edit = Robolectric.buildActivity(EditActivity::class.java, EditActivity.intent(app, e.id)).setup().get()
+        assertEquals(View.VISIBLE, edit.findViewById<View>(R.id.edit_note_box).visibility)
+        edit.findViewById<TextView>(R.id.edit_note_text).text = "Versichertenkarte"
+        edit.findViewById<View>(R.id.save).performClick()
+        assertEquals("Versichertenkarte", Db(app).get(e.id)!!.note)
+        assertEquals(e.start, Db(app).get(e.id)!!.start)
+
+        val memo = Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val memoEdit = Robolectric.buildActivity(EditActivity::class.java, EditActivity.intent(app, memo.id)).setup().get()
+        assertEquals(View.GONE, memoEdit.findViewById<View>(R.id.edit_note_box).visibility)
+    }
+
+    /** When a reminder rings, its note is what shows first, e.g. what to bring. */
+    @Test fun theReminderShowsItsNote() {
+        val at = LocalDateTime.now().plusHours(2)
+        val e = Store.addNote(app, Store.save(app, Parsed(Kind.REMINDER, "Einkaufen", at, null, false), "x"), "Brot, Milch")
+        Scheduler.notify(app, e)
+        val n = notifications.allNotifications.single { it.title() == "Einkaufen" }
+        assertEquals("Brot, Milch", n.text())
+        val big = n.extras.getCharSequence(android.app.Notification.EXTRA_BIG_TEXT).toString()
+        assertTrue(big, big.startsWith("Brot, Milch\n"))
+    }
+
     // ---------- Sharing ----------
 
     /** The text the share sheet was handed, or null if nothing was shared. */
@@ -950,7 +1228,8 @@ class AppSmokeTest {
 
         val day = LocalDate.now().plusDays(5)
         Store.save(app, Parsed(Kind.APPOINTMENT, "Oma zu Besuch", day.plusDays(2).atStartOfDay(), null, true), "Oma")
-        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", day.atTime(10, 0), day.atTime(11, 0), false), "Zahnarzt")
+        val dentist = Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", day.atTime(10, 0), day.atTime(11, 0), false), "Zahnarzt")
+        Store.addNote(app, dentist, "Versichertenkarte\nÜberweisung")
         val done = Store.save(app, Parsed(Kind.REMINDER, "Rezept abholen", day.plusDays(1).atTime(9, 0), null, false), "Rezept")
         Db(app).setDone(done.id, true)
 
@@ -965,6 +1244,8 @@ class AppSmokeTest {
         assertEquals(
             "Das steht an:\n\n" +
                 "• ${short.format(day)}, 10:00–11:00 Uhr: Zahnarzt\n" +
+                "   Versichertenkarte\n" +
+                "   Überweisung\n" +
                 "• ${long.format(day.plusDays(2))}: Oma zu Besuch",
             sharedText(),
         )

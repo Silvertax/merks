@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Changing an entry by typing: its text, its day, its time. -->
+<!-- Changing an entry by typing: its text, its note, its day, its time. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -50,6 +50,30 @@
                     android:maxLines="5"
                     android:minHeight="64dp"
                     android:textSize="20sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- What goes with it, e.g. what to bring; not for a note, which is all text already. -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/edit_note_box"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/edit_note_field"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edit_note_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:maxLines="8"
+                    android:minHeight="64dp"
+                    android:textSize="18sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView

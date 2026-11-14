@@ -21,11 +21,13 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 2. Say what you want to remember, for example "Tomorrow at 10 dentist" or "Remind me in 20 minutes to take the laundry out".
 3. A notification shows what was saved. "Undo" removes it again.
 
-Take your time: a pause to think does not end the recording. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking".
+Take your time: a pause to think does not end the recording. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking". If you need longer, choose a long pause in the settings (Pauses while speaking).
+
+Something goes with an appointment, like what to bring? Tap "Add note" on the confirmation, or tap the entry and then "Add a note by voice", and say it. The note shows below the appointment, in the calendar and in the reminder. A note you already spoke on its own can join an appointment too: tap it and choose "Add to an appointment".
 
 Forgot the date, or said the wrong time? Tap "Change" on the confirmation, or tap the entry in the app and then "Change date or time", and just say the new one, for example "Friday at 10". The title stays; the calendar entry and the reminders move along. A note that gets a date becomes an appointment.
 
-Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by typing": there you correct the text and pick the day and time.
+Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by typing": there you correct the text and the note, and pick the day and time.
 
 Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
 
@@ -35,7 +37,7 @@ Reminders come on time, appointments one hour ahead and, if you like, also the e
 
 The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers both.
 
-In the list, everything with a date shows the day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+In the list, everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 

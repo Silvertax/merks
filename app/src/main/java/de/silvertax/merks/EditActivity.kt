@@ -21,12 +21,13 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
- * Changes an entry by typing instead of speaking: its text, its day and its time. For a word the
- * speech recognition got wrong, or when speaking is not possible right now.
+ * Changes an entry by typing instead of speaking: its text, its note, its day and its time. For a word
+ * the speech recognition got wrong, or when speaking is not possible right now.
  */
 class EditActivity : MerksActivity() {
     private lateinit var entry: Entry
     private lateinit var text: EditText
+    private lateinit var noteText: EditText
 
     /** Day and time as they stand on the screen; no day for a note, no time for a whole day. */
     internal var day: LocalDate? = null
@@ -48,9 +49,13 @@ class EditActivity : MerksActivity() {
         setContentView(R.layout.activity_edit)
         findViewById<MaterialToolbar>(R.id.toolbar).setNavigationOnClickListener { finish() }
         text = findViewById(R.id.edit_text)
+        noteText = findViewById(R.id.edit_note_text)
+        // A note is all text already; the extra field is for appointments and reminders.
+        findViewById<View>(R.id.edit_note_box).visibility = if (entry.kind == Kind.NOTE) View.GONE else View.VISIBLE
 
         if (savedInstanceState == null) {
             text.setText(entry.title)
+            noteText.setText(entry.note.orEmpty())
             // For a series, the date that counts is its next one.
             val zone = ZoneId.systemDefault()
             val shown = Plan.currentStart(entry, System.currentTimeMillis(), zone)?.let { Instant.ofEpochMilli(it).atZone(zone) }
@@ -158,7 +163,8 @@ class EditActivity : MerksActivity() {
         // Asked again: the entry may have been ticked off or moved by a notification meanwhile.
         val current = Db(this).get(entry.id)
         if (current != null) {
-            Store.edit(this, current, title, day.takeIf { whenChanged }, time)
+            val note = if (entry.kind == Kind.NOTE) current.note else noteText.text.toString()
+            Store.edit(this, current, title, day.takeIf { whenChanged }, time, note)
             Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
         }
         finish()

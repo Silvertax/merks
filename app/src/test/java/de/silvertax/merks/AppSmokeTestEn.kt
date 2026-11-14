@@ -79,7 +79,7 @@ class AppSmokeTestEn {
         assertEquals("Appointment noted (not in calendar)", n.title())
         val date = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.US).format(tomorrow)
         assertEquals("$date, 10:00 AM Dentist", n.text())
-        assertEquals(listOf("Undo", "Change"), n.actions.map { it.title.toString() })
+        assertEquals(listOf("Undo", "Change", "Add note"), n.actions.map { it.title.toString() })
     }
 
     @Test fun mainScreenInEnglish() {
@@ -108,7 +108,7 @@ class AppSmokeTestEn {
         val n = notifications.allNotifications.single()
         assertEquals("Termin gemerkt (nicht im Kalender)", n.title())
         assertTrue(n.text()!!.endsWith(", 10:00 Uhr Zahnarzt"))
-        assertEquals(listOf("Rückgängig", "Ändern"), n.actions.map { it.title.toString() })
+        assertEquals(listOf("Rückgängig", "Ändern", "Notiz dazu"), n.actions.map { it.title.toString() })
     }
 
     @Test fun englishRulesOnAnEnglishPhone() {

@@ -78,12 +78,14 @@ object Scheduler {
         val start = Plan.currentStart(e, now, ZoneId.systemDefault()) ?: return
         val text = if (e.kind == Kind.REMINDER) texts.getString(R.string.notif_reminder) else Format.dueText(ctx, e, start, now)
         val open = PendingIntent.getActivity(ctx, 0, Intent(ctx, MainActivity::class.java), FLAGS)
+        // The note is what matters now, e.g. what to bring: shown right away, the time below it when opened.
+        val note = e.note?.takeIf { it.isNotBlank() }
         val n = Notification.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_merks)
             .setColor(ctx.getColor(R.color.brand_teal))
             .setContentTitle(e.title)
-            .setContentText(text)
-            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setContentText(note ?: text)
+            .setStyle(Notification.BigTextStyle().bigText(listOfNotNull(note, text).joinToString("\n")))
             .setCategory(Notification.CATEGORY_REMINDER)
             .setContentIntent(open)
             .setAutoCancel(true)
@@ -99,11 +101,16 @@ object Scheduler {
     fun canConfirmByNotification(ctx: Context): Boolean =
         ctx.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
 
+    /** What a confirmation is about: a new entry, a new date for one, or a note added to one. */
+    enum class Confirm { NEW, CHANGED, NOTED }
+
     /**
-     * Tells the user what was just saved, with a way to take it back and one to change the date by voice.
-     * [changed]: the entry got a new date; then "Undo" puts the old one back instead of deleting it.
+     * Tells the user what was just saved, with a way to take it back, one to change the date by voice and
+     * one to add a note by voice. For a change or a note, "Undo" puts the old version back instead of
+     * deleting; [added] is the note that was just added.
      */
-    fun confirm(ctx: Context, e: Entry, changed: Boolean = false) {
+    fun confirm(ctx: Context, e: Entry, how: Confirm = Confirm.NEW, added: String? = null) {
+        val changed = how != Confirm.NEW
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val texts = Lang.context(ctx)
         nm.createNotificationChannel(
@@ -119,25 +126,32 @@ object Scheduler {
             RecordActivity.changeIntent(ctx, e.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
             FLAGS,
         )
-        val text = Format.oneLine(ctx, e)
+        // Its own request code: two intents for the same screen that differ only in extras would be one.
+        val addNote = PendingIntent.getActivity(
+            ctx, (e.id + 2_000_000).toInt(),
+            RecordActivity.noteIntent(ctx, e.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+            FLAGS,
+        )
+        val text = if (how == Confirm.NOTED) e.title + ": " + Store.tidyNote(added.orEmpty()) else Format.oneLine(ctx, e)
+        val title = when (how) {
+            Confirm.NEW -> Format.savedLabel(e)
+            Confirm.CHANGED -> R.string.changed_label
+            Confirm.NOTED -> R.string.note_added
+        }
+        fun button(label: Int, intent: PendingIntent) =
+            Notification.Action.Builder(Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(label), intent).build()
         val n = Notification.Builder(ctx, CONFIRM_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_merks)
             .setColor(ctx.getColor(R.color.brand_teal))
-            .setContentTitle(texts.getString(if (changed) R.string.changed_label else Format.savedLabel(e)))
+            .setContentTitle(texts.getString(title))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))
             .setContentIntent(open)
             .setAutoCancel(true)
-            .addAction(
-                Notification.Action.Builder(
-                    Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(R.string.undo), undo,
-                ).build(),
-            )
-            .addAction(
-                Notification.Action.Builder(
-                    Icon.createWithResource(ctx, R.drawable.ic_mic), texts.getString(R.string.change), change,
-                ).build(),
-            )
+            .addAction(button(R.string.undo, undo))
+            .addAction(button(R.string.change, change))
+            // A note goes with an appointment or a reminder, e.g. what to bring.
+            .apply { if (e.kind != Kind.NOTE) addAction(button(R.string.note_add_short, addNote)) }
             .build()
         nm.notify(confirmId(e.id), n)
     }

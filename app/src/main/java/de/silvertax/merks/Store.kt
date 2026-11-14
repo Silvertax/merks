@@ -24,17 +24,23 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.TimeZone
 
-class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 2) {
+class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 3) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE entries(id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, title TEXT, raw TEXT, " +
                 "start INTEGER, end_ INTEGER, all_day INTEGER, cal_id INTEGER, created INTEGER)",
         )
         addVersion2Columns(db)
+        addVersion3Columns(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) addVersion2Columns(db)
+        if (oldVersion < 3) addVersion3Columns(db)
+    }
+
+    private fun addVersion3Columns(db: SQLiteDatabase) {
+        db.execSQL("ALTER TABLE entries ADD COLUMN note TEXT")
     }
 
     private fun addVersion2Columns(db: SQLiteDatabase) {
@@ -59,6 +65,7 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
             put("snooze", e.snooze)
             put("repeat_unit", e.repeat?.unit?.name)
             put("repeat_every", e.repeat?.every)
+            put("note", e.note)
         },
     )
 
@@ -79,6 +86,7 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
                 put("snooze", e.snooze)
                 put("repeat_unit", e.repeat?.unit?.name)
                 put("repeat_every", e.repeat?.every)
+                put("note", e.note)
             },
             "id=?", arrayOf(e.id.toString()),
         )
@@ -121,6 +129,7 @@ class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", nu
                     done = c.getInt(col("done")) == 1,
                     snooze = long("snooze"),
                     repeat = if (unit != null && every != null && every >= 1) Repeat(RepeatUnit.valueOf(unit), every) else null,
+                    note = c.getString(col("note"))?.takeIf { it.isNotBlank() },
                 )
             }
         }
@@ -207,6 +216,21 @@ object Prefs {
 
     fun forgetBefore(ctx: Context) = p(ctx).edit().remove("before").apply()
 
+    /** How long a pause to think may be while speaking: "short", "normal" or "long". */
+    fun speechPauseChoice(ctx: Context): String = p(ctx).getString("pause", PAUSE_NORMAL)!!
+        .takeIf { it in listOf(PAUSE_SHORT, PAUSE_NORMAL, PAUSE_LONG) } ?: PAUSE_NORMAL
+    fun setSpeechPause(ctx: Context, choice: String) = p(ctx).edit().putString("pause", choice).apply()
+    fun speechPause(ctx: Context): Long = pauseMillis(speechPauseChoice(ctx))
+    fun pauseMillis(choice: String): Long = when (choice) {
+        PAUSE_SHORT -> 1500L
+        PAUSE_LONG -> 6000L
+        else -> RecordActivity.PAUSE_MS
+    }
+
+    const val PAUSE_SHORT = "short"
+    const val PAUSE_NORMAL = "normal"
+    const val PAUSE_LONG = "long"
+
     fun askedPermissions(ctx: Context): Boolean = p(ctx).getBoolean("asked", false)
     fun setAskedPermissions(ctx: Context) = p(ctx).edit().putBoolean("asked", true).apply()
 }
@@ -291,8 +315,8 @@ object Store {
      * means the whole day). Kind and series stay as they are; a note that gets a date becomes an
      * appointment. The calendar entry and the reminders follow.
      */
-    fun edit(ctx: Context, old: Entry, title: String, day: LocalDate?, time: LocalTime?): Entry {
-        var target = old.copy(title = title.trim().ifEmpty { old.title })
+    fun edit(ctx: Context, old: Entry, title: String, day: LocalDate?, time: LocalTime?, note: String? = old.note): Entry {
+        var target = old.copy(title = title.trim().ifEmpty { old.title }, note = note?.trim()?.takeIf { it.isNotEmpty() })
         if (day != null) {
             val zone = ZoneId.systemDefault()
             // A reminder needs a time to ring at.
@@ -318,6 +342,30 @@ object Store {
         return rewrite(ctx, old, target)
     }
 
+    /** A spoken note as it is kept: without spaces around it, starting with a capital letter. */
+    fun tidyNote(text: String): String = text.trim().replaceFirstChar { it.uppercase() }
+
+    /**
+     * Adds [text] to the note of [e] on a new line, e.g. what to bring to an appointment. The calendar
+     * entry shows it too; date, alarms and everything else stay as they are.
+     */
+    fun addNote(ctx: Context, e: Entry, text: String): Entry {
+        val note = listOfNotNull(e.note?.takeIf { it.isNotBlank() }, tidyNote(text).takeIf { it.isNotEmpty() }).joinToString("\n")
+        val saved = e.copy(note = note.ifEmpty { null })
+        Db(ctx).replace(saved)
+        updateCalendarDescription(ctx, saved)
+        Glance.refresh(ctx)
+        return saved
+    }
+
+    /** A note that was spoken on its own goes with [target] instead, and is gone as an entry of its own. */
+    fun attachNote(ctx: Context, note: Entry, target: Entry): Entry {
+        val text = listOfNotNull(note.title, note.note).joinToString("\n")
+        val saved = addNote(ctx, target, text)
+        remove(ctx, note)
+        return saved
+    }
+
     /** Puts [current] back the way [before] was (the "Undo" of a change). */
     fun restore(ctx: Context, current: Entry, before: Entry): Entry = rewrite(ctx, current, before.copy(id = current.id))
 
@@ -329,7 +377,8 @@ object Store {
         fun local(ms: Long?) = ms?.let { LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), zone) }
         val calId = if (target.kind == Kind.APPOINTMENT && target.start != null) {
             insertCalendarEvent(
-                ctx, Parsed(target.kind, target.title, local(target.start), local(target.end), target.allDay, target.repeat), target.raw,
+                ctx, Parsed(target.kind, target.title, local(target.start), local(target.end), target.allDay, target.repeat),
+                description(target.raw, target.note),
             )
         } else {
             null
@@ -339,6 +388,24 @@ object Store {
         Scheduler.schedule(ctx, saved)
         Glance.refresh(ctx)
         return saved
+    }
+
+    /** What the calendar entry says below its title: the note first, then what was said. */
+    private fun description(raw: String, note: String?): String =
+        listOfNotNull(note?.takeIf { it.isNotBlank() }, raw).joinToString("\n\n")
+
+    private fun updateCalendarDescription(ctx: Context, e: Entry) {
+        val id = e.calendarEventId ?: return
+        if (!hasCalendarPermission(ctx)) return
+        try {
+            ctx.contentResolver.update(
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id),
+                ContentValues().apply { put(CalendarContract.Events.DESCRIPTION, description(e.raw, e.note)) },
+                null, null,
+            )
+        } catch (ex: Exception) {
+            // The calendar entry may be gone; the note is kept in the app all the same.
+        }
     }
 
     private fun deleteCalendarEvent(ctx: Context, id: Long?) {
@@ -377,7 +444,7 @@ object Store {
         return if (r.every > 1) "FREQ=$freq;INTERVAL=${r.every}" else "FREQ=$freq"
     }
 
-    private fun insertCalendarEvent(ctx: Context, p: Parsed, raw: String): Long? {
+    private fun insertCalendarEvent(ctx: Context, p: Parsed, description: String): Long? {
         if (!hasCalendarPermission(ctx)) return null
         return try {
             val calendar = findCalendar(ctx) ?: return null
@@ -385,7 +452,7 @@ object Store {
             val values = ContentValues().apply {
                 put(CalendarContract.Events.CALENDAR_ID, calendar)
                 put(CalendarContract.Events.TITLE, p.title)
-                put(CalendarContract.Events.DESCRIPTION, raw)
+                put(CalendarContract.Events.DESCRIPTION, description)
                 val startMillis: Long
                 val length: Duration
                 if (p.allDay) {
@@ -431,6 +498,7 @@ object EntryJson {
         put("done", e.done)
         e.snooze?.let { put("snooze", it) }
         e.repeat?.let { put("repeatUnit", it.unit.name); put("repeatEvery", it.every) }
+        e.note?.let { put("note", it) }
     }.toString()
 
     fun read(json: String): Entry? = try {
@@ -449,6 +517,7 @@ object EntryJson {
             done = o.optBoolean("done"),
             snooze = long("snooze"),
             repeat = if (o.has("repeatUnit")) Repeat(RepeatUnit.valueOf(o.getString("repeatUnit")), o.getInt("repeatEvery")) else null,
+            note = if (o.has("note")) o.getString("note") else null,
         )
     } catch (e: Exception) {
         null
