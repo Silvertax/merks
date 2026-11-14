@@ -1084,6 +1084,58 @@ class AppSmokeTest {
         assertEquals(note.id, opened.getLongExtra("id", -1))
     }
 
+    // ---------- Past entries ----------
+
+    /** What is over leaves the app by itself, done or not; the calendar keeps the appointments. */
+    @Test fun pastEntriesLeaveTheList() {
+        Prefs.setAskedPermissions(app)
+        val calendar = fakeCalendar()
+        val now = LocalDateTime.now()
+        val today = LocalDate.now()
+        fun save(kind: Kind, title: String, start: LocalDateTime?, end: LocalDateTime? = null, allDay: Boolean = false, repeat: Repeat? = null) =
+            Store.save(app, Parsed(kind, title, start, end, allDay, repeat), title)
+
+        // Over: yesterday, two hours ago (an hour is what an appointment without end takes), a reminder that
+        // rang two hours ago, and something ticked off yesterday.
+        save(Kind.APPOINTMENT, "Arzt gestern", today.minusDays(1).atTime(10, 0))
+        save(Kind.APPOINTMENT, "Vorhin vorbei", now.minusHours(2))
+        save(Kind.REMINDER, "Lange her", now.minusHours(2))
+        Db(app).setDone(save(Kind.REMINDER, "Erledigt und vorbei", today.minusDays(1).atTime(9, 0)).id, true)
+        // Still current: going on now, all day today, a holiday not over yet, a reminder that rang a moment
+        // ago, a series, a note, and something ticked off that is still to come.
+        save(Kind.APPOINTMENT, "Läuft gerade", now.minusMinutes(40))
+        save(Kind.APPOINTMENT, "Lange Sitzung", now.minusHours(2), now.plusHours(1))
+        save(Kind.APPOINTMENT, "Heute ganztags", today.atStartOfDay(), allDay = true)
+        save(Kind.APPOINTMENT, "Urlaub", today.minusDays(2).atStartOfDay(), today.plusDays(2).atStartOfDay(), allDay = true)
+        save(Kind.REMINDER, "Eben geklingelt", now.minusMinutes(20))
+        save(Kind.APPOINTMENT, "Chor", today.minusDays(14).atTime(18, 0), repeat = Repeat(RepeatUnit.WEEK, 1))
+        save(Kind.NOTE, "Geschenkidee", null)
+        Db(app).setDone(save(Kind.REMINDER, "Schon erledigt", now.plusDays(1)).id, true)
+
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+        val shown = (0 until list.adapter.count).map { (list.adapter.getItem(it) as Entry).title }
+        assertEquals(
+            setOf("Läuft gerade", "Lange Sitzung", "Heute ganztags", "Urlaub", "Eben geklingelt", "Chor"),
+            shown.take(6).toSet(),
+        )
+        assertEquals(listOf("Geschenkidee", "Schon erledigt"), shown.drop(6))
+        // Gone from the app for good, but not from the calendar.
+        assertEquals(shown.toSet(), Db(app).all().map { it.title }.toSet())
+        assertTrue(calendar.deleted.isEmpty())
+    }
+
+    /** A reminder that was tidied away: its buttons just take the notification away. */
+    @Test fun buttonsOfATidiedReminderCloseItsNotification() {
+        val e = Store.save(app, Parsed(Kind.REMINDER, "Lange her", LocalDateTime.now().minusHours(2), null, false), "x")
+        Scheduler.notify(app, e)
+        assertEquals(1, notifications.allNotifications.size)
+        assertEquals(1, Store.clearPast(app))
+        assertNull(Db(app).get(e.id))
+        ActionReceiver().onReceive(app, Intent().putExtra("id", e.id).putExtra("minutes", 15))
+        assertTrue(notifications.allNotifications.isEmpty())
+    }
+
     // ---------- Notes that go with an entry ----------
 
     /** Right after an appointment, say what goes with it; it is kept with it, also in the calendar. */

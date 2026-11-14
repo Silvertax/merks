@@ -2,6 +2,16 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.7.1
+
+### What's new
+
+- **Only what is current:** appointments and reminders whose time is over now leave the list by themselves, done or not, so what is still to come is always at the top. An appointment counts as over when it ends (an hour after it starts if no end was said), an all-day one at midnight, a reminder an hour after it rang. Appointments stay in the phone's calendar; notes and series stay in the app.
+
+### Fixed
+
+- The buttons of a reminder notification whose entry is gone now close the notification instead of doing nothing.
+
 ## 0.7.0
 
 ### What's new

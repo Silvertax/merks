@@ -128,12 +128,14 @@ class MainActivity : MerksActivity() {
 
     private fun reload() {
         val now = System.currentTimeMillis()
+        // What is over leaves first; the calendar keeps the appointments.
+        Store.clearPast(this, now)
         val all = Db(this).all()
         val zone = ZoneId.systemDefault()
         // For a series the date that counts is its next one.
         starts = all.associate { it.id to Plan.currentStart(it, now, zone) }
-        // Upcoming things first (soonest on top), then notes, then everything done or passed.
-        upcoming = all.filter { e -> !e.done && (starts[e.id] ?: 0) + DAY > now }.sortedBy { starts[it.id] }
+        // What is still to come first (soonest on top), then notes, then what is ticked off but not over yet.
+        upcoming = all.filter { e -> !e.done && e.start != null }.sortedBy { starts[it.id] }
         entries = upcoming + (all - upcoming.toSet()).sortedBy { it.done }
         adapter.notifyDataSetChanged()
         findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE
@@ -328,9 +330,5 @@ class MainActivity : MerksActivity() {
             v.findViewById<View>(R.id.card).alpha = if (e.done) 0.6f else 1f
             return v
         }
-    }
-
-    private companion object {
-        const val DAY = 24 * 60 * 60 * 1000L
     }
 }

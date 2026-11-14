@@ -104,7 +104,7 @@ class ScreenshotRender {
         Store.save(app, Store.sort(app, series), series)
         Store.save(app, Parsed(Kind.APPOINTMENT, t("Geburtstag von Oma", "Grandma's birthday"), today.plusDays(9).atStartOfDay(), null, true), "x")
         Store.save(app, Parsed(Kind.NOTE, t("Geschenkidee: Fotobuch vom Urlaub", "Gift idea: photo book of the holiday"), null, null, false), "x")
-        val done = Store.save(app, Parsed(Kind.REMINDER, t("Rezept in der Apotheke abholen", "Pick up the prescription"), LocalDateTime.now().minusHours(3), null, false), "x")
+        val done = Store.save(app, Parsed(Kind.REMINDER, t("Rezept in der Apotheke abholen", "Pick up the prescription"), LocalDateTime.now().plusHours(3).withMinute(30), null, false), "x")
         Db(app).setDone(done.id, true)
     }
 

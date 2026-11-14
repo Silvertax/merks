@@ -102,6 +102,20 @@ object Plan {
         }
     }
 
+    /** How long a reminder stays in the list after its time, so one that just rang can still be found. */
+    const val REMINDER_GRACE = 60 * 60 * 1000L
+
+    /**
+     * Whether [e] belongs to the past: a single appointment or reminder whose time is over (a reminder
+     * one hour after it rang), done or not. Notes and series never are.
+     */
+    fun isPast(e: Entry, now: Long, zone: ZoneId): Boolean {
+        if (e.start == null || e.kind == Kind.NOTE || e.repeat != null) return false
+        val t = if (e.kind == Kind.REMINDER) now - REMINDER_GRACE else now
+        if ((e.snooze ?: Long.MIN_VALUE) > t) return false
+        return occurrences(e, zone).none { over(e, it) > t }
+    }
+
     /** The occurrence of [e] that is next or still going on at [now], or null. Notes and done entries have none. */
     fun upcoming(e: Entry, now: Long, zone: ZoneId): Upcoming? {
         if (e.done || e.kind == Kind.NOTE || e.start == null) return null

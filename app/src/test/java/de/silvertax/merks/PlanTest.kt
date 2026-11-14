@@ -4,7 +4,9 @@ import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Repeat
 import de.silvertax.merks.parse.RepeatUnit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -158,5 +160,24 @@ class PlanTest {
         assertEquals(at("2026-11-16T00:00"), Plan.upcoming(e, at("2026-11-18T12:00"), zone)?.start)
         assertEquals(at("2026-11-16T00:00"), Plan.upcoming(e, at("2026-11-20T23:00"), zone)?.start)
         assertNull(Plan.upcoming(e, at("2026-11-21T00:00"), zone))
+    }
+
+    @Test fun whatBelongsToThePast() {
+        val now = at("2026-11-14T15:00")
+        fun past(e: Entry) = Plan.isPast(e, now, zone)
+        // An appointment without end takes an hour; with an end it lasts until then.
+        assertTrue(past(entry(Kind.APPOINTMENT, "2026-11-14T13:00", "2026-11-14T08:00")))
+        assertFalse(past(entry(Kind.APPOINTMENT, "2026-11-14T14:30", "2026-11-14T08:00")))
+        // A reminder stays an hour after it rang, or after its new time when it was put off.
+        assertFalse(past(entry(Kind.REMINDER, "2026-11-14T14:30", "2026-11-14T08:00")))
+        assertTrue(past(entry(Kind.REMINDER, "2026-11-14T13:30", "2026-11-14T08:00")))
+        assertFalse(past(entry(Kind.REMINDER, "2026-11-14T12:00", "2026-11-14T08:00").copy(snooze = at("2026-11-14T14:15"))))
+        // All day lasts until midnight; done changes nothing about the time.
+        assertFalse(past(entry(Kind.APPOINTMENT, "2026-11-14T00:00", "2026-11-14T08:00").copy(allDay = true)))
+        assertTrue(past(entry(Kind.APPOINTMENT, "2026-11-13T00:00", "2026-11-13T08:00").copy(allDay = true, done = true)))
+        assertFalse(past(entry(Kind.APPOINTMENT, "2026-11-15T10:00", "2026-11-14T08:00").copy(done = true)))
+        // A series goes on, a note has no time.
+        assertFalse(past(entry(Kind.APPOINTMENT, "2026-10-01T18:00", "2026-10-01T08:00", repeat = Repeat(RepeatUnit.WEEK, 1))))
+        assertFalse(past(Entry(9, Kind.NOTE, "Notiz", "x", null, null, false, null, at("2026-11-01T08:00"))))
     }
 }

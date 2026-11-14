@@ -172,7 +172,11 @@ class ActionReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getLongExtra("id", -1)
         val db = Db(ctx)
-        val e = db.get(id) ?: return
+        val e = db.get(id) ?: run {
+            // Already gone, e.g. tidied away as past: the notification goes too.
+            Scheduler.dismiss(ctx, id)
+            return
+        }
         val minutes = intent.getIntExtra("minutes", 0)
         if (minutes > 0) {
             db.setSnooze(id, System.currentTimeMillis() + minutes * 60_000L)

@@ -283,6 +283,23 @@ object Store {
     }
 
     /**
+     * Single appointments and reminders whose time is over leave the app by themselves, done or not, so
+     * the list shows only what is still to come. Appointments stay in the phone's calendar: that is
+     * where the past belongs. Notes and series stay.
+     */
+    fun clearPast(ctx: Context, now: Long = System.currentTimeMillis()): Int {
+        val db = Db(ctx)
+        val zone = ZoneId.systemDefault()
+        val past = db.all().filter { Plan.isPast(it, now, zone) }
+        for (e in past) {
+            Scheduler.cancel(ctx, e.id)
+            db.delete(e.id)
+        }
+        if (past.isNotEmpty()) Glance.refresh(ctx)
+        return past.size
+    }
+
+    /**
      * Gives an entry a new date, time or repetition, spoken afterwards. The title stays. A note with a
      * date becomes an appointment; "remind me ..." makes it a reminder. The calendar entry and the
      * reminders move along; the version before is remembered for "Undo".
