@@ -549,7 +549,7 @@ class RecordActivity : MerksActivity() {
         noteFor = null
         status.setText(
             when (how) {
-                Scheduler.Confirm.NEW -> Format.savedLabel(e)
+                Scheduler.Confirm.NEW -> Format.savedLabel(this, e)
                 Scheduler.Confirm.CHANGED -> R.string.changed_label
                 Scheduler.Confirm.NOTED -> R.string.note_added
             },

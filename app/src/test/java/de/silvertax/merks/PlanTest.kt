@@ -20,7 +20,10 @@ class PlanTest {
         done: Boolean = false, snooze: String? = null,
     ) = Entry(1, kind, "x", "x", at(start), null, allDay, null, at(created), done, snooze?.let { at(it) }, repeat)
 
-    private fun next(e: Entry, now: String, eve: Boolean = true): Long? = Plan.nextTrigger(e, at(now), eve, zone)
+    private fun next(e: Entry, now: String, eve: Boolean = true): Long? =
+        Plan.nextTrigger(e, at(now), if (eve) Lead.DEFAULT else setOf(Lead.HOUR), zone)
+
+    private fun next(e: Entry, now: String, leads: Set<Lead>): Long? = Plan.nextTrigger(e, at(now), leads, zone)
 
     @Test fun appointmentEveThenHourBefore() {
         val e = entry(Kind.APPOINTMENT, "2026-11-17T14:30", "2026-11-11T20:00")
@@ -179,5 +182,72 @@ class PlanTest {
         // A series goes on, a note has no time.
         assertFalse(past(entry(Kind.APPOINTMENT, "2026-10-01T18:00", "2026-10-01T08:00", repeat = Repeat(RepeatUnit.WEEK, 1))))
         assertFalse(past(Entry(9, Kind.NOTE, "Notiz", "x", null, null, false, null, at("2026-11-01T08:00"))))
+    }
+
+    // ---------- Chosen reminder times ----------
+
+    @Test fun aDayAndAnHourAhead() {
+        val e = entry(Kind.APPOINTMENT, "2026-11-17T14:30", "2026-11-11T20:00")
+        val leads = setOf(Lead.DAY, Lead.HOUR)
+        assertEquals(at("2026-11-16T14:30"), next(e, "2026-11-11T20:00", leads))
+        assertEquals(at("2026-11-17T13:30"), next(e, "2026-11-16T14:30", leads))
+        assertNull(next(e, "2026-11-17T13:30", leads))
+    }
+
+    @Test fun everyLeadCountsBackFromTheStart() {
+        val e = entry(Kind.APPOINTMENT, "2026-11-25T10:00", "2026-11-11T20:00")
+        val expected = mapOf(
+            Lead.WEEK to "2026-11-18T10:00",
+            Lead.DAY to "2026-11-24T10:00",
+            Lead.EVE to "2026-11-24T18:00",
+            Lead.HOURS_2 to "2026-11-25T08:00",
+            Lead.HOUR to "2026-11-25T09:00",
+            Lead.MIN_30 to "2026-11-25T09:30",
+            Lead.MIN_15 to "2026-11-25T09:45",
+            Lead.START to "2026-11-25T10:00",
+        )
+        assertEquals(Lead.entries.toSet(), expected.keys)
+        for ((lead, time) in expected) assertEquals(lead.name, at(time), next(e, "2026-11-11T20:00", setOf(lead)))
+    }
+
+    @Test fun allDayRemindsInTheMorning() {
+        val e = entry(Kind.APPOINTMENT, "2026-12-03T00:00", "2026-11-11T20:00", allDay = true)
+        assertEquals(at("2026-11-26T08:00"), next(e, "2026-11-11T20:00", setOf(Lead.WEEK)))
+        assertEquals(at("2026-12-02T08:00"), next(e, "2026-11-11T20:00", setOf(Lead.DAY)))
+        // Hours before a whole day would be in the night: the morning of the day instead, once.
+        val hours = setOf(Lead.HOUR, Lead.MIN_15, Lead.START)
+        assertEquals(at("2026-12-03T08:00"), next(e, "2026-11-11T20:00", hours))
+        assertNull(next(e, "2026-12-03T08:00", hours))
+    }
+
+    @Test fun noReminderChosen() {
+        val e = entry(Kind.APPOINTMENT, "2026-11-17T14:30", "2026-11-11T20:00")
+        assertNull(next(e, "2026-11-11T20:00", emptySet()))
+        // A reminder still rings: that is what it is for.
+        val r = entry(Kind.REMINDER, "2026-11-17T14:30", "2026-11-11T20:00")
+        assertEquals(at("2026-11-17T14:30"), next(r, "2026-11-11T20:00", emptySet()))
+    }
+
+    @Test fun shortNoticeWithADayAhead() {
+        // Entered in the morning for the afternoon: a day ahead is over already, an hour ahead is not.
+        val e = entry(Kind.APPOINTMENT, "2026-11-11T16:00", "2026-11-11T09:00")
+        assertEquals(at("2026-11-11T15:00"), next(e, "2026-11-11T09:00", setOf(Lead.DAY, Lead.HOUR)))
+        // Only a day ahead chosen: a quarter of an hour ahead instead, so it is not missed.
+        assertEquals(at("2026-11-11T15:45"), next(e, "2026-11-11T09:00", setOf(Lead.DAY)))
+    }
+
+    @Test fun aDayAheadByTheClockAcrossSummerTime() {
+        // Summer time ends on 25 October 2026: a day before 10:00 on the 26th is 10:00 on the 25th.
+        val e = entry(Kind.APPOINTMENT, "2026-10-26T10:00", "2026-10-20T08:00")
+        assertEquals(at("2026-10-25T10:00"), next(e, "2026-10-20T08:00", setOf(Lead.DAY)))
+    }
+
+    @Test fun leadsAsText() {
+        assertEquals("DAY,HOUR", Lead.write(setOf(Lead.HOUR, Lead.DAY)))
+        assertEquals(setOf(Lead.DAY, Lead.HOUR), Lead.parse("DAY,HOUR"))
+        assertEquals(emptySet<Lead>(), Lead.parse(""))
+        assertNull(Lead.parse(null))
+        // A name this version does not know is skipped.
+        assertEquals(setOf(Lead.HOUR), Lead.parse("HOUR,FORTNIGHT"))
     }
 }

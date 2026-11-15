@@ -2,6 +2,17 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.9.0
+
+### What's new
+
+- **Merk's as the calendar:** a new switch in the settings, for anyone who uses Merk's instead of the phone's calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it right away, so the calendar app does not remind you as well; switched off again, they can go back in.
+- **Choose when appointments remind you:** a week, a day or two hours ahead, the evening before at 6 pm, an hour, 30 or 15 minutes ahead, when it starts, or several of these (Settings → Remind me of appointments). Out of the box it stays the evening before and an hour ahead; all-day appointments remind at 8 in the morning.
+
+### Changed
+
+- The reminder for an appointment has "OK" instead of "Done": it puts away only this notification, so a tap a day ahead no longer cancels the reminder an hour ahead, and the appointment stays under "Up next" until it is over.
+
 ## 0.8.0
 
 ### What's new

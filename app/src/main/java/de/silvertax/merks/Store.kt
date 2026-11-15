@@ -158,8 +158,15 @@ object Prefs {
     fun setOled(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("oled", on).apply()
 
     /** Extra notification at 18:00 on the day before an appointment. */
-    fun eveBefore(ctx: Context): Boolean = p(ctx).getBoolean("eve_before", true)
-    fun setEveBefore(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("eve_before", on).apply()
+    /** When appointments remind. Until chosen, what the former "evening before" switch said. */
+    fun leads(ctx: Context): Set<Lead> = Lead.parse(p(ctx).getString("leads", null))
+        ?: if (p(ctx).getBoolean("eve_before", true)) Lead.DEFAULT else setOf(Lead.HOUR)
+
+    fun setLeads(ctx: Context, leads: Set<Lead>) = p(ctx).edit().putString("leads", Lead.write(leads)).apply()
+
+    /** "Merk's als Kalender": appointments stay in the app, the phone's calendar gets none. */
+    fun ownCalendar(ctx: Context): Boolean = p(ctx).getBoolean("own_calendar", false)
+    fun setOwnCalendar(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("own_calendar", on).apply()
 
     /** "" follows the phone, otherwise "de" or "en". */
     fun lang(ctx: Context): String = p(ctx).getString("lang", "")!!
@@ -297,8 +304,8 @@ object Store {
 
     /**
      * Single appointments and reminders whose time is over leave the app by themselves, done or not, so
-     * the list shows only what is still to come. Appointments stay in the phone's calendar: that is
-     * where the past belongs. Notes and series stay.
+     * the list shows only what is still to come. Appointments stay in the phone's calendar, if they went
+     * there: that is where the past belongs. Notes and series stay.
      */
     fun clearPast(ctx: Context, now: Long = System.currentTimeMillis()): Int {
         val db = Db(ctx)
@@ -403,13 +410,8 @@ object Store {
     private fun rewrite(ctx: Context, current: Entry, target: Entry): Entry {
         Scheduler.cancel(ctx, current.id)
         deleteCalendarEvent(ctx, current.calendarEventId)
-        val zone = ZoneId.systemDefault()
-        fun local(ms: Long?) = ms?.let { LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), zone) }
         val calId = if (target.kind == Kind.APPOINTMENT && target.start != null) {
-            insertCalendarEvent(
-                ctx, Parsed(target.kind, target.title, local(target.start), local(target.end), target.allDay, target.repeat),
-                description(target.raw, target.note),
-            )
+            insertCalendarEvent(ctx, parsed(target), description(target.raw, target.note))
         } else {
             null
         }
@@ -418,6 +420,48 @@ object Store {
         Scheduler.schedule(ctx, saved)
         Glance.refresh(ctx)
         return saved
+    }
+
+    private fun parsed(e: Entry): Parsed {
+        val zone = ZoneId.systemDefault()
+        fun local(ms: Long?) = ms?.let { LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(it), zone) }
+        return Parsed(e.kind, e.title, local(e.start), local(e.end), e.allDay, e.repeat)
+    }
+
+    /** How many entries Merk's has put into the phone's calendar. */
+    fun inCalendar(ctx: Context): Int = Db(ctx).all().count { it.calendarEventId != null }
+
+    /** How many appointments are only in the app, e.g. from the time Merk's was the calendar. */
+    fun onlyInApp(ctx: Context): Int = Db(ctx).all().count { it.kind == Kind.APPOINTMENT && it.start != null && it.calendarEventId == null }
+
+    /**
+     * Takes what Merk's put into the phone's calendar out of it again, when Merk's becomes the calendar:
+     * otherwise the calendar app would remind as well. In the app everything stays as it was.
+     */
+    fun leaveCalendar(ctx: Context): Int {
+        if (!hasCalendarPermission(ctx)) return 0
+        val db = Db(ctx)
+        var n = 0
+        for (e in db.all()) {
+            val id = e.calendarEventId ?: continue
+            deleteCalendarEvent(ctx, id)
+            db.replace(e.copy(calendarEventId = null))
+            n++
+        }
+        return n
+    }
+
+    /** Puts the appointments that are only in the app into the phone's calendar, as when they were entered. */
+    fun joinCalendar(ctx: Context): Int {
+        val db = Db(ctx)
+        var n = 0
+        for (e in db.all()) {
+            if (e.kind != Kind.APPOINTMENT || e.start == null || e.calendarEventId != null) continue
+            val calId = insertCalendarEvent(ctx, parsed(e), description(e.raw, e.note)) ?: continue
+            db.replace(e.copy(calendarEventId = calId))
+            n++
+        }
+        return n
     }
 
     /** What the calendar entry says below its title: the note first, then what was said. */
@@ -475,7 +519,7 @@ object Store {
     }
 
     private fun insertCalendarEvent(ctx: Context, p: Parsed, description: String): Long? {
-        if (!hasCalendarPermission(ctx)) return null
+        if (Prefs.ownCalendar(ctx) || !hasCalendarPermission(ctx)) return null
         return try {
             val calendar = findCalendar(ctx) ?: return null
             val start = p.start!!

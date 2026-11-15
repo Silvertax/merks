@@ -1,5 +1,7 @@
 package de.silvertax.merks
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Button
@@ -24,7 +26,7 @@ import java.time.ZoneId
 import java.util.Locale
 import kotlin.math.abs
 
-/** Settings: recording style, reminders, update check, and the optional AI sorting with its status. */
+/** Settings: look, recording, calendar and reminders, update check, and the optional AI sorting with its status. */
 class SettingsActivity : MerksActivity() {
     private lateinit var root: View
     private lateinit var key: EditText
@@ -70,11 +72,9 @@ class SettingsActivity : MerksActivity() {
         switchRow(R.id.row_compact, R.id.compact, Prefs.compact(this)) { on -> Prefs.setCompact(this, on) }
         findViewById<TextView>(R.id.pause_value).text = pauseName(Prefs.speechPauseChoice(this))
         findViewById<View>(R.id.row_pause).setOnClickListener { choosePause() }
-        switchRow(R.id.row_eve, R.id.eve_before, Prefs.eveBefore(this)) { on ->
-            Prefs.setEveBefore(this, on)
-            // Existing entries follow the switch right away.
-            Thread { Scheduler.rescheduleAll(applicationContext) }.start()
-        }
+        switchRow(R.id.row_own_calendar, R.id.own_calendar, Prefs.ownCalendar(this)) { on -> ownCalendarChanged(on) }
+        showLeads()
+        findViewById<View>(R.id.row_leads).setOnClickListener { chooseLeads() }
         switchRow(R.id.row_next_up, R.id.next_up, Prefs.nextUpNotification(this)) { on ->
             Prefs.setNextUpNotification(this, on)
             Glance.refresh(this)
@@ -299,6 +299,102 @@ class SettingsActivity : MerksActivity() {
             .show()
     }
 
+    private fun leadName(lead: Lead): String = getString(
+        when (lead) {
+            Lead.WEEK -> R.string.lead_week
+            Lead.DAY -> R.string.lead_day
+            Lead.EVE -> R.string.lead_eve
+            Lead.HOURS_2 -> R.string.lead_hours_2
+            Lead.HOUR -> R.string.lead_hour
+            Lead.MIN_30 -> R.string.lead_min_30
+            Lead.MIN_15 -> R.string.lead_min_15
+            Lead.START -> R.string.lead_start
+        },
+    )
+
+    private fun showLeads() {
+        val leads = Prefs.leads(this)
+        findViewById<TextView>(R.id.leads_value).text = if (leads.isEmpty()) {
+            getString(R.string.leads_none)
+        } else {
+            Lead.entries.filter { it in leads }.joinToString(", ") { leadName(it) }.replaceFirstChar { it.uppercase() }
+        }
+    }
+
+    /** Any number of times before an appointment, e.g. a day and an hour ahead. Existing entries follow right away. */
+    private fun chooseLeads() {
+        val all = Lead.entries
+        val checked = all.map { it in Prefs.leads(this) }.toBooleanArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_leads)
+            .setMultiChoiceItems(all.map { leadName(it).replaceFirstChar { c -> c.uppercase() } }.toTypedArray(), checked) { _, which, on ->
+                checked[which] = on
+            }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                Prefs.setLeads(this, all.filterIndexed { i, _ -> checked[i] }.toSet())
+                showLeads()
+                Thread { Scheduler.rescheduleAll(applicationContext) }.start()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Merk's as the calendar: new appointments stay in the app. What is already in the phone's calendar
+     * can go, or the calendar app may remind as well. Switched off again, the appointments that are
+     * only in the app can go into the calendar.
+     */
+    private fun ownCalendarChanged(on: Boolean) {
+        Prefs.setOwnCalendar(this, on)
+        if (!on) {
+            if (Store.hasCalendarPermission(this)) offerJoining() else askCalendar()
+            return
+        }
+        val n = Store.inCalendar(this)
+        if (n == 0 || !Store.hasCalendarPermission(this)) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.own_calendar_leave_title)
+            .setMessage(resources.getQuantityString(R.plurals.own_calendar_leave_text, n, n))
+            .setPositiveButton(R.string.own_calendar_leave_yes) { _, _ -> calendarWork(R.plurals.own_calendar_left) { Store.leaveCalendar(it) } }
+            .setNegativeButton(R.string.own_calendar_leave_no, null)
+            .show()
+    }
+
+    private fun offerJoining() {
+        val n = Store.onlyInApp(this)
+        if (n == 0) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.own_calendar_join_title)
+            .setMessage(resources.getQuantityString(R.plurals.own_calendar_join_text, n, n))
+            .setPositiveButton(R.string.own_calendar_join_yes) { _, _ -> calendarWork(R.plurals.own_calendar_joined) { Store.joinCalendar(it) } }
+            .setNegativeButton(R.string.not_now, null)
+            .show()
+    }
+
+    private fun askCalendar() =
+        requestPermissions(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR), CALENDAR_REQUEST)
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != CALENDAR_REQUEST) return
+        if (Store.hasCalendarPermission(this)) {
+            offerJoining()
+        } else {
+            Toast.makeText(this, R.string.calendar_permission_needed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /** Calendar work away from the screen, then how many appointments it was. */
+    private fun calendarWork(done: Int, work: (Context) -> Int) {
+        val app = applicationContext
+        Thread {
+            val n = work(app)
+            runOnUiThread {
+                if (!isDestroyed && n > 0) Toast.makeText(this, resources.getQuantityString(done, n, n), Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
     /** A setting with a switch; the whole row can be tapped, which is easier than hitting the switch. */
     private fun switchRow(row: Int, switch: Int, value: Boolean, changed: (Boolean) -> Unit) {
         val s = findViewById<CompoundButton>(switch)
@@ -484,6 +580,6 @@ class SettingsActivity : MerksActivity() {
     }
 
     private companion object {
-
+        const val CALENDAR_REQUEST = 7
     }
 }

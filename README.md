@@ -2,7 +2,7 @@
 
 Tap once, say it, done. Merk's is an Android app for people who do not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time. A letter or an appointment card can simply be photographed. Merk's speaks English and German.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, or stay in Merk's if it is your calendar, and the app reminds you in time. A letter or an appointment card can simply be photographed. Merk's speaks English and German.
 
 <p>
   <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next widget, speaking via the widget">
@@ -44,11 +44,15 @@ Repeating things work too: "Every Monday take out the trash", "Every weekday at 
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
-Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
+Reminders come on time. For appointments you choose when (Settings → Remind me of appointments): a week, a day or two hours ahead, the evening before at 6 pm, an hour, 30 or 15 minutes ahead, when it starts, or several of these. Out of the box it is the evening before and an hour ahead; all-day appointments remind at 8 in the morning. Each reminder has "In 15 min" and "In 1 hr" buttons, and "Done" for a reminder or "OK" for an appointment: "OK" puts away only this notification, so the reminders still to come for the appointment come all the same.
+
+## Merk's as the calendar
+
+For anyone who keeps their appointments in Merk's and never opens the phone's calendar: switch on Settings → Merk's as the calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merk's can go into the calendar.
 
 The "Speak" and "Photo" widgets can be resized from 2x2 down to 1x1. Another widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers all three.
 
-The list shows only what is current: what is still to come at the top, soonest first, then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+The list shows only what is current: what is still to come at the top, soonest first, then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
 

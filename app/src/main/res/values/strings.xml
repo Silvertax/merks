@@ -118,10 +118,9 @@
     <string name="settings_updates">Check for updates now</string>
     <string name="settings_updates_hint">Asks GitHub for the latest version, only when you tap the button. If there is a newer one, “Update now” downloads and installs it. No personal data is sent.</string>
 
-    <string name="settings_eve">Remind the evening before</string>
-    <string name="settings_eve_hint">Appointments also notify you at 6 pm on the day before.</string>
 
     <string name="action_done">Done</string>
+    <string name="action_seen">OK</string>
     <string name="action_snooze_15">In 15 min</string>
     <string name="action_snooze_60">In 1 hr</string>
     <string name="mark_open">Open again</string>
@@ -230,10 +229,51 @@
     <string name="read_from_photo">Read from a photo: “%1$s”</string>
     <plurals name="photo_found">
         <item quantity="one">Here is what I found. Please check:</item>
-        <item quantity="other">Found %d dates. The ticked ones go into the calendar:</item>
+        <item quantity="other">Found %d dates. The ticked ones will be saved:</item>
     </plurals>
     <plurals name="photo_saved">
         <item quantity="one">%d appointment added</item>
         <item quantity="other">%d appointments added</item>
+    </plurals>
+
+    <!-- Merk's as the calendar, and when appointments remind -->
+    <string name="section_calendar">Calendar</string>
+    <string name="settings_own_calendar">Merk\'s as the calendar</string>
+    <string name="settings_own_calendar_hint">Appointments don\'t go into the phone\'s calendar. They stay in Merk\'s only, and Merk\'s reminds you of them.</string>
+    <string name="settings_leads">Remind me of appointments</string>
+    <string name="settings_leads_hint">All-day appointments notify you at 8 in the morning.</string>
+    <string name="lead_week">1 week before</string>
+    <string name="lead_day">1 day before</string>
+    <string name="lead_eve">the evening before at 6 pm</string>
+    <string name="lead_hours_2">2 hours before</string>
+    <string name="lead_hour">1 hour before</string>
+    <string name="lead_min_30">30 minutes before</string>
+    <string name="lead_min_15">15 minutes before</string>
+    <string name="lead_start">when it starts</string>
+    <string name="leads_none">No reminder</string>
+    <string name="own_calendar_leave_title">Take them out of the calendar?</string>
+    <string name="own_calendar_leave_yes">Take them out</string>
+    <string name="own_calendar_leave_no">Leave them there</string>
+    <string name="own_calendar_join_title">Add them to the calendar?</string>
+    <string name="own_calendar_join_yes">Add</string>
+    <string name="not_now">Not now</string>
+    <string name="calendar_permission_needed">Without access to the calendar, appointments stay in Merk\'s only.</string>
+    <string name="saved_appointment_own">Appointment saved</string>
+    <string name="photo_save_own">Save</string>
+    <plurals name="own_calendar_leave_text">
+        <item quantity="one">Merk\'s has put %d appointment into the phone\'s calendar. Take it out there? Otherwise the calendar may remind you as well. It stays in Merk\'s.</item>
+        <item quantity="other">Merk\'s has put %d appointments into the phone\'s calendar. Take them out there? Otherwise the calendar may remind you as well. They stay in Merk\'s.</item>
+    </plurals>
+    <plurals name="own_calendar_left">
+        <item quantity="one">%d appointment taken out of the calendar</item>
+        <item quantity="other">%d appointments taken out of the calendar</item>
+    </plurals>
+    <plurals name="own_calendar_join_text">
+        <item quantity="one">%d appointment is only in Merk\'s. Add it to the phone\'s calendar now?</item>
+        <item quantity="other">%d appointments are only in Merk\'s. Add them to the phone\'s calendar now?</item>
+    </plurals>
+    <plurals name="own_calendar_joined">
+        <item quantity="one">%d appointment added to the calendar</item>
+        <item quantity="other">%d appointments added to the calendar</item>
     </plurals>
 </resources>

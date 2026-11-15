@@ -211,7 +211,7 @@ class PhotoFlowTest {
         val treatments = "Physiotherapie Lößnitz\nIhre Termine\n" +
             listOf(a, b, c).joinToString("\n") { it.format(dotted) + " 08:15 Uhr" }
         val activity = photograph(Parts(first = treatments))
-        assertEquals("3 Termine gefunden. Was angehakt ist, kommt in den Kalender:", activity.findViewById<TextView>(R.id.review_label).text.toString())
+        assertEquals("3 Termine gefunden. Was angehakt ist, wird eingetragen:", activity.findViewById<TextView>(R.id.review_label).text.toString())
         assertEquals(3, rows(activity).childCount)
         val second = row(activity, 1).findViewById<CheckBox>(R.id.date_pick)
         assertEquals(View.VISIBLE, second.visibility)

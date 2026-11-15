@@ -116,10 +116,9 @@
     <string name="settings_updates">Jetzt nach Updates suchen</string>
     <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version, nur wenn du auf den Knopf tippst. Gibt es eine neuere, lädt „Jetzt aktualisieren“ sie herunter und installiert sie. Dabei werden keine persönlichen Daten gesendet.</string>
 
-    <string name="settings_eve">Am Vorabend erinnern</string>
-    <string name="settings_eve_hint">Termine melden sich zusätzlich am Tag davor um 18 Uhr.</string>
 
     <string name="action_done">Erledigt</string>
+    <string name="action_seen">OK</string>
     <string name="action_snooze_15">In 15 Min.</string>
     <string name="action_snooze_60">In 1 Std.</string>
     <string name="mark_open">Wieder offen</string>
@@ -225,10 +224,51 @@
     <string name="read_from_photo">Vom Foto gelesen: „%1$s“</string>
     <plurals name="photo_found">
         <item quantity="one">Das habe ich gefunden. Bitte kurz prüfen:</item>
-        <item quantity="other">%d Termine gefunden. Was angehakt ist, kommt in den Kalender:</item>
+        <item quantity="other">%d Termine gefunden. Was angehakt ist, wird eingetragen:</item>
     </plurals>
     <plurals name="photo_saved">
         <item quantity="one">%d Termin eingetragen</item>
         <item quantity="other">%d Termine eingetragen</item>
+    </plurals>
+
+    <!-- Merk's as the calendar, and when appointments remind -->
+    <string name="section_calendar">Kalender</string>
+    <string name="settings_own_calendar">Merk\'s als Kalender</string>
+    <string name="settings_own_calendar_hint">Termine kommen nicht in den Kalender des Handys. Sie stehen nur in Merk\'s, und Merk\'s erinnert daran.</string>
+    <string name="settings_leads">Erinnern an Termine</string>
+    <string name="settings_leads_hint">Ganztägige Termine melden sich um 8 Uhr morgens.</string>
+    <string name="lead_week">1 Woche vorher</string>
+    <string name="lead_day">1 Tag vorher</string>
+    <string name="lead_eve">am Vorabend um 18 Uhr</string>
+    <string name="lead_hours_2">2 Stunden vorher</string>
+    <string name="lead_hour">1 Stunde vorher</string>
+    <string name="lead_min_30">30 Minuten vorher</string>
+    <string name="lead_min_15">15 Minuten vorher</string>
+    <string name="lead_start">zu Beginn</string>
+    <string name="leads_none">Keine Erinnerung</string>
+    <string name="own_calendar_leave_title">Aus dem Kalender nehmen?</string>
+    <string name="own_calendar_leave_yes">Aus dem Kalender nehmen</string>
+    <string name="own_calendar_leave_no">Im Kalender lassen</string>
+    <string name="own_calendar_join_title">In den Kalender eintragen?</string>
+    <string name="own_calendar_join_yes">Eintragen</string>
+    <string name="not_now">Nicht jetzt</string>
+    <string name="calendar_permission_needed">Ohne Zugriff auf den Kalender bleiben die Termine nur in Merk\'s.</string>
+    <string name="saved_appointment_own">Termin gemerkt</string>
+    <string name="photo_save_own">Eintragen</string>
+    <plurals name="own_calendar_leave_text">
+        <item quantity="one">Merk\'s hat %d Termin in den Kalender des Handys eingetragen. Soll er dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merk\'s bleibt er.</item>
+        <item quantity="other">Merk\'s hat %d Termine in den Kalender des Handys eingetragen. Sollen sie dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merk\'s bleiben sie.</item>
+    </plurals>
+    <plurals name="own_calendar_left">
+        <item quantity="one">%d Termin aus dem Kalender genommen</item>
+        <item quantity="other">%d Termine aus dem Kalender genommen</item>
+    </plurals>
+    <plurals name="own_calendar_join_text">
+        <item quantity="one">%d Termin steht nur in Merk\'s. Soll er jetzt auch in den Kalender des Handys?</item>
+        <item quantity="other">%d Termine stehen nur in Merk\'s. Sollen sie jetzt auch in den Kalender des Handys?</item>
+    </plurals>
+    <plurals name="own_calendar_joined">
+        <item quantity="one">%d Termin in den Kalender eingetragen</item>
+        <item quantity="other">%d Termine in den Kalender eingetragen</item>
     </plurals>
 </resources>

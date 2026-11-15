@@ -17,6 +17,7 @@ object Scheduler {
     private const val CHANNEL = "reminders"
     private const val CONFIRM_CHANNEL = "confirm"
     const val ACTION_DONE = "de.silvertax.merks.DONE"
+    const val ACTION_SEEN = "de.silvertax.merks.SEEN"
     const val ACTION_SNOOZE = "de.silvertax.merks.SNOOZE"
 
     private const val FLAGS = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -28,7 +29,7 @@ object Scheduler {
     fun schedule(ctx: Context, e: Entry) {
         val am = ctx.getSystemService(AlarmManager::class.java)
         val pi = pending(ctx, e.id)
-        val at = Plan.nextTrigger(e, System.currentTimeMillis(), Prefs.eveBefore(ctx), ZoneId.systemDefault())
+        val at = Plan.nextTrigger(e, System.currentTimeMillis(), Prefs.leads(ctx), ZoneId.systemDefault())
         if (at == null) {
             am.cancel(pi)
             return
@@ -67,7 +68,10 @@ object Scheduler {
         ).build()
     }
 
-    /** The reminder itself, with "Erledigt" and two "later" buttons. */
+    /**
+     * The reminder itself, with "Erledigt" and two "later" buttons. An appointment gets "OK" instead: it
+     * is not done before it took place, and "OK" a day ahead must not cancel the reminder an hour ahead.
+     */
     fun notify(ctx: Context, e: Entry) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val texts = Lang.context(ctx)
@@ -89,7 +93,10 @@ object Scheduler {
             .setCategory(Notification.CATEGORY_REMINDER)
             .setContentIntent(open)
             .setAutoCancel(true)
-            .addAction(action(ctx, e, ACTION_DONE, 0, R.string.action_done))
+            .addAction(
+                if (e.kind == Kind.APPOINTMENT) action(ctx, e, ACTION_SEEN, 0, R.string.action_seen)
+                else action(ctx, e, ACTION_DONE, 0, R.string.action_done),
+            )
             .addAction(action(ctx, e, ACTION_SNOOZE, 15, R.string.action_snooze_15))
             .addAction(action(ctx, e, ACTION_SNOOZE, 60, R.string.action_snooze_60))
             .build()
@@ -134,7 +141,7 @@ object Scheduler {
         )
         val text = if (how == Confirm.NOTED) e.title + ": " + Store.tidyNote(added.orEmpty()) else Format.oneLine(ctx, e)
         val title = when (how) {
-            Confirm.NEW -> Format.savedLabel(e)
+            Confirm.NEW -> Format.savedLabel(ctx, e)
             Confirm.CHANGED -> R.string.changed_label
             Confirm.NOTED -> R.string.note_added
         }
@@ -161,13 +168,13 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val e = Db(ctx).get(intent.getLongExtra("id", -1)) ?: return
         if (!e.done) Scheduler.notify(ctx, e)
-        // Line up the next one: the hour-before after the evening-before, or the next date of a series.
+        // Line up the next one: e.g. the hour before after the evening before, or the next date of a series.
         Scheduler.schedule(ctx, e)
         Glance.refresh(ctx)
     }
 }
 
-/** "Erledigt" and "Später erinnern" on the reminder notification. */
+/** "Erledigt", "OK" and "Später erinnern" on the reminder notification. */
 class ActionReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getLongExtra("id", -1)
@@ -178,12 +185,15 @@ class ActionReceiver : BroadcastReceiver() {
             return
         }
         val minutes = intent.getIntExtra("minutes", 0)
-        if (minutes > 0) {
-            db.setSnooze(id, System.currentTimeMillis() + minutes * 60_000L)
-        } else {
-            db.setSnooze(id, null)
-            // A series goes on; "Erledigt" only settles this one date.
-            if (e.repeat == null) db.setDone(id, true)
+        when {
+            minutes > 0 -> db.setSnooze(id, System.currentTimeMillis() + minutes * 60_000L)
+            // Only this notification goes; the reminders still to come for the appointment stay.
+            intent.action == Scheduler.ACTION_SEEN -> db.setSnooze(id, null)
+            else -> {
+                db.setSnooze(id, null)
+                // A series goes on; "Erledigt" only settles this one date.
+                if (e.repeat == null) db.setDone(id, true)
+            }
         }
         Scheduler.dismiss(ctx, id)
         db.get(id)?.let { Scheduler.schedule(ctx, it) }

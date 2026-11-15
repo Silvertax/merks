@@ -26,9 +26,39 @@ data class Entry(
     val note: String? = null,
 )
 
+/**
+ * When an appointment reminds before it starts; any number of them can be chosen. A whole-day
+ * appointment has no hour to count back from: it reminds at 8 in the morning instead, on the day
+ * itself or on the day (or week) before.
+ */
+enum class Lead(val minutes: Long) {
+    WEEK(7 * 24 * 60L),
+    DAY(24 * 60L),
+
+    /** The evening before at 6 pm, whatever time the appointment is. */
+    EVE(0),
+    HOURS_2(120),
+    HOUR(60),
+    MIN_30(30),
+    MIN_15(15),
+    START(0),
+    ;
+
+    companion object {
+        /** What it was before there was a choice: the evening before, and an hour ahead. */
+        val DEFAULT = setOf(EVE, HOUR)
+
+        fun parse(text: String?): Set<Lead>? =
+            text?.split(',')?.mapNotNull { name -> entries.firstOrNull { it.name == name.trim() } }?.toSet()
+
+        fun write(leads: Set<Lead>): String = leads.sortedBy { it.ordinal }.joinToString(",") { it.name }
+    }
+}
+
 /** Works out when an entry happens next and when to notify. Pure Kotlin so it can be unit-tested. */
 object Plan {
-    private const val HOUR = 60 * 60 * 1000L
+    private const val MINUTE = 60 * 1000L
+    private const val HOUR = 60 * MINUTE
     private const val MAX_OCCURRENCES = 20000
 
     private fun occurrences(e: Entry, zone: ZoneId): Sequence<ZonedDateTime> {
@@ -52,27 +82,37 @@ object Plan {
         }
     }
 
-    /** Notification times for one occurrence. */
-    private fun alerts(e: Entry, occ: ZonedDateTime, eveBefore: Boolean): List<Long> {
+    /** Notification times for one occurrence of an appointment, with the chosen [leads]; a reminder rings on time. */
+    private fun alerts(e: Entry, occ: ZonedDateTime, leads: Set<Lead>): List<Long> {
         val at = occ.toInstant().toEpochMilli()
         if (e.kind == Kind.NOTE) return emptyList()
         if (e.kind == Kind.REMINDER) return listOf(at)
-        val eve = occ.toLocalDate().minusDays(1).atTime(18, 0).atZone(occ.zone).toInstant().toEpochMilli()
-        val main = when {
-            e.allDay -> occ.toLocalDate().atTime(8, 0).atZone(occ.zone).toInstant().toEpochMilli()
-            // One hour ahead; a quarter of an hour when it was entered later than that.
-            at - HOUR > e.created -> at - HOUR
-            else -> at - HOUR / 4
-        }
-        return if (eveBefore) listOf(eve, main) else listOf(main)
+        if (leads.isEmpty()) return emptyList()
+        val day = occ.toLocalDate()
+        fun morning(d: LocalDate, hour: Int = 8) = d.atTime(hour, 0).atZone(occ.zone).toInstant().toEpochMilli()
+        val times = leads.map { lead ->
+            when {
+                lead == Lead.EVE -> morning(day.minusDays(1), 18)
+                e.allDay && lead == Lead.WEEK -> morning(day.minusWeeks(1))
+                e.allDay && lead == Lead.DAY -> morning(day.minusDays(1))
+                e.allDay -> morning(day)
+                // By the clock on the wall, also across a change to or from summer time.
+                lead == Lead.WEEK -> occ.minusWeeks(1).toInstant().toEpochMilli()
+                lead == Lead.DAY -> occ.minusDays(1).toInstant().toEpochMilli()
+                else -> at - lead.minutes * MINUTE
+            }
+        }.distinct()
+        // Entered at short notice: what would have been before that is left out, and when nothing is
+        // left, a quarter of an hour ahead (a whole day: its morning).
+        return times.filter { it > e.created }.ifEmpty { listOf(if (e.allDay) morning(day) else at - HOUR / 4) }
     }
 
     /** The next moment to notify, or null when nothing is left. */
-    fun nextTrigger(e: Entry, now: Long, eveBefore: Boolean, zone: ZoneId): Long? {
+    fun nextTrigger(e: Entry, now: Long, leads: Set<Lead>, zone: ZoneId): Long? {
         if (e.done) return null
         val snooze = e.snooze?.takeIf { it > now }
         for (occ in occurrences(e, zone)) {
-            val next = alerts(e, occ, eveBefore).filter { it > now }.minOrNull() ?: continue
+            val next = alerts(e, occ, leads).filter { it > now }.minOrNull() ?: continue
             return if (snooze != null && snooze < next) snooze else next
         }
         return snooze

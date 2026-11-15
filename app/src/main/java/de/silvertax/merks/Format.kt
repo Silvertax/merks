@@ -191,10 +191,12 @@ object Format {
 
     fun stamp(ctx: Context, millis: Long): String = zoned(millis).let { shortDate(ctx, it) + ", " + time(ctx, it) }
 
-    fun savedLabel(e: Entry): Int = when {
+    fun savedLabel(ctx: Context, e: Entry): Int = when {
         e.kind == Kind.REMINDER -> R.string.saved_reminder
         e.kind == Kind.NOTE -> R.string.saved_note
         e.calendarEventId != null -> R.string.saved_appointment
+        // Not in the calendar on purpose: nothing to point out.
+        Prefs.ownCalendar(ctx) -> R.string.saved_appointment_own
         else -> R.string.saved_appointment_local
     }
 }

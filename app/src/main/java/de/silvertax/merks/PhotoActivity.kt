@@ -110,7 +110,11 @@ class PhotoActivity : MerksActivity() {
         showText.setOnClickListener { showRead() }
         findViewById<View>(R.id.review_show_text).setOnClickListener { showRead() }
         undo.setOnClickListener { undoAll() }
-        findViewById<View>(R.id.save).setOnClickListener { saveAll() }
+        findViewById<Button>(R.id.save).apply {
+            // With Merk's as the calendar, nothing goes into the phone's calendar.
+            if (Prefs.ownCalendar(this@PhotoActivity)) setText(R.string.photo_save_own)
+            setOnClickListener { saveAll() }
+        }
 
         // After a rebuild an open picker has lost who listens to it.
         (supportFragmentManager.findFragmentByTag(DAY) as? MaterialDatePicker<*>)?.let { listenTo(it) }
@@ -209,7 +213,7 @@ class PhotoActivity : MerksActivity() {
             PhotoModel.Stage.SAVED -> {
                 val entries = model.saved.mapNotNull { Db(this).get(it) }
                 status.text = when {
-                    entries.size == 1 -> getString(Format.savedLabel(entries[0]))
+                    entries.size == 1 -> getString(Format.savedLabel(this, entries[0]))
                     else -> resources.getQuantityString(R.plurals.photo_saved, entries.size, entries.size)
                 }
                 detail.text = (listOfNotNull(entries.firstOrNull()?.title) + entries.map { Format.whenText(this, it) }).joinToString("\n")

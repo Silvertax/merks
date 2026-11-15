@@ -635,8 +635,8 @@ class AppSmokeTest {
         Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", start, null, false), "x")
         assertEquals(millis(start.toLocalDate().minusDays(1).atTime(18, 0)), alarms.peekNextScheduledAlarm()!!.triggerAtMs)
 
-        // Switching the evening reminder off moves the alarm; after a reboot it is set again the same way.
-        Prefs.setEveBefore(app, false)
+        // Without the evening before, the alarm moves; after a reboot it is set again the same way.
+        Prefs.setLeads(app, setOf(Lead.HOUR))
         BootReceiver().onReceive(app, Intent(Intent.ACTION_BOOT_COMPLETED))
         assertEquals(1, alarms.scheduledAlarms.size)
         assertEquals(millis(start.minusHours(1)), alarms.peekNextScheduledAlarm()!!.triggerAtMs)
