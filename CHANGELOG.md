@@ -2,6 +2,19 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.8.0
+
+### What's new
+
+- **Appointments from a photo:** tap "Snap an appointment" in the app, or the new "Photo" widget, and photograph a letter or an appointment card. Merk's reads the date, the time and what it is about, and shows it to check and change before it goes into the calendar, with a note such as what to bring. A card with several treatments gives several appointments to tick; if no date was found, you can pick it yourself. The letter's own date, birthdays and dates that are over are left out.
+- **With and without AI:** without an AI key, the phone reads the photo itself; that works well for printed text. With an AI key, the AI reads it, handwriting included. Without internet, the phone takes over.
+- **The photo is not kept:** it is deleted as soon as it has been read. Only the line the date came from stays with the entry ("Read from a photo: …").
+- "Put on the home screen" now offers the "Photo" button as well.
+
+### Good to know
+
+- The app is bigger now, about 14 MB instead of 5 MB: the reading on the phone needs its recognition data for German and English.
+
 ## 0.7.1
 
 ### What's new

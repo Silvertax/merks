@@ -2,11 +2,12 @@
 
 Tap once, say it, done. Merk's is an Android app for people who do not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time. Merk's speaks English and German.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time. A letter or an appointment card can simply be photographed. Merk's speaks English and German.
 
 <p>
   <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next widget, speaking via the widget">
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries">
+  <img src="docs/screenshots/en-photo.png" width="200" alt="Appointments read from a photo, to check before they go into the calendar">
   <img src="docs/screenshots/en-changed.png" width="200" alt="Date changed by voice">
   <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings">
 </p>
@@ -29,13 +30,23 @@ Forgot the date, or said the wrong time? Tap "Change" on the confirmation, or ta
 
 Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by typing": there you correct the text and the note, and pick the day and time.
 
+## Appointments from a photo
+
+Got a letter or an appointment card? Tap "Snap an appointment" in the app or the "Photo" widget, and take a photo of it. Merk's reads the date, the time and what it is about, and shows it to check: change the title, the day or the time, and add a note, then "Add to calendar". A card with several treatments gives several appointments; untick the ones you don't want. The letter's own date, birthdays and dates that are over are left out. If no date was found, you can pick it yourself.
+
+The photo is not kept: it is deleted as soon as it has been read, and it never lands in your gallery from Merk's. Only the line the date came from stays with the entry, so you can see later where it was read.
+
+Without an AI key, the phone reads the photo itself (Tesseract, built in). That works well for printed text; handwriting it can hardly read. With an AI key, the AI reads the photo, handwriting included; without internet, the phone reads it itself.
+
+## More
+
 Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
 Reminders come on time, appointments one hour ahead and, if you like, also the evening before. Each reminder has "Done", "In 15 min" and "In 1 hr" buttons.
 
-The widget can be resized from 2x2 down to 1x1. A second widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers both.
+The "Speak" and "Photo" widgets can be resized from 2x2 down to 1x1. Another widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers all three.
 
 The list shows only what is current: what is still to come at the top, soonest first, then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
@@ -45,10 +56,10 @@ The theme is light, dark or follows your phone, and an OLED mode makes the dark 
 
 German phones get German, all others English. You can also choose the language in the settings (on Android 13 and newer also in the system's app language settings). Speech recognition follows the app's language.
 
-## Understanding what you say
+## Understanding what you say and photograph
 
-- **Built in:** common date, time and repeat phrases in English and German are understood offline, without any account.
-- **With AI (optional):** with your own Anthropic API key, Merk's also understands free-form speech. You can choose the model; the settings show whether key and model work. Without internet, the built-in rules take over.
+- **Built in:** common date, time and repeat phrases in English and German are understood offline, without any account. Photos are read on the phone.
+- **With AI (optional):** with your own Anthropic API key, Merk's also understands free-form speech and reads photos better, handwriting included. You can choose the model; the settings show whether key and model work. Without internet, the built-in rules and the reading on the phone take over.
 
 ## Privacy
 
@@ -56,7 +67,7 @@ No ads, no tracking, no account. Your entries stay on your phone and in your cal
 
 - Speech recognition is done by the recognizer installed on your phone.
 - Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version, and only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
-- Only if you enter an AI key, the spoken text is sent to Anthropic to be sorted.
+- Photos are read on the phone and deleted right after. Only if you enter an AI key, the spoken text and the photo are sent to Anthropic to be sorted and read.
 
 ## Status
 
@@ -65,3 +76,5 @@ Merk's is young and still growing. Ideas and problems are welcome as an [issue](
 ## License
 
 MIT, see [LICENSE](LICENSE). The Nunito font is licensed under the SIL Open Font License, see [fonts/Nunito-OFL.txt](fonts/Nunito-OFL.txt).
+
+Reading photos on the phone uses [Tesseract](https://github.com/tesseract-ocr/tesseract) and its [recognition data](https://github.com/tesseract-ocr/tessdata_fast) (Apache License 2.0) and [Leptonica](http://www.leptonica.org/) (BSD 2-Clause), built for Android by [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) (Apache License 2.0).

@@ -47,6 +47,15 @@
             android:taskAffinity="de.silvertax.merks.record"
             android:theme="@style/Theme.Merks.Overlay" />
 
+        <!-- Opened by the "Photo" button too: a task of its own, so it never clears the list
+             behind it, and gone from the recent apps once the appointment is in. -->
+        <activity
+            android:name=".PhotoActivity"
+            android:autoRemoveFromRecents="true"
+            android:exported="false"
+            android:taskAffinity="de.silvertax.merks.photo"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />
@@ -86,6 +95,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/speak_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".PhotoWidget"
+            android:exported="true"
+            android:label="@string/photo">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/photo_widget_info" />
         </receiver>
 
         <receiver

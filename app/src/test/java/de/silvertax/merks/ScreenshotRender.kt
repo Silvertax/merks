@@ -17,6 +17,8 @@ import android.view.LayoutInflater
 import android.view.View
 import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Parsed
+import de.silvertax.merks.parse.PhotoDate
+import de.silvertax.merks.parse.PhotoFind
 import org.junit.Assume.assumeTrue
 import org.junit.After
 import org.junit.Before
@@ -34,6 +36,7 @@ import java.io.FileOutputStream
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 /**
  * Renders the screens to PNG files for design reviews and the store listing. Skipped unless
@@ -285,6 +288,35 @@ class ScreenshotRender {
             shot(dialog.window!!.decorView, name, android.graphics.Color.parseColor("#101418"))
             dialog.dismiss()
         }
+    }
+
+    /** The check before saving, with what a photo of a card with three treatments gave. */
+    private fun photoReview(nightMode: Boolean, name: String) {
+        night(nightMode)
+        val today = LocalDate.now()
+        val model = PhotoModel().apply {
+            stage = PhotoModel.Stage.REVIEW
+            find = PhotoFind(t("Physiotherapie Lößnitz", "Riverside Physiotherapy"), t("Handtuch mitbringen", "Bring a towel"), emptyList(), text = "…")
+            dates += listOf(
+                PhotoDate(today.plusDays(2), LocalTime.of(8, 15)),
+                PhotoDate(today.plusDays(4), LocalTime.of(8, 15)),
+                PhotoDate(today.plusDays(9), LocalTime.of(8, 30), chosen = false),
+            )
+        }
+        val state = Bundle().also { model.save(it) }
+        shotActivity(Robolectric.buildActivity(PhotoActivity::class.java).setup(state).get(), name)
+    }
+
+    @Test fun photoReviewLight() = photoReview(false, "14_photo_review_light")
+    @Test fun photoReviewDark() = photoReview(true, "14_photo_review_dark")
+
+    @Test fun photoWidget() {
+        val density = app.resources.displayMetrics.density
+        val v = LayoutInflater.from(app).inflate(R.layout.widget_photo, null)
+        val w = (150 * density).toInt()
+        v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY))
+        v.layout(0, 0, w, w)
+        shot(v, "8_photo_widget_2x2")
     }
 
     @Test fun icon() {

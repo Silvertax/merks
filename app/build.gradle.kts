@@ -15,8 +15,10 @@ val ksPath: String? = secret("MERKS_KEYSTORE", "storeFile")
 
 // F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. It also brings
 // the updates, so that build leaves out the update check against GitHub releases. Before the app goes
-// to F-Droid or Google Play, REQUEST_INSTALL_PACKAGES and the FileProvider must leave the manifest of
-// that build too: neither store accepts an app that installs its own updates.
+// to F-Droid or Google Play, REQUEST_INSTALL_PACKAGES and the "update" path of the FileProvider must
+// leave that build too: neither store accepts an app that installs its own updates. (The provider
+// itself stays; the camera writes the photo through it.) F-Droid may also want the text recognition
+// (tesseract4android) built from its sources instead of taken from JitPack.
 val fdroid = project.hasProperty("fdroid")
 
 android {
@@ -27,9 +29,16 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 34
-        versionCode = 22
-        versionName = "0.7.1"
+        versionCode = 23
+        versionName = "0.8.0"
         buildConfigField("boolean", "FDROID", fdroid.toString())
+        // Reading photos is native code. Phones need only these two; x86 devices run them translated.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    }
+
+    packaging {
+        // Packed in the APK: about 7 MB less to download. Android unpacks them once when installing.
+        jniLibs { useLegacyPackaging = true }
     }
 
     buildFeatures {
@@ -73,6 +82,8 @@ android {
     }
     lint {
         checkReleaseBuilds = false
+        // Chromebooks with Intel chips run the ARM libraries translated; x86 copies would add 7 MB for everyone.
+        disable += "ChromeOsAbiSupport"
     }
     testOptions {
         // Robolectric runs the app's screens and receivers on the JVM and needs the resources.
@@ -103,6 +114,8 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
+    // Reads the text on a photo, on the phone: Tesseract (Apache 2.0) with Leptonica (BSD).
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
     // Must match the Robolectric version below and the sdk in src/test/resources/robolectric.properties.
     robolectricRuntime("org.robolectric:android-all-instrumented:15-robolectric-12650502-i7")
     testImplementation("junit:junit:4.13.2")

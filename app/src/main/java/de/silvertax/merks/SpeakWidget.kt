@@ -13,10 +13,16 @@ import android.util.SizeF
 import android.widget.RemoteViews
 
 /**
- * Home screen widget: one big button that starts listening.
- * Three shapes depending on the space: icon with label below, icon with label beside it, icon only (down to 1x1).
+ * A home screen widget that is one big button. Three shapes depending on the space: icon with label
+ * below, icon with label beside it, icon only (down to 1x1).
  */
-class SpeakWidget : AppWidgetProvider() {
+abstract class ButtonWidget : AppWidgetProvider() {
+    protected abstract val label: Int
+    protected abstract val icon: Int
+
+    /** What a tap opens. */
+    protected abstract fun target(ctx: Context): Intent
+
     override fun onUpdate(ctx: Context, manager: AppWidgetManager, ids: IntArray) {
         for (id in ids) render(ctx, manager, id)
     }
@@ -28,15 +34,15 @@ class SpeakWidget : AppWidgetProvider() {
     private fun views(ctx: Context, layout: Int): RemoteViews {
         val open = PendingIntent.getActivity(
             ctx, 0,
-            Intent(ctx, RecordActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+            target(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val label = Lang.context(ctx).getString(R.string.speak)
+        val text = Lang.context(ctx).getString(label)
         return RemoteViews(ctx.packageName, layout).apply {
             setOnClickPendingIntent(R.id.widget_root, open)
-            setContentDescription(R.id.widget_root, label)
-            if (layout != R.layout.widget_speak_small) setTextViewText(R.id.widget_label, label)
+            setContentDescription(R.id.widget_root, text)
+            setImageViewResource(R.id.widget_icon, icon)
+            if (layout != R.layout.widget_speak_small) setTextViewText(R.id.widget_label, text)
         }
     }
 
@@ -64,13 +70,6 @@ class SpeakWidget : AppWidgetProvider() {
     }
 
     companion object {
-        /** Redraws all placed widgets, e.g. after the language was changed. */
-        fun updateAll(ctx: Context) {
-            val manager = AppWidgetManager.getInstance(ctx)
-            val ids = manager.getAppWidgetIds(ComponentName(ctx, SpeakWidget::class.java))
-            if (ids.isNotEmpty()) SpeakWidget().onUpdate(ctx, manager, ids)
-        }
-
         const val TALL_MIN_W = 90f
         const val TALL_MIN_H = 90f
         const val WIDE_MIN_W = 150f
@@ -82,5 +81,28 @@ class SpeakWidget : AppWidgetProvider() {
             w >= WIDE_MIN_W -> R.layout.widget_speak_wide
             else -> R.layout.widget_speak_small
         }
+
+        /** Redraws all placed button widgets, e.g. after the language was changed. */
+        fun updateAll(ctx: Context) {
+            val manager = AppWidgetManager.getInstance(ctx)
+            for (widget in listOf(SpeakWidget(), PhotoWidget())) {
+                val ids = manager.getAppWidgetIds(ComponentName(ctx, widget.javaClass))
+                if (ids.isNotEmpty()) widget.onUpdate(ctx, manager, ids)
+            }
+        }
     }
+}
+
+/** One tap starts listening. */
+class SpeakWidget : ButtonWidget() {
+    override val label = R.string.speak
+    override val icon = R.drawable.ic_mic
+    override fun target(ctx: Context) = Intent(ctx, RecordActivity::class.java)
+}
+
+/** One tap opens the camera, for a letter or an appointment card. */
+class PhotoWidget : ButtonWidget() {
+    override val label = R.string.photo
+    override val icon = R.drawable.ic_camera
+    override fun target(ctx: Context) = Intent(ctx, PhotoActivity::class.java)
 }

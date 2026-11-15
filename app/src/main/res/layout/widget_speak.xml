@@ -10,6 +10,7 @@
 
     <!-- The icon takes whatever height the label leaves, so the label is never cut off. -->
     <ImageView
+        android:id="@+id/widget_icon"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"

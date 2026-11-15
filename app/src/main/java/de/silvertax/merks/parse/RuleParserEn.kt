@@ -157,7 +157,8 @@ object RuleParserEn {
     private val leadArticle = re("^(?:a|an|to|that|about)$R\\s+")
     private val tailFiller = re("\\s(?:at|on|in|and|for|by|from|between|of)$")
 
-    private fun monthFirstHere() = Locale.getDefault().country.uppercase() in monthFirstRegions
+    /** Whether "11/12" means 12 November where the phone is set up, as in the USA. */
+    internal fun monthFirstHere() = Locale.getDefault().country.uppercase() in monthFirstRegions
 
     /** The [n]th (or with -1 the last) [weekday] of the month that [first] starts. */
     private fun nthInMonth(first: LocalDate, n: Int, weekday: Int): LocalDate =

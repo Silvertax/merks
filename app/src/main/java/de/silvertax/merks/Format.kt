@@ -3,6 +3,7 @@ package de.silvertax.merks
 import android.content.Context
 import android.text.format.DateFormat
 import de.silvertax.merks.parse.Kind
+import de.silvertax.merks.parse.PhotoDate
 import de.silvertax.merks.parse.Repeat
 import de.silvertax.merks.parse.RepeatUnit
 import java.time.Duration
@@ -154,12 +155,32 @@ object Format {
     fun fullDate(ctx: Context, day: LocalDate): String =
         pattern(ctx, if (Lang.isGerman(ctx)) "EEEE, d. MMMM yyyy" else "EEEE, MMMM d, yyyy").format(day)
 
+    /** "Dienstag, 17. November", with the year only when it is not this year's. */
+    fun dayText(ctx: Context, day: LocalDate): String =
+        if (day.year == LocalDate.now().year) {
+            pattern(ctx, if (Lang.isGerman(ctx)) "EEEE, d. MMMM" else "EEEE, MMMM d").format(day)
+        } else {
+            fullDate(ctx, day)
+        }
+
     /** "14:30 Uhr" / "2:30 PM", for choosing a time. */
     fun clockTime(ctx: Context, t: LocalTime): String = when {
         Lang.isGerman(ctx) -> pattern(ctx, "HH:mm 'Uhr'")
         DateFormat.is24HourFormat(ctx) -> pattern(ctx, "HH:mm")
         else -> pattern(ctx, "h:mm a")
     }.format(t)
+
+    /** The time of a date found on a photo: "10:30 Uhr", "14:30–17:00 Uhr", "ganztägig", "bis Mittwoch, 23. Dezember 2026". */
+    fun photoTime(ctx: Context, d: PhotoDate): String {
+        val c = Lang.context(ctx)
+        val t = d.time ?: return d.lastDay?.let { c.getString(R.string.photo_until, dayText(ctx, it)) } ?: c.getString(R.string.photo_all_day)
+        val end = d.end ?: return clockTime(ctx, t)
+        return when {
+            Lang.isGerman(ctx) -> pattern(ctx, "HH:mm").format(t) + "–" + clockTime(ctx, end)
+            DateFormat.is24HourFormat(ctx) -> clockTime(ctx, t) + "–" + clockTime(ctx, end)
+            else -> clockTime(ctx, t) + " – " + clockTime(ctx, end)
+        }
+    }
 
     /** Weekday, day and month for the date tile of a list entry: "Mi", "18" and "Nov". */
     fun tileWeekday(ctx: Context, start: Long): String = pattern(ctx, "EEE").format(zoned(start)).trimEnd('.')

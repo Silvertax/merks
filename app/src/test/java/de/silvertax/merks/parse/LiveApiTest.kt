@@ -33,4 +33,17 @@ class LiveApiTest {
         assertEquals(ModelCheck.INVALID, AiParser.checkModel(key, "claude-sonet-5-5"))
         assertNotNull(AiParser.parse(key, AiParser.DEFAULT_MODEL, "Morgen um 10 Zahnarzt", now, zone).parsed)
     }
+
+    /** A photographed appointment card, read by the real API. */
+    @Test fun photoIsRead() {
+        val key = System.getenv("MERKS_API_KEY")
+        assumeTrue("set MERKS_API_KEY for this one", !key.isNullOrBlank())
+        val jpeg = javaClass.getResource("/photos/de_card.jpg")!!.readBytes()
+        val before = LocalDateTime.of(2026, 11, 15, 10, 0)
+        val r = AiParser.readPhoto(key, AiParser.DEFAULT_MODEL, jpeg, before, zone)
+        assertNotNull(r.error?.toString(), r.find)
+        val date = r.find!!.dates.single()
+        assertEquals(java.time.LocalDate.of(2026, 11, 23), date.day)
+        assertEquals(java.time.LocalTime.of(10, 30), date.time)
+    }
 }

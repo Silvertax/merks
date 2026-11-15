@@ -292,7 +292,7 @@ class SettingsActivity : MerksActivity() {
                 val choice = choices[which]
                 if (choice == Prefs.lang(this)) return@setSingleChoiceItems
                 Prefs.setLang(this, choice)
-                SpeakWidget.updateAll(this)
+                ButtonWidget.updateAll(this)
                 Glance.refresh(this)
                 Lang.apply(choice)
             }

@@ -17,11 +17,22 @@ enum class AiProblem {
 
 data class AiError(val problem: AiProblem, val code: Int = 0, val detail: String = "")
 
-/**
- * Outcome of an AI request: either [parsed] or an [error] to show in the settings.
- * [modelUnknown] is set when the API does not know the model name.
- */
-data class AiResult(val parsed: Parsed?, val error: AiError?, val modelUnknown: Boolean = false)
+/** What the app needs to know of any AI request. [modelUnknown]: the API does not know the model name. */
+interface AiOutcome {
+    val error: AiError?
+    val modelUnknown: Boolean
+    val ok: Boolean
+}
+
+/** Outcome of an AI request: either [parsed] or an [error] to show in the settings. */
+data class AiResult(val parsed: Parsed?, override val error: AiError?, override val modelUnknown: Boolean = false) : AiOutcome {
+    override val ok get() = parsed != null
+}
+
+/** Outcome of reading a photo with the AI: what it found, or an [error]. */
+data class AiPhotoResult(val find: PhotoFind?, override val error: AiError?, override val modelUnknown: Boolean = false) : AiOutcome {
+    override val ok get() = find != null
+}
 
 enum class ModelCheck { VALID, INVALID, KEY_INVALID, UNKNOWN }
 
@@ -51,6 +62,96 @@ object AiParser {
 
     /** Rules out names that cannot be a model at all, without asking the network. */
     fun isPlausibleModelName(model: String): Boolean = MODEL_NAME.matches(model)
+
+    /** The reply to [body]: its text, or what went wrong. Never throws. */
+    private class Reply(val text: String?, val error: AiError?, val modelUnknown: Boolean = false)
+
+    private fun ask(apiKey: String, body: JSONObject, readTimeout: Int): Reply = try {
+        val conn = post(apiKey, body, readTimeout)
+        val code = conn.responseCode
+        if (code != 200) {
+            val detail = conn.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            Reply(null, classify(code, detail), modelUnknown = code == 404 && isNotFound(detail))
+        } else {
+            val response = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
+            val reply = replyText(response)
+            when {
+                reply.isEmpty() && response.optString("stop_reason") == "max_tokens" -> Reply(null, AiError(AiProblem.ONLY_THINKING))
+                reply.isEmpty() -> Reply(null, AiError(AiProblem.NO_TEXT))
+                else -> Reply(reply, null)
+            }
+        }
+    } catch (e: Exception) {
+        Reply(null, AiError(AiProblem.NO_CONNECTION, detail = e.message ?: e.javaClass.simpleName))
+    }
+
+    /**
+     * Reads a photo of an appointment card, a letter or a poster, handwriting included, and finds
+     * the appointments on it. [jpeg] is the photo; it goes to the API and nowhere else.
+     */
+    fun readPhoto(apiKey: String, model: String, jpeg: ByteArray, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
+        if (!isPlausibleModelName(model)) return AiPhotoResult(null, AiError(AiProblem.BAD_MODEL_NAME), modelUnknown = true)
+        val weekday = now.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+        val system = """
+            You read a photo of an appointment card, a letter, a poster or a handwritten note and find the appointments on it, for a calendar.
+            Current local time: ${now.withSecond(0).withNano(0)} ($weekday), time zone ${zone.id}.
+            Reply with one JSON object and nothing else:
+            {"title":string,"note":string|null,"appointments":[{"start":string,"end":string|null,"all_day":boolean,"source":string}]}
+            - appointments: each date the reader is to attend (a visit, a treatment, an event), in time order. Several treatment dates on one card are several appointments. Leave out the letter's own date, birth dates, validity or expiry dates, opening hours and dates that are over. A deadline ("register by ...") is no appointment: put it into the note.
+            - start/end: local time as YYYY-MM-DDTHH:MM. A date without a year is the next such date from now. end only if an end time is written. all_day: true when no time is given (start then uses T00:00); over several days, end is the last day at T00:00.
+            - title: short and clear, in the language of the photo: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie". No date or time.
+            - note: what to bring or to know, e.g. the room or to come fasting, in the language of the photo, at most two short lines; null if there is nothing.
+            - source: the words on the photo the date was read from, as written, at most 80 characters.
+            - If nothing is readable or there is no appointment on the photo, reply with an empty list.
+        """.trimIndent()
+        val image = JSONObject().put("type", "image").put(
+            "source",
+            JSONObject().put("type", "base64").put("media_type", "image/jpeg")
+                .put("data", java.util.Base64.getEncoder().encodeToString(jpeg)),
+        )
+        val question = JSONObject().put("type", "text").put("text", "Which appointments are on this photo?")
+        val body = JSONObject()
+            .put("model", model)
+            .put("max_tokens", MAX_TOKENS)
+            .put("system", system)
+            .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", JSONArray().put(image).put(question))))
+        val reply = ask(apiKey, body, readTimeout = 60000)
+        val text = reply.text ?: return AiPhotoResult(null, reply.error, reply.modelUnknown)
+        return photoFromJson(text, now)?.let { AiPhotoResult(it, null) } ?: AiPhotoResult(null, AiError(AiProblem.UNREADABLE))
+    }
+
+    /** The photo's appointments from the reply; what is over or unreadable is left out. */
+    internal fun photoFromJson(reply: String, now: LocalDateTime): PhotoFind? = try {
+        val from = reply.indexOf('{')
+        val to = reply.lastIndexOf('}')
+        if (from < 0 || to <= from) {
+            null
+        } else {
+            val o = JSONObject(reply.substring(from, to + 1))
+            val list = o.optJSONArray("appointments") ?: JSONArray()
+            val dates = (0 until list.length()).mapNotNull { i ->
+                val a = list.optJSONObject(i) ?: return@mapNotNull null
+                val start = dateTime(a, "start") ?: return@mapNotNull null
+                val end = dateTime(a, "end")
+                val allDay = a.optBoolean("all_day")
+                val date = if (allDay) {
+                    PhotoDate(start.toLocalDate(), lastDay = end?.toLocalDate()?.takeIf { it.isAfter(start.toLocalDate()) })
+                } else {
+                    PhotoDate(start.toLocalDate(), start.toLocalTime(), end?.takeIf { it.toLocalDate() == start.toLocalDate() && it.isAfter(start) }?.toLocalTime())
+                }
+                val over = if (allDay) date.day.isBefore(now.toLocalDate()) else start.isBefore(now)
+                if (over) null else date.copy(source = a.optString("source").trim().take(100))
+            }.distinct().sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_DATES)
+            PhotoFind(
+                title = o.optString("title").trim().take(80),
+                note = if (o.isNull("note")) null else o.optString("note").trim().ifEmpty { null },
+                dates = dates,
+                byAi = true,
+            )
+        }
+    } catch (e: Exception) {
+        null
+    }
 
     fun parse(apiKey: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiResult {
         if (!isPlausibleModelName(model)) return AiResult(null, AiError(AiProblem.BAD_MODEL_NAME), modelUnknown = true)

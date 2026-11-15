@@ -439,12 +439,12 @@ class AppSmokeTest {
         assertTrue(Db(app).all().isEmpty())
     }
 
-    /** Taps "Put on the home screen" and picks the button to speak (0) or "Up next" (1). */
+    /** Taps "Put on the home screen" and picks the button to speak (0), to photograph (1) or "Up next" (2). */
     private fun pickWidget(main: MainActivity, which: Int): android.app.Dialog {
         main.findViewById<View>(R.id.add_widget).performClick()
         val chooser = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val list = chooser.listView
-        assertEquals(2, list.adapter.count)
+        assertEquals(3, list.adapter.count)
         list.performItemClick(list.adapter.getView(which, null, list), which, list.adapter.getItemId(which))
         return chooser
     }
@@ -460,18 +460,29 @@ class AppSmokeTest {
         assertFalse(chooser.isShowing)
     }
 
-    /** Both widgets are on offer, and the way by hand names the one that was picked. */
+    /** All three widgets are on offer, and the way by hand names the one that was picked. */
     @Test fun widgetButtonOffersUpNextToo() {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val chooser = pickWidget(main, 1)
+        val chooser = pickWidget(main, 2)
         val shown = (chooser as androidx.appcompat.app.AlertDialog).listView.adapter
         assertTrue(shown.getItem(0).toString().startsWith("Knopf „Sprechen“"))
-        assertTrue(shown.getItem(1).toString().startsWith("„Als Nächstes“"))
+        assertTrue(shown.getItem(1).toString().startsWith("Knopf „Foto“"))
+        assertTrue(shown.getItem(2).toString().startsWith("„Als Nächstes“"))
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.endsWith("„Merk's“ suchen und „Als Nächstes“ hinzufügen."))
+    }
+
+    @Test fun widgetButtonOffersThePhotoButton() {
+        Prefs.setAskedPermissions(app)
+        shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        pickWidget(main, 1)
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(text, text.endsWith("„Merk's“ suchen und „Foto“ hinzufügen."))
     }
 
     /** Xiaomi's home screen takes the request and drops it silently: then the app explains the way by hand. */

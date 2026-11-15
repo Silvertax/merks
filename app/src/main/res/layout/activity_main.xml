@@ -104,7 +104,7 @@
             android:textColor="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
-    <!-- The big button, always within reach of the thumb. -->
+    <!-- The big buttons, always within reach of the thumb. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -120,6 +120,21 @@
             android:layout_height="wrap_content"
             android:text="@string/speak"
             app:icon="@drawable/ic_mic" />
+
+        <!-- A letter or an appointment card: photographed instead of read out. -->
+        <Button
+            android:id="@+id/photo"
+            style="@style/Widget.Merks.Button.Tonal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="64dp"
+            android:text="@string/photo_button"
+            android:textSize="20sp"
+            app:icon="@drawable/ic_camera"
+            app:iconGravity="textStart"
+            app:iconPadding="12dp"
+            app:iconSize="26dp" />
 
         <Button
             android:id="@+id/add_widget"

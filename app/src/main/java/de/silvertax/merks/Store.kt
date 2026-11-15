@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.CalendarContract
+import de.silvertax.merks.parse.AiOutcome
 import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.Kind
 import de.silvertax.merks.parse.Parsed
@@ -236,38 +237,50 @@ object Prefs {
 }
 
 object Store {
+    /** In front of what an entry was read from when it came from a photo, not from speaking. */
+    const val PHOTO_MARK = "📷 "
+
     /** Sorts the spoken text: AI when a key is set and the request works, fixed rules otherwise. */
     fun sort(ctx: Context, text: String): Parsed {
         val now = LocalDateTime.now()
-        val key = Prefs.apiKey(ctx)
-        if (key.isNotEmpty()) {
-            val zone = ZoneId.systemDefault()
-            val model = Prefs.model(ctx)
-            var ai = AiParser.parse(key, model, text, now, zone)
-            var note = ai.error?.text(ctx)
-            if (ai.modelUnknown && model != AiParser.DEFAULT_MODEL) {
-                // A mistyped model must not switch the AI off for good: back to the default, try again.
-                Prefs.setModel(ctx, "")
-                ai = AiParser.parse(key, AiParser.DEFAULT_MODEL, text, now, zone)
-                val reset = Lang.context(ctx).getString(R.string.ai_model_reset, model)
-                note = listOfNotNull(reset, ai.error?.text(ctx)).joinToString("\n")
-            }
-            // Remembered so the settings can show whether AI sorting really works.
-            Prefs.setAiStatus(ctx, ai.parsed != null, note)
-            ai.parsed?.let { return it }
-        }
+        val zone = ZoneId.systemDefault()
+        askAi(ctx) { key, model -> AiParser.parse(key, model, text, now, zone) }?.parsed?.let { return it }
         return if (Lang.isGerman(ctx)) RuleParser.parse(text, now) else RuleParserEn.parse(text, now)
     }
 
+    /**
+     * Asks the AI with the key and model from the settings, or returns null without a key. A model
+     * name the API does not know is reset to the default and asked once more. How it went is
+     * remembered, so the settings can show whether the AI really works.
+     */
+    fun <T : AiOutcome> askAi(ctx: Context, ask: (key: String, model: String) -> T): T? {
+        val key = Prefs.apiKey(ctx)
+        if (key.isEmpty()) return null
+        val model = Prefs.model(ctx)
+        var ai = ask(key, model)
+        var note = ai.error?.text(ctx)
+        if (ai.modelUnknown && model != AiParser.DEFAULT_MODEL) {
+            // A mistyped model must not switch the AI off for good: back to the default, try again.
+            Prefs.setModel(ctx, "")
+            ai = ask(key, AiParser.DEFAULT_MODEL)
+            val reset = Lang.context(ctx).getString(R.string.ai_model_reset, model)
+            note = listOfNotNull(reset, ai.error?.text(ctx)).joinToString("\n")
+        }
+        Prefs.setAiStatus(ctx, ai.ok, note)
+        return ai
+    }
+
     /** Saves the entry, puts appointments into the phone calendar and schedules the reminder. */
-    fun save(ctx: Context, p: Parsed, raw: String): Entry {
+    fun save(ctx: Context, p: Parsed, raw: String, note: String? = null): Entry {
         val zone = ZoneId.systemDefault()
         val start = p.start?.atZone(zone)?.toInstant()?.toEpochMilli()
         val end = p.end?.atZone(zone)?.toInstant()?.toEpochMilli()
-        val calId = if (p.kind == Kind.APPOINTMENT && p.start != null) insertCalendarEvent(ctx, p, raw) else null
+        val tidyNote = note?.trim()?.takeIf { it.isNotEmpty() }
+        val calId = if (p.kind == Kind.APPOINTMENT && p.start != null) insertCalendarEvent(ctx, p, description(raw, tidyNote)) else null
         val draft = Entry(
             0, p.kind, p.title, raw, start, end, p.allDay, calId, System.currentTimeMillis(),
             repeat = if (start != null) p.repeat else null,
+            note = tidyNote,
         )
         val entry = draft.copy(id = Db(ctx).insert(draft))
         Scheduler.schedule(ctx, entry)

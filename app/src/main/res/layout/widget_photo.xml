@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- How the "Photo" button looks in the widget list and before its first update. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <!-- The icon takes whatever height the label leaves, so the label is never cut off. -->
+    <ImageView
+        android:id="@+id/widget_icon"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:contentDescription="@string/photo"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_camera" />
+
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/nunito_extrabold"
+        android:maxLines="1"
+        android:text="@string/photo"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
+</LinearLayout>

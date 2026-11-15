@@ -10,7 +10,7 @@
     <string name="widget_app_settings">App-Einstellungen</string>
     <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen, „Merk\'s“ suchen und „%1$s“ hinzufügen.</string>
     <string name="empty_title">Noch nichts gemerkt</string>
-    <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“.</string>
+    <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“. Oder fotografiere eine Terminkarte oder einen Brief.</string>
 
     <string name="listening">Ich höre zu …</string>
     <string name="listening_on">Ich höre weiter zu …</string>
@@ -157,7 +157,7 @@
     <string name="section_reminders">Erinnerungen</string>
     <string name="section_app">App</string>
     <string name="back">Zurück</string>
-    <string name="settings_ai_text">Ohne Schlüssel erkennt die App klare Angaben wie „morgen um 10“ selbst. Mit einem Anthropic-API-Schlüssel versteht sie auch freies Erzählen; dafür wird der gesprochene Text an Anthropic geschickt. Ohne Internet greifen automatisch die festen Regeln.</string>
+    <string name="settings_ai_text">Ohne Schlüssel erkennt die App klare Angaben wie „morgen um 10“ selbst und liest Fotos auf dem Handy. Mit einem Anthropic-API-Schlüssel versteht sie auch freies Erzählen und liest Fotos besser, sogar Handschrift; dafür werden der gesprochene Text und das Foto an Anthropic geschickt. Ohne Internet greifen automatisch die festen Regeln.</string>
     <string name="settings_ai_hint">API-Schlüssel (sk-ant-…)</string>
     <string name="settings_saved">Gespeichert</string>
     <string name="widget_description">Ein Tipp, dann sprechen</string>
@@ -193,4 +193,42 @@
     <string name="ai_err_only_thinking">Das Modell hat nur nachgedacht und keine Antwort geliefert.</string>
     <string name="ai_err_no_text">Die Antwort enthielt keinen Text.</string>
     <string name="ai_err_unreadable">Antwort nicht lesbar.</string>
+
+    <!-- Appointments from a photo -->
+    <string name="photo">Foto</string>
+    <string name="photo_button">Termin fotografieren</string>
+    <string name="photo_title">Termin vom Foto</string>
+    <string name="photo_widget_description">Ein Tipp, dann Brief oder Terminkarte fotografieren</string>
+    <string name="widget_pick_photo">Knopf „Foto“: ein Tipp, dann Brief oder Terminkarte fotografieren</string>
+    <string name="photo_reading">Ich lese das Foto …</string>
+    <string name="photo_reading_ai">Die KI liest es gerade.</string>
+    <string name="photo_what">Was</string>
+    <string name="photo_default_title">Termin</string>
+    <string name="photo_save">In den Kalender eintragen</string>
+    <string name="photo_retake">Nochmal fotografieren</string>
+    <string name="photo_by_hand">Datum selbst wählen</string>
+    <string name="photo_show_text">Gelesenen Text zeigen</string>
+    <string name="photo_text_title">Text auf dem Foto</string>
+    <string name="photo_no_date">Kein Datum gefunden</string>
+    <string name="photo_no_text">Kein Text zu erkennen</string>
+    <string name="photo_tip">Tipp: Handy ruhig halten, so nah, dass der Text das Bild füllt, und bei gutem Licht fotografieren.</string>
+    <string name="photo_tip_handwriting">Handschrift kann das Handy ohne KI kaum lesen.</string>
+    <string name="photo_no_camera">Keine Kamera-App gefunden.</string>
+    <string name="photo_unreadable">Das Foto ließ sich nicht öffnen.</string>
+    <string name="photo_ocr_failed">Das Lesen von Text klappt auf diesem Handy leider nicht.</string>
+    <string name="photo_pick_one">Bitte mindestens einen Termin anhaken.</string>
+    <string name="photo_change">Datum oder Uhrzeit ändern</string>
+    <string name="photo_all_day">ganztägig</string>
+    <string name="photo_until">bis %1$s</string>
+    <string name="photo_by_ai">Von der KI gelesen.</string>
+    <string name="photo_ai_failed">Die KI war nicht erreichbar, das Handy hat selbst gelesen.</string>
+    <string name="read_from_photo">Vom Foto gelesen: „%1$s“</string>
+    <plurals name="photo_found">
+        <item quantity="one">Das habe ich gefunden. Bitte kurz prüfen:</item>
+        <item quantity="other">%d Termine gefunden. Was angehakt ist, kommt in den Kalender:</item>
+    </plurals>
+    <plurals name="photo_saved">
+        <item quantity="one">%d Termin eingetragen</item>
+        <item quantity="other">%d Termine eingetragen</item>
+    </plurals>
 </resources>

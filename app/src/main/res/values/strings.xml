@@ -12,7 +12,7 @@
     <string name="widget_app_settings">App settings</string>
     <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets”, look for “Merk\'s” and add “%1$s”.</string>
     <string name="empty_title">Nothing noted yet</string>
-    <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”.</string>
+    <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”. Or take a photo of an appointment card or a letter.</string>
 
     <string name="listening">Listening …</string>
     <string name="listening_on">Still listening …</string>
@@ -160,7 +160,7 @@
     <string name="section_reminders">Reminders</string>
     <string name="section_app">App</string>
     <string name="back">Back</string>
-    <string name="settings_ai_text">Without a key, the app understands clear phrases like “tomorrow at 10” on its own. With an Anthropic API key it also understands free speech; the spoken text is then sent to Anthropic. Without internet, the built-in rules take over automatically.</string>
+    <string name="settings_ai_text">Without a key, the app understands clear phrases like “tomorrow at 10” on its own and reads photos on the phone. With an Anthropic API key it also understands free speech and reads photos better, even handwriting; the spoken text and the photo are then sent to Anthropic. Without internet, the built-in rules take over automatically.</string>
     <string name="settings_ai_hint">API key (sk-ant-…)</string>
     <string name="settings_saved">Saved</string>
     <string name="widget_description">One tap, then speak</string>
@@ -198,4 +198,42 @@
     <string name="ai_err_only_thinking">The model only thought and gave no answer.</string>
     <string name="ai_err_no_text">The answer contained no text.</string>
     <string name="ai_err_unreadable">The answer could not be read.</string>
+
+    <!-- Appointments from a photo -->
+    <string name="photo">Photo</string>
+    <string name="photo_button">Snap an appointment</string>
+    <string name="photo_title">From a photo</string>
+    <string name="photo_widget_description">One tap, then photograph a letter or appointment card</string>
+    <string name="widget_pick_photo">“Photo” button: one tap, then photograph a letter or appointment card</string>
+    <string name="photo_reading">Reading the photo …</string>
+    <string name="photo_reading_ai">The AI is reading it.</string>
+    <string name="photo_what">What</string>
+    <string name="photo_default_title">Appointment</string>
+    <string name="photo_save">Add to calendar</string>
+    <string name="photo_retake">Take another photo</string>
+    <string name="photo_by_hand">Choose the date myself</string>
+    <string name="photo_show_text">Show the text that was read</string>
+    <string name="photo_text_title">Text on the photo</string>
+    <string name="photo_no_date">No date found</string>
+    <string name="photo_no_text">No text to be read</string>
+    <string name="photo_tip">Tip: hold the phone steady, close enough for the text to fill the picture, in good light.</string>
+    <string name="photo_tip_handwriting">Without the AI, the phone can hardly read handwriting.</string>
+    <string name="photo_no_camera">No camera app found.</string>
+    <string name="photo_unreadable">The photo could not be opened.</string>
+    <string name="photo_ocr_failed">Reading text does not work on this phone, sorry.</string>
+    <string name="photo_pick_one">Please tick at least one date.</string>
+    <string name="photo_change">Change date or time</string>
+    <string name="photo_all_day">all day</string>
+    <string name="photo_until">until %1$s</string>
+    <string name="photo_by_ai">Read by the AI.</string>
+    <string name="photo_ai_failed">The AI could not be reached; the phone read it itself.</string>
+    <string name="read_from_photo">Read from a photo: “%1$s”</string>
+    <plurals name="photo_found">
+        <item quantity="one">Here is what I found. Please check:</item>
+        <item quantity="other">Found %d dates. The ticked ones go into the calendar:</item>
+    </plurals>
+    <plurals name="photo_saved">
+        <item quantity="one">%d appointment added</item>
+        <item quantity="other">%d appointments added</item>
+    </plurals>
 </resources>

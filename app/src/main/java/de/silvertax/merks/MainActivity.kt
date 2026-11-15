@@ -37,6 +37,9 @@ class MainActivity : MerksActivity() {
         findViewById<View>(R.id.speak).setOnClickListener {
             startActivity(Intent(this, RecordActivity::class.java))
         }
+        findViewById<View>(R.id.photo).setOnClickListener {
+            startActivity(Intent(this, PhotoActivity::class.java))
+        }
         findViewById<View>(R.id.settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -66,14 +69,21 @@ class MainActivity : MerksActivity() {
         paused = true
     }
 
-    /** There are two things for the home screen: the button to speak, and what comes next. */
+    /** There are three things for the home screen: the buttons to speak and to photograph, and what comes next. */
     private fun addWidget() {
-        val choices = arrayOf(getString(R.string.widget_pick_speak), getString(R.string.widget_pick_next))
+        val choices = arrayOf(
+            getString(R.string.widget_pick_speak),
+            getString(R.string.widget_pick_photo),
+            getString(R.string.widget_pick_next),
+        )
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.add_widget)
             .setItems(choices) { _, which ->
-                if (which == 0) pinWidget(SpeakWidget::class.java, getString(R.string.speak))
-                else pinWidget(NextWidget::class.java, getString(R.string.next_up_label))
+                when (which) {
+                    0 -> pinWidget(SpeakWidget::class.java, getString(R.string.speak))
+                    1 -> pinWidget(PhotoWidget::class.java, getString(R.string.photo))
+                    else -> pinWidget(NextWidget::class.java, getString(R.string.next_up_label))
+                }
             }
             .show()
     }
@@ -157,7 +167,9 @@ class MainActivity : MerksActivity() {
             if (e.start != null) append(" · ").append(Format.whenText(this@MainActivity, e, starts[e.id]))
             if (e.done) append("\n").append(getString(R.string.is_done))
             e.note?.takeIf { it.isNotBlank() }?.let { append("\n\n").append(getString(R.string.note_label, it)) }
-            append("\n\n").append(getString(R.string.said, e.raw))
+            // Where it came from: what was said, or the words on the photo.
+            val photo = e.raw.startsWith(Store.PHOTO_MARK)
+            append("\n\n").append(getString(if (photo) R.string.read_from_photo else R.string.said, e.raw.removePrefix(Store.PHOTO_MARK)))
         }
         // A big button for the most common fix: the date or time was missing or wrong.
         val changeButton = com.google.android.material.button.MaterialButton(
