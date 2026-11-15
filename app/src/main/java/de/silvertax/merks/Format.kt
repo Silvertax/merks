@@ -151,6 +151,42 @@ object Format {
     fun compactWhen(ctx: Context, e: Entry, start: Long, now: Long, short: Boolean = false): String =
         listOfNotNull(compactDay(ctx, e, start, now, short), compactTime(ctx, e, start)).joinToString(", ")
 
+    /**
+     * "When" beside a widget's date tile, which already shows the day: "Heute, 18:00 Uhr", "Morgen",
+     * "10:00–11:00 Uhr", "Ganztägig", or "bis Fr., 20. Nov." for days off that have already begun.
+     */
+    fun tileWhen(ctx: Context, e: Entry, start: Long, now: Long): String {
+        val c = Lang.context(ctx)
+        val t = zoned(start)
+        val days = ChronoUnit.DAYS.between(zoned(now).toLocalDate(), t.toLocalDate())
+        if (days < 0) return compactDay(ctx, e, start, now)
+        val time = if (e.allDay) null else clock(ctx, e, t)
+        val day = when (days) {
+            0L -> c.getString(R.string.due_today)
+            1L -> c.getString(R.string.due_tomorrow)
+            else -> null
+        }
+        return listOfNotNull(day, time).joinToString(", ").ifEmpty { c.getString(R.string.widget_all_day) }
+    }
+
+    /** The time of a later entry in a widget, short: "10:00" / "10:00 AM"; nothing for all-day entries. */
+    fun rowTime(ctx: Context, e: Entry, start: Long): String? = when {
+        e.allDay -> null
+        Lang.isGerman(ctx) || DateFormat.is24HourFormat(ctx) -> pattern(ctx, "HH:mm").format(zoned(start))
+        else -> pattern(ctx, "h:mm a").format(zoned(start))
+    }
+
+    /** The day in front of the later entries in a widget: "Heute", "Morgen", "Mo 16." / "Mon 16". */
+    fun rowDay(ctx: Context, start: Long, now: Long): String {
+        val c = Lang.context(ctx)
+        val t = zoned(start)
+        return when (ChronoUnit.DAYS.between(zoned(now).toLocalDate(), t.toLocalDate())) {
+            0L -> c.getString(R.string.due_today)
+            1L -> c.getString(R.string.due_tomorrow)
+            else -> tileWeekday(ctx, start) + " " + t.dayOfMonth + if (Lang.isGerman(ctx)) "." else ""
+        }
+    }
+
     /** "Freitag, 20. November 2026" / "Friday, November 20, 2026", for choosing a day. */
     fun fullDate(ctx: Context, day: LocalDate): String =
         pattern(ctx, if (Lang.isGerman(ctx)) "EEEE, d. MMMM yyyy" else "EEEE, MMMM d, yyyy").format(day)

@@ -1,32 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The "Speak" widget from about 2x2 up: a big round button with its word below. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_root"
+    android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
+    android:background="@drawable/w_card"
+    android:contentDescription="@string/speak"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:padding="12dp">
 
-    <!-- The icon takes whatever height the label leaves, so the label is never cut off. -->
-    <ImageView
-        android:id="@+id/widget_icon"
+    <!-- Takes whatever height the word leaves, so the word is never cut off; never larger than the button itself. -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:contentDescription="@string/speak"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_mic" />
+        android:layout_weight="1">
 
+        <ImageView
+            android:id="@+id/widget_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/w_speak_button" />
+    </FrameLayout>
+
+    <!-- Shrinks in a narrow cell instead of cutting the word off. -->
     <TextView
         android:id="@+id/widget_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
         android:layout_marginTop="6dp"
-        android:fontFamily="@font/nunito_extrabold"
+        android:autoSizeMaxTextSize="17sp"
+        android:autoSizeMinTextSize="10sp"
+        android:autoSizeTextType="uniform"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:importantForAccessibility="no"
         android:maxLines="1"
         android:text="@string/speak"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp" />
+        android:textColor="@color/w_on_surface"
+        android:textStyle="bold" />
 </LinearLayout>

@@ -1,74 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- As drawn here it is the preview, sized for two cells; NextWidget sets print and margins for the real size. -->
+<!-- "Up next": the next appointment or reminder; made taller it also lists the two after it. NextWidget fills it in. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/next_root"
+    android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg_small"
+    android:background="@drawable/w_card"
     android:gravity="center_vertical"
     android:orientation="vertical"
-    android:paddingHorizontal="12dp"
-    android:paddingVertical="10dp">
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp">
 
-    <TextView
-        android:id="@+id/next_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/nunito_bold"
-        android:maxLines="1"
-        android:text="@string/next_up_label"
-        android:textColor="#CCEFE9"
-        android:textSize="13sp" />
+    <include layout="@layout/widget_next_head" />
 
-    <TextView
-        android:id="@+id/next_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:fontFamily="@font/nunito_extrabold"
-        android:maxLines="2"
-        android:text="@string/next_up_none"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/next_when"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:fontFamily="@font/nunito_semibold"
-        android:maxLines="1"
-        android:textColor="#E6F7F4"
-        android:textSize="14sp"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:id="@+id/next_more"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:id="@+id/next_line2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:fontFamily="@font/nunito_semibold"
-            android:maxLines="1"
-            android:textColor="#E6F7F4"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/next_line3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:fontFamily="@font/nunito_semibold"
-            android:maxLines="1"
-            android:textColor="#E6F7F4"
-            android:textSize="14sp" />
-    </LinearLayout>
+    <include layout="@layout/widget_next_more" />
 </LinearLayout>

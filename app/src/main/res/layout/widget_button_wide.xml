@@ -1,33 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "Speak" or "Photo", wide and low: the round button in front, the word beside it. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_root"
+    android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg_small"
-    android:gravity="center"
+    android:background="@drawable/w_card"
+    android:baselineAligned="false"
+    android:gravity="center_vertical"
     android:orientation="horizontal"
     android:padding="8dp">
 
     <ImageView
         android:id="@+id/widget_icon"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:contentDescription="@string/speak"
-        android:src="@drawable/ic_mic" />
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:importantForAccessibility="no"
+        android:maxHeight="72dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/w_speak_button" />
 
     <!-- Shrinks on narrow widgets instead of cutting the word off. -->
     <TextView
         android:id="@+id/widget_label"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:autoSizeMaxTextSize="19sp"
         android:autoSizeMinTextSize="12sp"
         android:autoSizeTextType="uniform"
-        android:fontFamily="@font/nunito_extrabold"
+        android:fontFamily="sans-serif"
         android:gravity="center_vertical"
+        android:importantForAccessibility="no"
         android:maxLines="1"
         android:text="@string/speak"
-        android:textColor="#FFFFFF" />
+        android:textColor="@color/w_on_surface"
+        android:textStyle="bold" />
 </LinearLayout>

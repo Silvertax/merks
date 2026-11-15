@@ -422,10 +422,10 @@ class PhotoFlowTest {
         val id = widgets.createWidget(PhotoWidget::class.java, R.layout.widget_photo)
         val view = widgets.getViewFor(id)
         // The simulation draws the smallest shape, the camera without a label; the description names it.
-        assertEquals("Foto", view.findViewById<View>(R.id.widget_root).contentDescription?.toString())
+        assertEquals("Foto", view.findViewById<View>(android.R.id.background).contentDescription?.toString())
         val icon = view.findViewById<android.widget.ImageView>(R.id.widget_icon)
-        assertEquals(R.drawable.ic_camera, shadowOf(icon.drawable).createdFromResId)
-        view.findViewById<View>(R.id.widget_root).performClick()
+        assertEquals(R.drawable.w_photo_button, shadowOf(icon.drawable).createdFromResId)
+        view.findViewById<View>(android.R.id.background).performClick()
         assertEquals(PhotoActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
     }
 }

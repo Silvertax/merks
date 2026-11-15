@@ -2,6 +2,23 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.10.0
+
+### What's new
+
+- **"All in one" widget:** what comes next and the buttons to speak and to photograph, on one card. Two rows high it shows the date tile, the title and when, the entry after it, and the long buttons "Speak" and "Photo"; one row high, round buttons sit beside it. "Put on the home screen" offers it first.
+- **All widgets in a new look:** a calm card in the phone's light or dark mode, big round buttons, and in "Up next" the date tile from the list: teal for appointments, amber for reminders.
+- **Clear print:** widgets cannot use the app's own font, so on most phones their text came out thin and plain. They now use the phone's font, bold where it matters.
+
+### Changed
+
+- Every widget fits its size and larger print without cutting anything off: a narrow "Up next" puts the day on top and lists the entries after it with their day above the title; a very low one puts everything in one line, the time first.
+- "Up next" starts three cells wide, with room for the date tile.
+
+### Good to know
+
+- Widgets already on the home screen take on the new look by themselves after the update.
+
 ## 0.9.1
 
 ### What's new

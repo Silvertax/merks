@@ -292,8 +292,8 @@ class SettingsActivity : MerksActivity() {
                 val choice = choices[which]
                 if (choice == Prefs.lang(this)) return@setSingleChoiceItems
                 Prefs.setLang(this, choice)
+                // All widgets, those that show what comes next too.
                 ButtonWidget.updateAll(this)
-                Glance.refresh(this)
                 Lang.apply(choice)
             }
             .show()

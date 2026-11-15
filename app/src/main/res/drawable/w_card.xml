@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The calm card every widget sits on; a tap ripples across it. Android 12 and newer: see drawable-v31. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/w_ripple">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/w_surface" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+</ripple>

@@ -271,4 +271,13 @@
         <item quantity="one">%d Termin in den Kalender eingetragen</item>
         <item quantity="other">%d Termine in den Kalender eingetragen</item>
     </plurals>
+
+    <string name="widget_all">Alles in einem</string>
+    <string name="widget_all_description">Was als Nächstes ansteht, mit den Knöpfen zum Sprechen und Fotografieren</string>
+    <string name="widget_pick_all">„Alles in einem“: was als Nächstes ansteht, dazu die Knöpfe zum Sprechen und Fotografieren</string>
+    <string name="widget_all_day">Ganztägig</string>
+    <string name="widget_sample_weekday">Mo</string>
+    <string name="widget_sample_month">Nov</string>
+    <string name="widget_sample_title">Zahnarzt bei Neupert</string>
+    <string name="widget_sample_when">Morgen, 10:00 Uhr</string>
 </resources>

@@ -11,7 +11,7 @@ Was du zum Beispiel sagen kannst:
 • „Jedes Jahr am 3. Dezember Geburtstag von Oma“
 
 Funktionen:
-• Große Widgets zum Sprechen und für Fotos, von 2x2 bis 1x1 verkleinerbar, dazu das Widget „Als Nächstes“, das zeigt, was ansteht
+• Widgets für den Startbildschirm: „Alles in einem“ mit dem, was als Nächstes ansteht, und den Knöpfen zum Sprechen und Fotografieren, oder alles einzeln; große runde Knöpfe, bis 1x1
 • Termine vom Foto: Merk's liest Datum, Uhrzeit und worum es geht, und du prüfst alles, bevor es gespeichert wird. Das Foto wird gleich danach gelöscht
 • Termine kommen in deinen Kalender, wiederkehrende als Serie, oder bleiben in Merk's, wenn Merk's dein Kalender ist
 • Du wählst, wann Termine erinnern: eine Woche, einen Tag oder zwei Stunden vorher, am Vorabend, eine Stunde, 30 oder 15 Minuten vorher oder zu Beginn

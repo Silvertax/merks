@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Starts two cells wide, so it fits next to the "Speak" button; made wider or taller it shows more. -->
+<!-- Starts three cells wide, with room for the date tile; made taller it lists more, made narrower it puts the day on top. -->
+<!-- Preview layout and cell counts are for Android 12 and newer; older ones go by minWidth and minHeight. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:description="@string/next_up_widget_description"
     android:initialLayout="@layout/widget_next"
-    android:minWidth="110dp"
+    android:minWidth="180dp"
     android:minHeight="50dp"
     android:minResizeWidth="110dp"
     android:minResizeHeight="40dp"
-    android:previewLayout="@layout/widget_next"
+    android:previewLayout="@layout/widget_next_preview"
     android:resizeMode="horizontal|vertical"
-    android:targetCellWidth="2"
+    android:targetCellWidth="3"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"

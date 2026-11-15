@@ -14,15 +14,13 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.util.SizeF
-import android.view.View
 import android.widget.RemoteViews
 import java.time.ZoneId
 
 /**
- * What comes next, at a glance: the "Up next" widget and, if switched on, a quiet notification
- * that also shows on the lock screen. Both are redrawn whenever entries change and whenever the
- * next thing is over, a new one starts or the day changes.
+ * What comes next, at a glance: the "Up next" and the all-in-one widget and, if switched on, a quiet
+ * notification that also shows on the lock screen. They are redrawn whenever entries change and
+ * whenever the next thing is over, a new one starts or the day changes.
  */
 object Glance {
     private const val CHANNEL = "next_up"
@@ -34,18 +32,20 @@ object Glance {
 
     fun refresh(ctx: Context) {
         val app = ctx.applicationContext
-        val widgets = NextWidget.ids(app)
+        val nextWidgets = NextWidget.ids(app)
+        val allWidgets = AllInOneWidget.ids(app)
         val notification = Prefs.nextUpNotification(app)
         val entries = Db(app).all()
         val now = System.currentTimeMillis()
         val zone = ZoneId.systemDefault()
         val next = Plan.nextUp(entries, now, zone, 3)
-        if (widgets.isNotEmpty()) NextWidget.renderAll(app, next, now)
+        if (nextWidgets.isNotEmpty()) NextWidget.renderAll(app, next, now)
+        if (allWidgets.isNotEmpty()) AllInOneWidget.renderAll(app, next, now)
         if (notification) show(app, next, now) else app.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
         // Only keep a wake-up when something shows what comes next.
         val am = app.getSystemService(AlarmManager::class.java)
         val pi = PendingIntent.getBroadcast(app, 7, Intent(app, GlanceReceiver::class.java), FLAGS)
-        if (widgets.isEmpty() && !notification) {
+        if (nextWidgets.isEmpty() && allWidgets.isEmpty() && !notification) {
             am.cancel(pi)
             return
         }
@@ -109,8 +109,9 @@ class GlanceReceiver : BroadcastReceiver() {
 }
 
 /**
- * Home screen widget "Up next": the next appointment or reminder; a taller widget also lists the two after it.
- * Tapping it opens the app, so at two cells wide it doubles as a big button to the list, next to "Speak".
+ * Home screen widget "Up next": the next appointment or reminder with its date tile; a taller widget
+ * also lists the two after it. Tapping it opens the app, so at two cells wide it doubles as a big
+ * button to the list, next to "Speak".
  */
 class NextWidget : AppWidgetProvider() {
     override fun onUpdate(ctx: Context, manager: AppWidgetManager, ids: IntArray) = Glance.refresh(ctx)
@@ -124,111 +125,98 @@ class NextWidget : AppWidgetProvider() {
         fun ids(ctx: Context): IntArray =
             AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, NextWidget::class.java))
 
-        /** One line, two-line block, or block plus the two after it. */
-        enum class Shape { LINE, BLOCK, LIST }
+        /** From this width (dp) the date tile fits in front of the title. */
+        const val TILE_MIN_W = 200f
+        private const val MIN = 40f
 
-        /**
-         * How a widget of some size is drawn. A [narrow] one, two cells wide like the "Speak" button, has no
-         * room for "Fr., 14. Nov., 10:00 Uhr" in one line: the day goes on top and the time below the title.
-         * Where even that is too high ([low]), the day is written short instead.
-         */
-        data class Look(val shape: Shape, val narrow: Boolean = false, val low: Boolean = false)
+        // Heights (dp) from which each look fits without cutting a line off. Larger print needs more
+        // room, though less than in proportion. Measured on the layouts with long titles, plus 2 dp;
+        // WidgetSizeTest checks them. A narrow widget mostly uses the same steps: its day, title and
+        // time need a little less than the date tile, its title in two lines a little less than "Up next".
+        // Below the lowest step everything shares one line.
 
-        const val WIDE_MIN_W = 200f
-        private const val NARROW_W = 100f
-        private const val LOW_H = 40f
+        /** The title, and below it day and time in one line. Below this, all goes into one line. */
+        internal fun lowMinH(fs: Float) = 38.5f * fs + 19f
 
-        // Heights in dp from which each look fits without cutting a line off. Larger print needs more room.
-        private fun stackMinH(fontScale: Float) = 58f * fontScale + 12f
-        private fun blockMinH(fontScale: Float, narrow: Boolean) = (if (narrow) 80f else 82f) * fontScale + 20f
-        private fun listMinH(fontScale: Float, narrow: Boolean) = (if (narrow) 130f else 132f) * fontScale + 20f
+        /** The date tile with the title beside it; narrow: the day, the title and the time. */
+        internal fun tileMinH(fs: Float) = 44f * fs + 50f
 
-        /** [w] and [h] in dp; an unknown size (0) counts as wide and as a block. */
-        fun lookFor(w: Float, h: Float, fontScale: Float = 1f): Look {
-            val narrow = w > 0f && w < WIDE_MIN_W
+        /** "Up next" above the title; narrow: the title in two lines. */
+        internal fun labelMinH(fs: Float) = 72f * fs + 36f
+
+        /** One more entry below, in one line. */
+        internal fun list1MinH(fs: Float) = 95f * fs + 51f
+
+        /** Two more entries below. */
+        internal fun list2MinH(fs: Float) = 118.5f * fs + 50.5f
+
+        /** Narrow: one more entry below, its day above its title. */
+        internal fun stackList1MinH(fs: Float) = 108f * fs + 50f
+
+        /** Narrow: two more. */
+        internal fun stackList2MinH(fs: Float) = 145f * fs + 54.5f
+
+        /** The steps of height at which the look changes; with the two widths 16 layouts, as many as Android takes. */
+        internal fun heights(fs: Float) =
+            listOf(MIN, lowMinH(fs), tileMinH(fs), labelMinH(fs), list1MinH(fs), list2MinH(fs), stackList1MinH(fs), stackList2MinH(fs))
+
+        /** [w] and [h] in dp; an unknown size (0) gets the look of the preview. */
+        fun lookFor(w: Float, h: Float, fontScale: Float = 1f): UpNextViews.Look {
+            val fs = fontScale
+            val wide = w <= 0f || w >= TILE_MIN_W
+            if (h <= 0f) return UpNextViews.Look(tile = wide, label = wide, compact = !wide)
+            if (h < lowMinH(fs)) return UpNextViews.Look(tile = false, oneLine = true, shortDay = !wide, compact = !wide)
+            if (wide) {
+                return when {
+                    h < tileMinH(fs) -> UpNextViews.Look(tile = false, titleLines = 1, low = true)
+                    h < labelMinH(fs) -> UpNextViews.Look(tile = true)
+                    h < list1MinH(fs) -> UpNextViews.Look(tile = true, label = true)
+                    h < list2MinH(fs) -> UpNextViews.Look(tile = true, label = true, rows = 1)
+                    else -> UpNextViews.Look(tile = true, label = true, rows = 2)
+                }
+            }
             return when {
-                h <= 0f -> Look(Shape.BLOCK, narrow)
-                narrow && h < stackMinH(fontScale) -> Look(Shape.LINE, narrow, low = true)
-                h < blockMinH(fontScale, narrow) -> Look(Shape.LINE, narrow)
-                h < listMinH(fontScale, narrow) -> Look(Shape.BLOCK, narrow)
-                else -> Look(Shape.LIST, narrow)
+                h < tileMinH(fs) -> UpNextViews.Look(tile = false, titleLines = 1, low = true, shortDay = true, compact = true)
+                h < labelMinH(fs) -> UpNextViews.Look(tile = false, titleLines = 1, compact = true)
+                h < stackList1MinH(fs) -> UpNextViews.Look(tile = false, compact = true)
+                h < stackList2MinH(fs) -> UpNextViews.Look(tile = false, rows = 1, compact = true)
+                else -> UpNextViews.Look(tile = false, rows = 2, compact = true)
             }
         }
 
-        fun views(ctx: Context, next: List<Plan.Upcoming>, now: Long, shape: Shape): RemoteViews =
-            views(ctx, next, now, Look(shape))
-
-        fun views(ctx: Context, next: List<Plan.Upcoming>, now: Long, look: Look): RemoteViews {
-            val texts = Lang.context(ctx)
-            val shape = look.shape
-            val narrow = look.narrow
-            // Day on top, time below the title.
-            val stacked = narrow && !look.low
-            val open = PendingIntent.getActivity(
-                ctx, 1, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-            return RemoteViews(ctx.packageName, R.layout.widget_next).apply {
-                setOnClickPendingIntent(R.id.next_root, open)
-                val first = next.firstOrNull()
-                val label = if (stacked && first != null) Format.compactDay(ctx, first.entry, first.start, now) else texts.getString(R.string.next_up_label)
-                setTextViewText(R.id.next_label, label)
-                // As the day it is what is looked for first, so it stands out more than the heading does.
-                setTextColor(R.id.next_label, if (stacked && first != null) 0xFFE6F7F4.toInt() else 0xFFCCEFE9.toInt())
-                setViewVisibility(R.id.next_label, if (stacked || (shape != Shape.LINE && !narrow)) View.VISIBLE else View.GONE)
-                val whenText = when {
-                    first == null -> null
-                    stacked -> Format.compactTime(ctx, first.entry, first.start)
-                    else -> Format.compactWhen(ctx, first.entry, first.start, now, short = narrow && !first.entry.allDay)
-                }
-                setTextViewText(R.id.next_title, first?.entry?.title ?: texts.getString(R.string.next_up_none))
-                setTextViewText(R.id.next_when, whenText.orEmpty())
-                setViewVisibility(R.id.next_when, if (whenText == null) View.GONE else View.VISIBLE)
-                // In one row, a title without a time below it may use that line too.
-                setInt(R.id.next_title, "setMaxLines", if (shape == Shape.LINE && !(stacked && whenText == null)) 1 else 2)
-                val rest = if (shape == Shape.LIST) next.drop(1) else emptyList()
-                setViewVisibility(R.id.next_more, if (rest.isEmpty()) View.GONE else View.VISIBLE)
-                for ((i, row) in listOf(R.id.next_line2, R.id.next_line3).withIndex()) {
-                    val u = rest.getOrNull(i)
-                    setViewVisibility(row, if (u == null) View.GONE else View.VISIBLE)
-                    if (u == null) continue
-                    val day = if (narrow) Format.compactDay(ctx, u.entry, u.start, now, short = true) else Format.compactWhen(ctx, u.entry, u.start, now)
-                    setTextViewText(row, day + " · " + u.entry.title)
-                }
-                // A narrow widget gets slightly smaller print and margins, so three lines fit in one row of the home screen.
-                val sp = android.util.TypedValue.COMPLEX_UNIT_SP
-                setTextViewTextSize(R.id.next_label, sp, if (narrow) 13f else 12f)
-                setTextViewTextSize(R.id.next_title, sp, if (narrow) 16f else 17f)
-                setTextViewTextSize(R.id.next_when, sp, if (look.low) 12f else if (narrow) 13f else 14f)
+        fun views(ctx: Context, next: List<Plan.Upcoming>, now: Long, look: UpNextViews.Look): RemoteViews =
+            RemoteViews(ctx.packageName, R.layout.widget_next).apply {
+                setOnClickPendingIntent(android.R.id.background, UpNextViews.openApp(ctx))
+                UpNextViews.fill(this, ctx, next, now, look)
                 val dp = ctx.resources.displayMetrics.density
-                val side = ((if (narrow) 12 else 16) * dp).toInt()
-                val top = ((if (narrow && shape == Shape.LINE) 6 else 10) * dp).toInt()
-                setViewPadding(R.id.next_root, side, top, side, top)
+                val side = ((if (look.compact) 12 else 14) * dp).toInt()
+                val vertical = ((if (look.oneLine) 5 else if (look.low) 8 else 12) * dp).toInt()
+                setViewPadding(android.R.id.background, side, vertical, side, vertical)
             }
-        }
 
         fun renderAll(ctx: Context, next: List<Plan.Upcoming>, now: Long) {
             val manager = AppWidgetManager.getInstance(ctx)
-            val fontScale = ctx.resources.configuration.fontScale
+            val fs = ctx.resources.configuration.fontScale
             for (id in ids(ctx)) {
                 if (Build.VERSION.SDK_INT >= 31) {
-                    // The launcher picks what fits the real size.
-                    val sizes = listOf(false, true).flatMap { narrow ->
-                        val heights = listOfNotNull(LOW_H, stackMinH(fontScale).takeIf { narrow }, blockMinH(fontScale, narrow), listMinH(fontScale, narrow))
-                        heights.map { SizeF(if (narrow) NARROW_W else WIDE_MIN_W, it) }
-                    }
+                    // The home screen picks what fits the real size, in both orientations.
                     manager.updateAppWidget(
                         id,
-                        RemoteViews(sizes.associateWith { views(ctx, next, now, lookFor(it.width, it.height, fontScale)) }),
+                        UpNextViews.responsive(listOf(MIN, TILE_MIN_W), heights(fs)) { w, h -> views(ctx, next, now, lookFor(w, h, fs)) },
                     )
                 } else {
-                    val o = manager.getAppWidgetOptions(id)
-                    val portrait = ctx.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
-                    val w = o.getInt(if (portrait) AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
-                    val h = o.getInt(if (portrait) AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-                    manager.updateAppWidget(id, views(ctx, next, now, lookFor(w.toFloat(), h.toFloat(), fontScale)))
+                    val (w, h) = size(ctx, manager.getAppWidgetOptions(id))
+                    manager.updateAppWidget(id, views(ctx, next, now, lookFor(w, h, fs)))
                 }
             }
+        }
+
+        /** Older Android: the options hold portrait as min width x max height, landscape as max width x min height. */
+        fun size(ctx: Context, o: Bundle): Pair<Float, Float> {
+            val portrait = ctx.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
+            val w = o.getInt(if (portrait) AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+            val h = o.getInt(if (portrait) AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+            return w.toFloat() to h.toFloat()
         }
     }
 }

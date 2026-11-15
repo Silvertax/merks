@@ -41,4 +41,19 @@
     <color name="m_inverse_surface">#31302D</color>
     <color name="m_inverse_on_surface">#F4F0EA</color>
     <color name="m_inverse_primary">#7FD8CB</color>
+
+    <!-- Home screen widgets, light. They follow the phone's light or dark mode; dark values in values-night. -->
+    <color name="w_surface">#FCFAF6</color>
+    <color name="w_on_surface">#1C1B19</color>
+    <color name="w_on_surface_variant">#625D55</color>
+    <color name="w_outline">#E6E0D6</color>
+    <color name="w_primary">#0D7A6F</color>
+    <color name="w_on_primary">#FFFFFF</color>
+    <color name="w_tonal">#CDEFE9</color>
+    <color name="w_on_tonal">#00332D</color>
+    <color name="w_amber">#FFE2B6</color>
+    <color name="w_on_amber">#2C1A00</color>
+    <color name="w_accent">#0B6B61</color>
+    <color name="w_ripple">#1F1C1B19</color>
+    <color name="w_ripple_on_primary">#40FFFFFF</color>
 </resources>

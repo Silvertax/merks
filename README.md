@@ -6,7 +6,7 @@ A home screen widget starts listening right away. What you say becomes an appoin
 
 <p>
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries: what is coming up, soonest first, then the notes">
-  <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next, Speak and Photo widgets, speaking via the widget">
+  <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the All in one widget and the Speak, Photo and Up next widgets, speaking via the widget">
   <img src="docs/screenshots/en-photo.png" width="200" alt="Appointments read from a photo, to check before they are saved">
   <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings: Merk's as the calendar, and when it reminds you">
 </p>
@@ -43,13 +43,21 @@ Appointments go into your phone's calendar, so you see them there too. For anyon
 
 Reminders come on time. For appointments you choose when (Settings → Remind me of appointments): a week, a day or two hours ahead, the evening before at 6 pm, an hour, 30 or 15 minutes ahead, when it starts, or several of these. Out of the box it is the evening before and an hour ahead; all-day appointments remind at 8 in the morning. Each reminder has "In 15 min" and "In 1 hr" buttons, and "Done" for a reminder or "OK" for an appointment: "OK" puts away only this notification, so the reminders still to come for the appointment come all the same.
 
+## Widgets
+
+Four widgets for the home screen; "Put on the home screen" in the app offers them all.
+
+- **All in one:** what comes next, with its date tile as in the list, and below it the buttons "Speak" and "Photo". It starts four cells wide and two high; made taller it also lists the entries after it, and one row high the buttons turn round and sit beside it.
+- **Speak** and **Photo:** one big round button each, from 2x2 down to 1x1.
+- **Up next:** what comes next, with the date tile when there is room for it; made taller it also lists the two entries after it. A tap on it opens the list with everything.
+
+The widgets follow the phone's light or dark mode, and they adapt to their size and to larger print, so nothing is cut off. A tap anywhere else on "All in one" opens the list too.
+
 ## More
 
 Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating appointments, in the phone's calendar as a series.
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
-
-The "Speak" and "Photo" widgets can be resized from 2x2 down to 1x1. Another widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers all three.
 
 The list shows only what is current: what is still to come at the top, soonest first, then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
@@ -78,6 +86,6 @@ Merk's is young and still growing. Ideas and problems are welcome as an [issue](
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The Nunito font is licensed under the SIL Open Font License, see [fonts/Nunito-OFL.txt](fonts/Nunito-OFL.txt).
+MIT, see [LICENSE](LICENSE). The Nunito font is licensed under the SIL Open Font License, see [fonts/Nunito-OFL.txt](fonts/Nunito-OFL.txt). The symbols in the widgets are [Material Symbols](https://github.com/google/material-design-icons) by Google (Apache License 2.0).
 
 Reading photos on the phone uses [Tesseract](https://github.com/tesseract-ocr/tesseract) and its [recognition data](https://github.com/tesseract-ocr/tessdata_fast) (Apache License 2.0) and [Leptonica](http://www.leptonica.org/) (BSD 2-Clause), built for Android by [Tesseract4Android](https://github.com/adaptech-cz/Tesseract4Android) (Apache License 2.0).

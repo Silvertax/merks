@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The big round "Photo" button of the Photo widget. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/w_tonal" />
+            <size
+                android:width="104dp"
+                android:height="104dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="28dp"
+        android:drawable="@drawable/w_ic_camera_on_tonal"
+        android:left="28dp"
+        android:right="28dp"
+        android:top="28dp" />
+</layer-list>

@@ -143,7 +143,7 @@ class AppSmokeTestEn {
         val id = manager.createWidget(SpeakWidget::class.java, R.layout.widget_speak)
         val label = manager.getViewFor(id).findViewById<TextView>(R.id.widget_label)
         // The simulation draws the smallest layout without a label; then the description tells it.
-        val described = manager.getViewFor(id).findViewById<View>(R.id.widget_root).contentDescription?.toString()
+        val described = manager.getViewFor(id).findViewById<View>(android.R.id.background).contentDescription?.toString()
         assertEquals("Sprechen", label?.text?.toString() ?: described)
     }
 }

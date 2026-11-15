@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round "Photo" button inside a widget: quieter than "Speak", as in the app. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/w_ripple">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/w_tonal" />
+        </shape>
+    </item>
+</ripple>

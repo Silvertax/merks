@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- All in one, two rows or taller: what comes next on top, the buttons to speak and to photograph below. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/w_card"
+    android:orientation="vertical"
+    android:padding="14dp"
+    tools:ignore="UseAppTint">
+
+    <include layout="@layout/widget_next_head" />
+
+    <include layout="@layout/widget_next_more" />
+
+    <!-- Whatever height is left goes here, so the buttons sit at the bottom. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="12dp"
+        tools:ignore="UselessLeaf" />
+
+    <LinearLayout
+        android:id="@+id/all_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/all_speak"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/w_pill_primary"
+            android:contentDescription="@string/speak"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/w_ic_mic"
+                android:tint="@color/w_on_primary" />
+
+            <TextView
+                android:id="@+id/all_speak_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:text="@string/speak"
+                android:textColor="@color/w_on_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/all_photo"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/w_pill_tonal"
+            android:contentDescription="@string/photo"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/w_ic_camera"
+                android:tint="@color/w_on_tonal" />
+
+            <TextView
+                android:id="@+id/all_photo_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif"
+                android:importantForAccessibility="no"
+                android:maxLines="1"
+                android:text="@string/photo"
+                android:textColor="@color/w_on_tonal"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

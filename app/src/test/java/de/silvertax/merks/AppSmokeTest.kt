@@ -441,12 +441,12 @@ class AppSmokeTest {
         assertTrue(Db(app).all().isEmpty())
     }
 
-    /** Taps "Put on the home screen" and picks the button to speak (0), to photograph (1) or "Up next" (2). */
+    /** Taps "Put on the home screen" and picks all in one (0), the button to speak (1), to photograph (2) or "Up next" (3). */
     private fun pickWidget(main: MainActivity, which: Int): android.app.Dialog {
         main.findViewById<View>(R.id.add_widget).performClick()
         val chooser = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val list = chooser.listView
-        assertEquals(3, list.adapter.count)
+        assertEquals(4, list.adapter.count)
         list.performItemClick(list.adapter.getView(which, null, list), which, list.adapter.getItemId(which))
         return chooser
     }
@@ -462,16 +462,17 @@ class AppSmokeTest {
         assertFalse(chooser.isShowing)
     }
 
-    /** All three widgets are on offer, and the way by hand names the one that was picked. */
+    /** All four widgets are on offer, all in one first, and the way by hand names the one that was picked. */
     @Test fun widgetButtonOffersUpNextToo() {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val chooser = pickWidget(main, 2)
+        val chooser = pickWidget(main, 3)
         val shown = (chooser as androidx.appcompat.app.AlertDialog).listView.adapter
-        assertTrue(shown.getItem(0).toString().startsWith("Knopf „Sprechen“"))
-        assertTrue(shown.getItem(1).toString().startsWith("Knopf „Foto“"))
-        assertTrue(shown.getItem(2).toString().startsWith("„Als Nächstes“"))
+        assertTrue(shown.getItem(0).toString().startsWith("„Alles in einem“"))
+        assertTrue(shown.getItem(1).toString().startsWith("Knopf „Sprechen“"))
+        assertTrue(shown.getItem(2).toString().startsWith("Knopf „Foto“"))
+        assertTrue(shown.getItem(3).toString().startsWith("„Als Nächstes“"))
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.endsWith("„Merk's“ suchen und „Als Nächstes“ hinzufügen."))
@@ -481,7 +482,7 @@ class AppSmokeTest {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        pickWidget(main, 1)
+        pickWidget(main, 2)
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.endsWith("„Merk's“ suchen und „Foto“ hinzufügen."))
@@ -500,7 +501,7 @@ class AppSmokeTest {
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.startsWith("Das Handy hat es nicht von selbst hinzugefügt. Bei Xiaomi"))
-        assertTrue(text, text.endsWith("„Widgets“ wählen, „Merk's“ suchen und „Sprechen“ hinzufügen."))
+        assertTrue(text, text.endsWith("„Widgets“ wählen, „Merk's“ suchen und „Alles in einem“ hinzufügen."))
         assertEquals("App-Einstellungen", dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).text.toString())
     }
 
@@ -870,52 +871,110 @@ class AppSmokeTest {
     @Test fun theUpNextWidgetShowsWhatComesNext() {
         val widgets = shadowOf(AppWidgetManager.getInstance(app))
         val id = widgets.createWidget(NextWidget::class.java, R.layout.widget_next)
+        // The simulation draws the smallest size, where everything shares one line.
         assertEquals("Nichts geplant", widgets.getViewFor(id).findViewById<TextView>(R.id.next_title).text.toString())
 
         Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", LocalDate.now().plusDays(1).atTime(9, 0), null, false), "Fußpflege")
-        val view = widgets.getViewFor(id)
-        assertEquals("Fußpflege", view.findViewById<TextView>(R.id.next_title).text.toString())
-        assertEquals("Morgen, 09:00 Uhr", view.findViewById<TextView>(R.id.next_when).text.toString())
+        assertEquals("Morgen, 09:00 Uhr · Fußpflege", widgets.getViewFor(id).findViewById<TextView>(R.id.next_title).text.toString())
     }
 
-    /** Two cells wide, next to the "Speak" button: the day on top, the time below, so nothing is cut off. */
-    @Test fun theUpNextWidgetFitsTwoCells() {
-        fun look(shape: NextWidget.Companion.Shape, narrow: Boolean = false, low: Boolean = false) =
-            NextWidget.Companion.Look(shape, narrow, low)
-        val line = NextWidget.Companion.Shape.LINE
-        val block = NextWidget.Companion.Shape.BLOCK
-        val list = NextWidget.Companion.Shape.LIST
-        assertEquals(look(line), NextWidget.lookFor(250f, 80f))
-        assertEquals(look(line, narrow = true), NextWidget.lookFor(161f, 80f))
-        assertEquals(look(line, narrow = true, low = true), NextWidget.lookFor(161f, 60f))
-        // Larger print needs more room before three lines fit.
-        assertEquals(look(line, narrow = true, low = true), NextWidget.lookFor(161f, 80f, fontScale = 1.3f))
-        assertEquals(look(block, narrow = true), NextWidget.lookFor(161f, 110f))
-        assertEquals(look(list, narrow = true), NextWidget.lookFor(161f, 180f))
-        assertEquals(look(block), NextWidget.lookFor(0f, 0f))
-
+    /**
+     * Wide enough, the date tile stands in front, as in the list. Two cells wide there is no room for
+     * it: the day goes on top and the time below, and the entries after it have their day above the
+     * title. Lower, day and time share a line; lowest, everything does. Nothing is cut off.
+     */
+    @Test fun theUpNextWidgetFitsItsSize() {
         val day = LocalDate.now().plusDays(5)
         Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", day.atTime(9, 0), null, false), "Fußpflege")
         Store.save(app, Parsed(Kind.APPOINTMENT, "Oma zu Besuch", day.plusDays(1).atStartOfDay(), null, true), "Oma")
         val next = Glance.nextUp(app)
         val now = System.currentTimeMillis()
         fun visible(v: View): Boolean = v.visibility == View.VISIBLE && ((v.parent as? View)?.let { visible(it) } ?: true)
-        fun texts(l: NextWidget.Companion.Look): List<String> {
-            val v = NextWidget.views(app, next, now, l).apply(app, null)
-            return listOf(R.id.next_label, R.id.next_title, R.id.next_when, R.id.next_line2).map { id ->
-                v.findViewById<TextView>(id).let { if (visible(it)) it.text.toString() else "" }
-            }
+        fun texts(w: Float, h: Float, fontScale: Float = 1f): List<String> {
+            val v = NextWidget.views(app, next, now, NextWidget.lookFor(w, h, fontScale)).apply(app, null)
+            fun text(id: Int) = v.findViewById<TextView>(id).let { if (visible(it)) it.text.toString() else "" }
+            return listOf(
+                text(R.id.next_badge_day), text(R.id.next_day), text(R.id.next_title), text(R.id.next_when),
+                text(R.id.next_row2_day) + text(R.id.next_stack2_day), text(R.id.next_line2) + text(R.id.next_stack2_title),
+            )
         }
         val date = java.time.format.DateTimeFormatter.ofPattern("EEE, d. MMM", Locale.GERMANY).format(day)
-        val short = java.time.format.DateTimeFormatter.ofPattern("d.M.", Locale.GERMANY)
-        assertEquals(listOf(date, "Fußpflege", "09:00 Uhr", ""), texts(look(line, narrow = true)))
-        assertEquals(listOf("", "Fußpflege", short.format(day) + ", 09:00 Uhr", ""), texts(look(line, narrow = true, low = true)))
-        assertEquals(
-            listOf(date, "Fußpflege", "09:00 Uhr", short.format(day.plusDays(1)) + " · Oma zu Besuch"),
-            texts(look(list, narrow = true)),
-        )
-        // Wide stays as it was.
-        assertEquals(listOf("", "Fußpflege", "$date, 09:00 Uhr", ""), texts(look(line)))
+        val short = java.time.format.DateTimeFormatter.ofPattern("d.M.", Locale.GERMANY).format(day)
+        val tile = day.dayOfMonth.toString()
+        val after = java.time.format.DateTimeFormatter.ofPattern("EEE d.", Locale.GERMANY).format(day.plusDays(1)).replace(". ", " ")
+
+        // Wide: the tile in front, beside it the time; taller, the one after it too.
+        assertEquals(listOf(tile, "", "Fußpflege", "09:00 Uhr", "", ""), texts(250f, 100f))
+        assertEquals(listOf(tile, "", "Fußpflege", "09:00 Uhr", after, "Oma zu Besuch"), texts(250f, 200f))
+        // Two cells: the day on top, the title, the time; taller, the one after it, its day above it.
+        assertEquals(listOf("", date, "Fußpflege", "09:00 Uhr", "", ""), texts(150f, 100f))
+        assertEquals(listOf("", date, "Fußpflege", "09:00 Uhr", after, "Oma zu Besuch"), texts(150f, 200f))
+        // Too low for three lines: day and time share one; lower still, the title joins them, after the time.
+        assertEquals(listOf("", "", "Fußpflege", "$short, 09:00 Uhr", "", ""), texts(150f, 60f))
+        assertEquals(listOf("", "", "$short, 09:00 Uhr · Fußpflege", "", "", ""), texts(150f, 50f))
+        // Larger print needs more room before three lines fit.
+        assertEquals(listOf("", "", "Fußpflege", "$short, 09:00 Uhr", "", ""), texts(150f, 100f, fontScale = 1.3f))
+    }
+
+    /** As in the list, the date tile is teal for an appointment and amber for a reminder. */
+    @Test fun theDateTileTellsAppointmentsFromReminders() {
+        fun teal(): Boolean = NextWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), NextWidget.lookFor(250f, 120f))
+            .apply(app, null).findViewById<View>(R.id.next_badge).isEnabled
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", LocalDate.now().plusDays(2).atTime(9, 0), null, false), "Fußpflege")
+        assertTrue(teal())
+        Store.save(app, Parsed(Kind.REMINDER, "Blumen gießen", LocalDate.now().plusDays(1).atTime(18, 0), null, false), "Blumen")
+        assertFalse(teal())
+    }
+
+    // ---------- All in one ----------
+
+    @Test fun theAllInOneWidgetSpeaksPhotographsAndOpensTheList() {
+        val widgets = shadowOf(AppWidgetManager.getInstance(app))
+        val id = widgets.createWidget(AllInOneWidget::class.java, R.layout.widget_all)
+        val view = widgets.getViewFor(id)
+        assertEquals("Sprechen", view.findViewById<View>(R.id.all_speak).contentDescription?.toString())
+        assertEquals("Foto", view.findViewById<View>(R.id.all_photo).contentDescription?.toString())
+        view.findViewById<View>(R.id.all_speak).performClick()
+        assertEquals(RecordActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+        view.findViewById<View>(R.id.all_photo).performClick()
+        assertEquals(PhotoActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+        view.findViewById<View>(android.R.id.background).performClick()
+        assertEquals(MainActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+    }
+
+    /** Two rows high: what comes next and the one after it, the long buttons with their words below. */
+    @Test fun theAllInOneWidgetShowsWhatComesNext() {
+        val day = LocalDate.now().plusDays(1)
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", day.atTime(9, 0), null, false), "Fußpflege")
+        Store.save(app, Parsed(Kind.REMINDER, "Blumen gießen", day.plusDays(1).atTime(18, 0), null, false), "Blumen")
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        fun visible(v: View): Boolean = v.visibility == View.VISIBLE && ((v.parent as? View)?.let { visible(it) } ?: true)
+        fun texts(v: View) = listOf(R.id.next_badge_day, R.id.next_label, R.id.next_title, R.id.next_when, R.id.next_line2, R.id.next_row2_time, R.id.all_speak_label, R.id.all_photo_label)
+            .map { id -> v.findViewById<TextView>(id)?.takeIf { visible(it) }?.text?.toString().orEmpty() }
+
+        val tall = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
+        assertEquals(listOf(day.dayOfMonth.toString(), "Als Nächstes", "Fußpflege", "Morgen, 09:00 Uhr", "Blumen gießen", "18:00", "Sprechen", "Foto"), texts(tall))
+        // Three cells wide the buttons keep their symbols only.
+        val narrower = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(236f, 219f)).apply(app, null)
+        assertEquals(listOf("", ""), texts(narrower).takeLast(2))
+        // One row: the round buttons beside it.
+        val row = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(394f, 107f)).apply(app, null)
+        assertEquals(listOf(day.dayOfMonth.toString(), "", "Fußpflege", "Morgen, 09:00 Uhr", "", "", "", ""), texts(row))
+        assertNotNull(row.findViewById<View>(R.id.all_speak))
+        // Too narrow for what comes next: only the two buttons.
+        val buttons = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(150f, 80f)).apply(app, null)
+        assertEquals(View.GONE, buttons.findViewById<View>(R.id.next_head).visibility)
+    }
+
+    /** Like "Up next", it is redrawn when what comes next changes, so a wake-up is kept for it. */
+    @Test fun theAllInOneWidgetKeepsUpToDate() {
+        val alarms = shadowOf(app.getSystemService(android.app.AlarmManager::class.java))
+        fun planned() = alarms.scheduledAlarms.any { shadowOf(it.operation).savedIntent.component?.className == GlanceReceiver::class.java.name }
+        Glance.refresh(app)
+        assertFalse(planned())
+        shadowOf(AppWidgetManager.getInstance(app)).createWidget(AllInOneWidget::class.java, R.layout.widget_all)
+        assertTrue(planned())
     }
 
     // ---------- Main list ----------
@@ -1642,7 +1701,7 @@ class AppSmokeTest {
         val id = manager.createWidget(SpeakWidget::class.java, R.layout.widget_speak)
         val view = manager.getViewFor(id)
         assertNotNull(view)
-        view.findViewById<View>(R.id.widget_root).performClick()
+        view.findViewById<View>(android.R.id.background).performClick()
         idleMain()
         val started = shadowOf(app).nextStartedActivity
         assertEquals(RecordActivity::class.java.name, started?.component?.className)

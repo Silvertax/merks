@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Round "Speak" button inside a widget. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/w_ripple_on_primary">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/w_primary" />
+        </shape>
+    </item>
+</ripple>

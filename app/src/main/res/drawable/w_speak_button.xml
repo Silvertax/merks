@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The big round "Speak" button of the Speak widget, one picture so it grows and shrinks with the widget. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/w_primary" />
+            <size
+                android:width="104dp"
+                android:height="104dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="27dp"
+        android:drawable="@drawable/w_ic_mic_on_primary"
+        android:left="27dp"
+        android:right="27dp"
+        android:top="27dp" />
+</layer-list>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The date tile, as in the app's list: teal for appointments, amber for reminders.
+    Widgets cannot switch colours that follow light and dark mode, so the tile is switched
+    "off" (setEnabled false) for amber; its texts take the state over with duplicateParentState.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/w_amber" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/w_tonal" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</selector>

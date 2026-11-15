@@ -276,4 +276,15 @@
         <item quantity="one">%d appointment added to the calendar</item>
         <item quantity="other">%d appointments added to the calendar</item>
     </plurals>
+
+    <!-- The all-in-one widget, and the samples its preview in the widget list shows. -->
+    <string name="widget_all">All in one</string>
+    <string name="widget_all_description">What comes next, with buttons to speak and to photograph</string>
+    <string name="widget_pick_all">“All in one”: what comes next, with the buttons to speak and to photograph</string>
+    <string name="widget_all_day">All day</string>
+    <string name="widget_sample_weekday">Mon</string>
+    <string name="widget_sample_day" translatable="false">16</string>
+    <string name="widget_sample_month">Nov</string>
+    <string name="widget_sample_title">Dentist, Dr. Miller</string>
+    <string name="widget_sample_when">Tomorrow, 10:00 AM</string>
 </resources>

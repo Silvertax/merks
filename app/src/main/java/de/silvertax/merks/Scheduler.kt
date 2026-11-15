@@ -224,6 +224,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED && intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) Updater.cleanUp(ctx)
         Scheduler.rescheduleAll(ctx)
-        Glance.refresh(ctx)
+        // After an update every widget is drawn anew, so it takes on a new look right away.
+        if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) ButtonWidget.updateAll(ctx) else Glance.refresh(ctx)
     }
 }

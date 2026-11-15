@@ -197,12 +197,12 @@ class ScreenshotRender {
 
     @Test fun widgets() {
         val density = app.resources.displayMetrics.density
-        for ((layout, size, name) in listOf(
-            Triple(R.layout.widget_speak, 150 to 150, "8_widget_2x2"),
-            Triple(R.layout.widget_speak_wide, 150 to 64, "8_widget_2x1"),
-            Triple(R.layout.widget_speak_small, 64 to 64, "8_widget_1x1"),
+        for ((widget, size, name) in listOf(
+            Triple(SpeakWidget(), 150 to 150, "8_widget_2x2"),
+            Triple(SpeakWidget(), 150 to 64, "8_widget_2x1"),
+            Triple(SpeakWidget(), 64 to 64, "8_widget_1x1"),
         )) {
-            val v = LayoutInflater.from(app).inflate(layout, null)
+            val v = widget.views(app, ButtonWidget.shapeFor(size.first.toFloat(), size.second.toFloat())).apply(app, null)
             val w = (size.first * density).toInt()
             val h = (size.second * density).toInt()
             v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
@@ -329,8 +329,8 @@ class ScreenshotRender {
     }
 
     /**
-     * The home screen for the store and the README: "Up next" above the buttons to speak and to
-     * photograph, and Merk's listening at the bottom after a tap on "Speak".
+     * The home screen for the store and the README: "All in one" on top, below it "Speak", "Photo"
+     * and "Up next" on their own, and Merk's listening at the bottom after a tap on "Speak".
      */
     private fun homeScreen(name: String) {
         night(true)
@@ -354,10 +354,13 @@ class ScreenshotRender {
             v.draw(canvas)
             canvas.restore()
         }
-        val look = NextWidget.lookFor(345f, 160f, app.resources.configuration.fontScale)
-        place(NextWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), look).apply(app, null), 33, 72, 345, 160)
-        place(LayoutInflater.from(app).inflate(R.layout.widget_speak, null), 33, 256, 150, 150)
-        place(LayoutInflater.from(app).inflate(R.layout.widget_photo, null), 228, 256, 150, 150)
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        val fs = app.resources.configuration.fontScale
+        place(AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(379f, 216f, fs)).apply(app, null), 16, 112, 379, 216)
+        place(SpeakWidget().views(app, ButtonWidget.shapeFor(88f, 106f)).apply(app, null), 16, 344, 88, 106)
+        place(PhotoWidget().views(app, ButtonWidget.shapeFor(88f, 106f)).apply(app, null), 113, 344, 88, 106)
+        place(NextWidget.views(app, next, now, NextWidget.lookFor(185f, 106f, fs)).apply(app, null), 210, 344, 185, 106)
         val card = listeningNow().also { idle(400) }.window.decorView
         canvas.save()
         canvas.translate(0f, (bmp.height - card.height).toFloat())
@@ -367,6 +370,80 @@ class ScreenshotRender {
     }
 
     @Test fun home() = homeScreen("15_home")
+
+    /** A widget drawn at a size in dp, as the home screen would, in light or dark mode. */
+    private class WidgetShot(val label: String, val w: Int, val h: Int, val make: (android.content.Context) -> android.widget.RemoteViews)
+
+    /**
+     * All widgets at the sizes home screens give them, on one sheet, for design reviews: light and
+     * dark mode, the phone's font as on a real home screen.
+     */
+    private fun widgetSheet(dark: Boolean, name: String) {
+        sampleEntries()
+        val config = android.content.res.Configuration(app.resources.configuration)
+        config.uiMode = (config.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
+            (if (dark) android.content.res.Configuration.UI_MODE_NIGHT_YES else android.content.res.Configuration.UI_MODE_NIGHT_NO)
+        val c = app.createConfigurationContext(config)
+        val d = c.resources.displayMetrics.density
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        fun button(w: ButtonWidget, label: String, x: Int, y: Int) = WidgetShot("$label ${x}x$y", x, y) { w.views(it, ButtonWidget.shapeFor(x.toFloat(), y.toFloat())) }
+        fun upNext(x: Int, y: Int) = WidgetShot("Up next ${x}x$y", x, y) { NextWidget.views(it, next, now, NextWidget.lookFor(x.toFloat(), y.toFloat())) }
+        fun all(x: Int, y: Int) = WidgetShot("All in one ${x}x$y", x, y) { AllInOneWidget.views(it, next, now, AllInOneWidget.lookFor(x.toFloat(), y.toFloat())) }
+        val rows = listOf(
+            listOf(button(SpeakWidget(), "Speak", 64, 64), button(SpeakWidget(), "Speak", 78, 107), button(PhotoWidget(), "Photo", 78, 107), button(SpeakWidget(), "Speak", 150, 70), button(SpeakWidget(), "Speak", 150, 150), button(PhotoWidget(), "Photo", 150, 150)),
+            listOf(upNext(140, 50), upNext(140, 70), upNext(140, 100), upNext(150, 210), upNext(236, 107), upNext(315, 150), upNext(315, 220)),
+            listOf(all(150, 80), all(236, 107), all(315, 90), all(315, 107), all(394, 107)),
+            listOf(all(160, 220), all(236, 220), all(315, 214), all(394, 214), all(315, 330)),
+            listOf(
+                WidgetShot("Up next, nothing planned", 236, 107) { NextWidget.views(it, emptyList(), now, NextWidget.lookFor(236f, 107f)) },
+                WidgetShot("All in one, nothing planned", 315, 107) { AllInOneWidget.views(it, emptyList(), now, AllInOneWidget.lookFor(315f, 107f)) },
+                WidgetShot("Up next in the widget list", 236, 107) { android.widget.RemoteViews(app.packageName, R.layout.widget_next_preview) },
+                WidgetShot("All in one in the widget list", 315, 214) { android.widget.RemoteViews(app.packageName, R.layout.widget_all_preview) },
+            ),
+        )
+        val gap = (18 * d).toInt()
+        val labelH = (16 * d).toInt()
+        val drawn = rows.map { row ->
+            row.map { shot ->
+                val v = shot.make(c).apply(c, null)
+                val w = (shot.w * d).toInt()
+                val h = (shot.h * d).toInt()
+                v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
+                v.layout(0, 0, w, h)
+                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                v.draw(Canvas(bmp))
+                shot.label to bmp
+            }
+        }
+        val width = drawn.maxOf { r -> r.sumOf { it.second.width } + gap * (r.size + 1) }
+        val height = drawn.sumOf { r -> r.maxOf { it.second.height } + labelH + gap } + gap
+        val sheet = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(sheet)
+        val wallpaper = android.graphics.Paint().apply {
+            shader = if (dark) {
+                android.graphics.LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), Color.rgb(12, 18, 24), Color.rgb(40, 56, 66), android.graphics.Shader.TileMode.CLAMP)
+            } else {
+                android.graphics.LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), Color.rgb(196, 214, 228), Color.rgb(232, 214, 196), android.graphics.Shader.TileMode.CLAMP)
+            }
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), wallpaper)
+        val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = if (dark) Color.WHITE else Color.BLACK; textSize = 11 * d }
+        var y = gap
+        for (row in drawn) {
+            var x = gap
+            for ((label, bmp) in row) {
+                canvas.drawText(label, x.toFloat(), y + 11 * d, text)
+                canvas.drawBitmap(bmp, x.toFloat(), (y + labelH).toFloat(), null)
+                x += bmp.width + gap
+            }
+            y += row.maxOf { it.second.height } + labelH + gap
+        }
+        save(sheet, name)
+    }
+
+    @Test fun widgetsDark() = widgetSheet(true, "17_widgets_dark")
+    @Test fun widgetsLight() = widgetSheet(false, "17_widgets_light")
 
     /** What makes Merk's a calendar of its own: the switch, and when appointments remind. */
     @Test fun calendarSettings() {

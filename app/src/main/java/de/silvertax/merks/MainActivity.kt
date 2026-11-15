@@ -69,9 +69,13 @@ class MainActivity : MerksActivity() {
         paused = true
     }
 
-    /** There are three things for the home screen: the buttons to speak and to photograph, and what comes next. */
+    /**
+     * What there is for the home screen: everything on one card, or each on its own: the buttons to
+     * speak and to photograph, and what comes next.
+     */
     private fun addWidget() {
         val choices = arrayOf(
+            getString(R.string.widget_pick_all),
             getString(R.string.widget_pick_speak),
             getString(R.string.widget_pick_photo),
             getString(R.string.widget_pick_next),
@@ -80,8 +84,9 @@ class MainActivity : MerksActivity() {
             .setTitle(R.string.add_widget)
             .setItems(choices) { _, which ->
                 when (which) {
-                    0 -> pinWidget(SpeakWidget::class.java, getString(R.string.speak))
-                    1 -> pinWidget(PhotoWidget::class.java, getString(R.string.photo))
+                    0 -> pinWidget(AllInOneWidget::class.java, getString(R.string.widget_all))
+                    1 -> pinWidget(SpeakWidget::class.java, getString(R.string.speak))
+                    2 -> pinWidget(PhotoWidget::class.java, getString(R.string.photo))
                     else -> pinWidget(NextWidget::class.java, getString(R.string.next_up_label))
                 }
             }
