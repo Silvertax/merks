@@ -1,0 +1,4 @@
+• Merk's as the calendar: appointments can stay in Merk's only, and Merk's reminds you of them.
+• Choose when appointments remind you: from a week ahead to when it starts, or several times.
+• "OK" on an appointment's reminder puts away only this notification; the next reminders still come.
+• Saving, reminders and widgets are quicker and steadier.

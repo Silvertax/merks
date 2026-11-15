@@ -1,15 +1,14 @@
 # Merk's
 
-Tap once, say it, done. Merk's is an Android app for people who do not want to open an app, type, or think about where something belongs.
+A simple calendar you talk to. Tap once, say it, done: Merk's is an Android app for people who do not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, or stay in Merk's if it is your calendar, and the app reminds you in time. A letter or an appointment card can simply be photographed. Merk's speaks English and German.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merk's reminds you in time. A letter or an appointment card can simply be photographed. Merk's fills your phone's calendar, or it is your calendar itself: then appointments stay in Merk's only, and you choose when it reminds you of them. Merk's speaks English and German.
 
 <p>
-  <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next widget, speaking via the widget">
-  <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries">
-  <img src="docs/screenshots/en-photo.png" width="200" alt="Appointments read from a photo, to check before they go into the calendar">
-  <img src="docs/screenshots/en-changed.png" width="200" alt="Date changed by voice">
-  <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings">
+  <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries: what is coming up, soonest first, then the notes">
+  <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the Up next, Speak and Photo widgets, speaking via the widget">
+  <img src="docs/screenshots/en-photo.png" width="200" alt="Appointments read from a photo, to check before they are saved">
+  <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings: Merk's as the calendar, and when it reminds you">
 </p>
 
 ## Install
@@ -32,23 +31,23 @@ Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by
 
 ## Appointments from a photo
 
-Got a letter or an appointment card? Tap "Snap an appointment" in the app or the "Photo" widget, and take a photo of it. Merk's reads the date, the time and what it is about, and shows it to check: change the title, the day or the time, and add a note, then "Add to calendar". A card with several treatments gives several appointments; untick the ones you don't want. The letter's own date, birthdays and dates that are over are left out. If no date was found, you can pick it yourself.
+Got a letter or an appointment card? Tap "Snap an appointment" in the app or the "Photo" widget, and take a photo of it. Merk's reads the date, the time and what it is about, and shows it to check: change the title, the day or the time, and add a note, then "Add to calendar" ("Save" when Merk's is the calendar). A card with several treatments gives several appointments; untick the ones you don't want. The letter's own date, birthdays and dates that are over are left out. If no date was found, you can pick it yourself.
 
 The photo is not kept: it is deleted as soon as it has been read, and it never lands in your gallery from Merk's. Only the line the date came from stays with the entry, so you can see later where it was read.
 
 Without an AI key, the phone reads the photo itself (Tesseract, built in). That works well for printed text; handwriting it can hardly read. With an AI key, the AI reads the photo, handwriting included; without internet, the phone reads it itself.
 
-## More
+## Calendar and reminders
 
-Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating calendar events.
-
-Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
+Appointments go into your phone's calendar, so you see them there too. For anyone who keeps their appointments in Merk's and never opens the phone's calendar: switch on Settings → Merk's as the calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merk's can go into the calendar.
 
 Reminders come on time. For appointments you choose when (Settings → Remind me of appointments): a week, a day or two hours ahead, the evening before at 6 pm, an hour, 30 or 15 minutes ahead, when it starts, or several of these. Out of the box it is the evening before and an hour ahead; all-day appointments remind at 8 in the morning. Each reminder has "In 15 min" and "In 1 hr" buttons, and "Done" for a reminder or "OK" for an appointment: "OK" puts away only this notification, so the reminders still to come for the appointment come all the same.
 
-## Merk's as the calendar
+## More
 
-For anyone who keeps their appointments in Merk's and never opens the phone's calendar: switch on Settings → Merk's as the calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merk's can go into the calendar.
+Repeating things work too: "Every Monday take out the trash", "Every weekday at 7 am walk the dog", "Every other Wednesday choir at 6 pm", "Every year on December 3rd grandma's birthday". They become repeating appointments, in the phone's calendar as a series.
+
+Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
 The "Speak" and "Photo" widgets can be resized from 2x2 down to 1x1. Another widget, "Up next", shows on your home screen what comes next, and a tap on it opens the list with everything. It starts two cells wide, so it fits next to the "Speak" button as a second big button; made taller, it also lists the two entries after it. "Put on the home screen" in the app offers all three.
 

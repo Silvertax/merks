@@ -98,16 +98,20 @@ class ScreenshotRender {
         shotActivity(activity, "7b_settings_top_dark")
     }
 
+    /** [hour]:[minute] today, or tomorrow when that is less than half an hour away: times a person would pick. */
+    private fun next(hour: Int, minute: Int = 0): LocalDateTime =
+        LocalDate.now().atTime(hour, minute).let { if (it.isAfter(LocalDateTime.now().plusMinutes(30))) it else it.plusDays(1) }
+
     private fun sampleEntries() {
         val today = LocalDate.now()
         val dentist = Store.save(app, Parsed(Kind.APPOINTMENT, t("Zahnarzt bei Neupert", "Dentist, Dr. Miller"), today.plusDays(1).atTime(10, 0), null, false), "x")
         Store.addNote(app, dentist, t("Versichertenkarte mitnehmen", "Bring the insurance card"))
-        Store.save(app, Parsed(Kind.REMINDER, t("Wäsche aufhängen", "Hang up the laundry"), LocalDateTime.now().plusHours(2).withMinute(0), null, false), "x")
+        Store.save(app, Parsed(Kind.REMINDER, t("Wäsche aufhängen", "Hang up the laundry"), next(18), null, false), "x")
         val series = t("Jeden Montag Mülltonne rausstellen", "Every Monday take out the trash")
         Store.save(app, Store.sort(app, series), series)
         Store.save(app, Parsed(Kind.APPOINTMENT, t("Geburtstag von Oma", "Grandma's birthday"), today.plusDays(9).atStartOfDay(), null, true), "x")
         Store.save(app, Parsed(Kind.NOTE, t("Geschenkidee: Fotobuch vom Urlaub", "Gift idea: photo book of the holiday"), null, null, false), "x")
-        val done = Store.save(app, Parsed(Kind.REMINDER, t("Rezept in der Apotheke abholen", "Pick up the prescription"), LocalDateTime.now().plusHours(3).withMinute(30), null, false), "x")
+        val done = Store.save(app, Parsed(Kind.REMINDER, t("Rezept in der Apotheke abholen", "Pick up the prescription"), next(16, 30), null, false), "x")
         Db(app).setDone(done.id, true)
     }
 
@@ -128,6 +132,11 @@ class ScreenshotRender {
 
     private fun listening(nightMode: Boolean, name: String) {
         night(nightMode)
+        shotActivity(listeningNow(), name)
+    }
+
+    /** Merk's listening, with the first words heard. */
+    private fun listeningNow(): RecordActivity {
         shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO)
         val service = ComponentName("com.example.speech", "com.example.speech.Recognizer")
         shadowOf(app.packageManager).addServiceIfNotPresent(service)
@@ -143,7 +152,7 @@ class ScreenshotRender {
             },
         )
         recognizer.triggerOnRmsChanged(7f)
-        shotActivity(activity, name)
+        return activity
     }
 
     /** After a pause: it keeps listening, with the words so far. */
@@ -317,6 +326,59 @@ class ScreenshotRender {
         v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY))
         v.layout(0, 0, w, w)
         shot(v, "8_photo_widget_2x2")
+    }
+
+    /**
+     * The home screen for the store and the README: "Up next" above the buttons to speak and to
+     * photograph, and Merk's listening at the bottom after a tap on "Speak".
+     */
+    private fun homeScreen(name: String) {
+        night(true)
+        sampleEntries()
+        val density = app.resources.displayMetrics.density
+        fun px(dp: Int) = (dp * density).toInt()
+        val bmp = Bitmap.createBitmap(px(411), px(891), Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        // A plain dark wallpaper.
+        val wallpaper = android.graphics.Paint().apply {
+            shader = android.graphics.LinearGradient(
+                0f, 0f, 0f, bmp.height.toFloat(), Color.rgb(16, 24, 32), Color.rgb(43, 61, 71), android.graphics.Shader.TileMode.CLAMP,
+            )
+        }
+        canvas.drawRect(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat(), wallpaper)
+        fun place(v: View, x: Int, y: Int, w: Int, h: Int) {
+            v.measure(View.MeasureSpec.makeMeasureSpec(px(w), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(px(h), View.MeasureSpec.EXACTLY))
+            v.layout(0, 0, px(w), px(h))
+            canvas.save()
+            canvas.translate(px(x).toFloat(), px(y).toFloat())
+            v.draw(canvas)
+            canvas.restore()
+        }
+        val look = NextWidget.lookFor(345f, 160f, app.resources.configuration.fontScale)
+        place(NextWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), look).apply(app, null), 33, 72, 345, 160)
+        place(LayoutInflater.from(app).inflate(R.layout.widget_speak, null), 33, 256, 150, 150)
+        place(LayoutInflater.from(app).inflate(R.layout.widget_photo, null), 228, 256, 150, 150)
+        val card = listeningNow().also { idle(400) }.window.decorView
+        canvas.save()
+        canvas.translate(0f, (bmp.height - card.height).toFloat())
+        card.draw(canvas)
+        canvas.restore()
+        save(bmp, name)
+    }
+
+    @Test fun home() = homeScreen("15_home")
+
+    /** What makes Merk's a calendar of its own: the switch, and when appointments remind. */
+    @Test fun calendarSettings() {
+        night(true)
+        Prefs.setOwnCalendar(app, true)
+        Prefs.setLeads(app, setOf(Lead.DAY, Lead.HOUR))
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle(400)
+        val card = activity.findViewById<View>(R.id.row_own_calendar).parent as View
+        val scroll = activity.findViewById<View>(R.id.settings_root).parent as android.widget.ScrollView
+        scroll.scrollTo(0, card.top - (52 * app.resources.displayMetrics.density).toInt())
+        shotActivity(activity, "16_calendar_dark")
     }
 
     @Test fun icon() {

@@ -1,6 +1,8 @@
-Einmal tippen, sagen, fertig. Merk's ist für alle, die keine App öffnen, nichts tippen und nicht überlegen wollen, wo etwas hingehört.
+Ein einfacher Kalender, mit dem du sprichst. Einmal tippen, sagen, fertig: Merk's ist für alle, die keine App öffnen, nichts tippen und nicht überlegen wollen, wo etwas hingehört.
 
-Ein Widget auf dem Startbildschirm hört sofort zu. Was du sagst, wird zu einem Termin, einer Erinnerung oder einer Notiz. Termine landen in deinem Kalender, und die App erinnert dich rechtzeitig.
+Ein Widget auf dem Startbildschirm hört sofort zu. Was du sagst, wird zu einem Termin, einer Erinnerung oder einer Notiz, und Merk's erinnert dich rechtzeitig. Ein Brief oder eine Terminkarte? Einfach fotografieren, und Merk's liest die Termine heraus.
+
+Merk's trägt Termine in den Kalender deines Handys ein oder ist selbst dein Kalender: Dann stehen deine Termine nur in Merk's, und Merk's erinnert dich daran, wann du willst, zum Beispiel einen Tag, eine Stunde oder 15 Minuten vorher.
 
 Was du zum Beispiel sagen kannst:
 • „Morgen um 10 Zahnarzt bei Neupert“
@@ -9,20 +11,23 @@ Was du zum Beispiel sagen kannst:
 • „Jedes Jahr am 3. Dezember Geburtstag von Oma“
 
 Funktionen:
-• Großes Widget für den Startbildschirm, von 2x2 bis 1x1 verkleinerbar
-• Termine kommen direkt in deinen Kalender, wiederkehrende als Serie
-• Erinnerungen kommen pünktlich, Termine eine Stunde vorher und auf Wunsch auch am Vorabend
-• Jede Erinnerung hat die Knöpfe „Erledigt“, „In 15 Min.“ und „In 1 Std.“
+• Große Widgets zum Sprechen und für Fotos, von 2x2 bis 1x1 verkleinerbar, dazu das Widget „Als Nächstes“, das zeigt, was ansteht
+• Termine vom Foto: Merk's liest Datum, Uhrzeit und worum es geht, und du prüfst alles, bevor es gespeichert wird. Das Foto wird gleich danach gelöscht
+• Termine kommen in deinen Kalender, wiederkehrende als Serie, oder bleiben in Merk's, wenn Merk's dein Kalender ist
+• Du wählst, wann Termine erinnern: eine Woche, einen Tag oder zwei Stunden vorher, am Vorabend, eine Stunde, 30 oder 15 Minuten vorher oder zu Beginn
+• Jede Erinnerung hat die Knöpfe „In 15 Min.“ und „In 1 Std.“
+• Termin per Sprache verschieben: einfach den neuen Tag oder die neue Uhrzeit sagen
 • Eine Benachrichtigung zeigt, was eingetragen wurde; „Rückgängig“ löscht es wieder
+• Teilen, was ansteht, zum Beispiel in den Familien-Chat
 • Deutsch und Englisch, helles und dunkles Design, OLED-Modus
 • Große, klare Knöpfe, auch für ältere Menschen gedacht
 
 Wie die App dich versteht:
-Übliche Angaben zu Datum, Uhrzeit und Wiederholung versteht Merk's auf Deutsch und Englisch ohne Internet und ohne Konto. Mit einem eigenen Anthropic-API-Schlüssel versteht die App auf Wunsch auch frei Gesprochenes. Ohne Internet übernehmen wieder die eingebauten Regeln.
+Übliche Angaben zu Datum, Uhrzeit und Wiederholung versteht Merk's auf Deutsch und Englisch ohne Internet und ohne Konto, und Fotos liest das Handy selbst. Mit einem eigenen Anthropic-API-Schlüssel versteht die App auf Wunsch auch frei Gesprochenes und liest Fotos besser, auch Handschrift. Ohne Internet übernehmen wieder die eingebauten Regeln und das Lesen auf dem Handy.
 
 Datenschutz:
-Keine Werbung, kein Tracking, kein Konto. Deine Einträge bleiben auf deinem Handy und in deinem Kalender.
+Keine Werbung, kein Tracking, kein Konto. Deine Einträge bleiben auf deinem Handy und in deinem Kalender. Fotos werden gelöscht, sobald sie gelesen sind.
 
 Gut zu wissen:
 • Merk's nutzt die Spracherkennung, die auf deinem Handy installiert ist. Ohne sie kann die App nicht zuhören.
-• Unfreier Netzwerkdienst: Die optionale KI-Sortierung schickt den gesprochenen Text an Anthropic, einen proprietären Dienst. Sie bleibt aus, solange du keinen eigenen Schlüssel einträgst.
+• Unfreier Netzwerkdienst: Die optionale KI schickt den gesprochenen Text und die Fotos an Anthropic, einen proprietären Dienst. Sie bleibt aus, solange du keinen eigenen Schlüssel einträgst.

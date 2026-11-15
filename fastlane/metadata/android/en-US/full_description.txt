@@ -1,6 +1,8 @@
-Tap once, say it, done. Merk's is for everyone who does not want to open an app, type, or think about where something belongs.
+A simple calendar you talk to. Tap once, say it, done: Merk's is for everyone who does not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note. Appointments go into your calendar, and the app reminds you in time.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merk's reminds you in time. Got a letter or an appointment card? Take a photo of it, and Merk's reads the appointments from it.
+
+Merk's fills your phone's calendar, or it is your calendar itself: then your appointments stay in Merk's only, and Merk's reminds you of them when you like, for example a day, an hour or 15 minutes ahead.
 
 What you can say, for example:
 • "Tomorrow at 10 dentist, Dr. Miller"
@@ -9,20 +11,23 @@ What you can say, for example:
 • "Every year on December 3rd grandma's birthday"
 
 Features:
-• Big home screen widget, resizable from 2x2 down to 1x1
-• Appointments go straight into your calendar, repeating ones as a calendar series
-• Reminders come on time, appointments one hour ahead and, if you like, also the evening before
-• Every reminder has "Done", "In 15 min" and "In 1 hr" buttons
+• Big home screen widgets for speaking and for photos, resizable from 2x2 down to 1x1, and an "Up next" widget that shows what comes next
+• Appointments from a photo: Merk's reads the date, the time and what it is about, and you check it before it is saved. The photo is deleted right after
+• Appointments go into your calendar, repeating ones as a series, or stay in Merk's if it is your calendar
+• You choose when appointments remind you: a week, a day or two hours ahead, the evening before, an hour, 30 or 15 minutes ahead, or when it starts
+• Every reminder has "In 15 min" and "In 1 hr" buttons
+• Move an appointment by voice: just say the new day or time
 • A notification shows what was saved; "Undo" removes it again
+• Share what is coming up, for example to a family chat
 • English and German, light and dark theme, OLED mode
 • Large, clear buttons, made with older people in mind
 
-Understanding what you say:
-Common date, time and repeat phrases in English and German are understood offline, without any account. Optionally, with your own Anthropic API key, Merk's also understands free-form speech. Without internet, the built-in rules take over.
+Understanding what you say and photograph:
+Common date, time and repeat phrases in English and German are understood offline, without any account, and photos are read on the phone. Optionally, with your own Anthropic API key, Merk's also understands free-form speech and reads photos better, handwriting included. Without internet, the built-in rules and the reading on the phone take over.
 
 Privacy:
-No ads, no tracking, no account. Your entries stay on your phone and in your calendar.
+No ads, no tracking, no account. Your entries stay on your phone and in your calendar. Photos are deleted as soon as they have been read.
 
 Good to know:
 • Merk's uses the speech recognition installed on your phone. Without one, it cannot listen.
-• Non-free network service: the optional AI sorting sends the spoken text to Anthropic, a proprietary service. It stays off unless you enter your own key.
+• Non-free network service: the optional AI sends the spoken text and the photos to Anthropic, a proprietary service. It stays off unless you enter your own key.

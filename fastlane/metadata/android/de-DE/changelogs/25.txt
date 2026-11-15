@@ -1,0 +1,4 @@
+• Merk's als Kalender: Termine können nur in Merk's stehen, und Merk's erinnert daran.
+• Wähle, wann Termine erinnern: von einer Woche vorher bis zu Beginn, auch mehrmals.
+• „OK“ an der Erinnerung eines Termins räumt nur diese Benachrichtigung weg; die nächsten Erinnerungen kommen trotzdem.
+• Speichern, Erinnerungen und Widgets sind schneller und zuverlässiger.
