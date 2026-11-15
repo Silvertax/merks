@@ -2,7 +2,7 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
-## 0.9.0
+## 0.9.1
 
 ### What's new
 
@@ -12,6 +12,15 @@ What changed for users, per version. When a GitHub release is created with an em
 ### Changed
 
 - The reminder for an appointment has "OK" instead of "Done": it puts away only this notification, so a tap a day ahead no longer cancels the reminder an hour ahead, and the appointment stays under "Up next" until it is over.
+- Saving, alarms and widget updates are quicker and steadier: all parts of the app now share one connection to the entries, instead of opening a new one each time that stayed open until Android cleaned up.
+
+### Good to know
+
+- 0.9.0 was published without the app file: its build stopped at a test that gave the build server too little time. Everything from it is in 0.9.1.
+
+## 0.9.0
+
+Published without the app file; its changes came with 0.9.1.
 
 ## 0.8.0
 

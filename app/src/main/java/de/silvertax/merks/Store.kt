@@ -25,30 +25,57 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.TimeZone
 
-class Db(ctx: Context) : SQLiteOpenHelper(ctx.applicationContext, "merks.db", null, 3) {
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(
-            "CREATE TABLE entries(id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, title TEXT, raw TEXT, " +
-                "start INTEGER, end_ INTEGER, all_day INTEGER, cal_id INTEGER, created INTEGER)",
-        )
-        addVersion2Columns(db)
-        addVersion3Columns(db)
-    }
+/**
+ * The entries. Every Db shares one connection to the database file, as Android wants it: a connection
+ * of its own each time would cost time on every save, alarm and widget update, and stay open until the
+ * garbage collector finds it.
+ */
+class Db(ctx: Context) {
+    private val helper = Helper.of(ctx)
+    private val writableDatabase: SQLiteDatabase get() = helper.writableDatabase
+    private val readableDatabase: SQLiteDatabase get() = helper.readableDatabase
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) addVersion2Columns(db)
-        if (oldVersion < 3) addVersion3Columns(db)
-    }
+    private class Helper(app: Context) : SQLiteOpenHelper(app, "merks.db", null, 3) {
+        override fun onCreate(db: SQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE entries(id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT, title TEXT, raw TEXT, " +
+                    "start INTEGER, end_ INTEGER, all_day INTEGER, cal_id INTEGER, created INTEGER)",
+            )
+            addVersion2Columns(db)
+            addVersion3Columns(db)
+        }
 
-    private fun addVersion3Columns(db: SQLiteDatabase) {
-        db.execSQL("ALTER TABLE entries ADD COLUMN note TEXT")
-    }
+        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+            if (oldVersion < 2) addVersion2Columns(db)
+            if (oldVersion < 3) addVersion3Columns(db)
+        }
 
-    private fun addVersion2Columns(db: SQLiteDatabase) {
-        db.execSQL("ALTER TABLE entries ADD COLUMN done INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE entries ADD COLUMN snooze INTEGER")
-        db.execSQL("ALTER TABLE entries ADD COLUMN repeat_unit TEXT")
-        db.execSQL("ALTER TABLE entries ADD COLUMN repeat_every INTEGER")
+        private fun addVersion3Columns(db: SQLiteDatabase) {
+            db.execSQL("ALTER TABLE entries ADD COLUMN note TEXT")
+        }
+
+        private fun addVersion2Columns(db: SQLiteDatabase) {
+            db.execSQL("ALTER TABLE entries ADD COLUMN done INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE entries ADD COLUMN snooze INTEGER")
+            db.execSQL("ALTER TABLE entries ADD COLUMN repeat_unit TEXT")
+            db.execSQL("ALTER TABLE entries ADD COLUMN repeat_every INTEGER")
+        }
+
+        companion object {
+            /** The one helper, with the application it belongs to (in tests, each test has its own). */
+            @Volatile
+            private var shared: Pair<Context, Helper>? = null
+
+            fun of(ctx: Context): Helper {
+                val app = ctx.applicationContext
+                shared?.let { (owner, helper) -> if (owner === app) return helper }
+                synchronized(this) {
+                    shared?.let { (owner, helper) -> if (owner === app) return helper }
+                    shared?.second?.let { old -> runCatching { old.close() } }
+                    return Helper(app).also { shared = app to it }
+                }
+            }
+        }
     }
 
     fun insert(e: Entry): Long = writableDatabase.insert(

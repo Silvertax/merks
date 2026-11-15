@@ -65,9 +65,10 @@ class AppSmokeTestEn {
         // It listens on for a while in case more comes; then it saves.
         assertEquals("Still listening …", activity.findViewById<TextView>(R.id.status).text.toString())
         shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(5))
-        repeat(200) {
+        // Saving runs in the background; a busy build server can take seconds for it.
+        val until = System.currentTimeMillis() + 30_000
+        while (!activity.isFinishing && System.currentTimeMillis() < until) {
             shadowOf(Looper.getMainLooper()).idle()
-            if (activity.isFinishing) return@repeat
             Thread.sleep(25)
         }
         assertTrue(activity.isFinishing)

@@ -53,7 +53,9 @@ class PhotoFlowTest {
     private val zone = ZoneId.systemDefault()
 
     private fun waitFor(condition: () -> Boolean) {
-        repeat(400) {
+        // By the clock: a busy build server can take seconds for what takes milliseconds here.
+        val until = System.currentTimeMillis() + 30_000
+        while (System.currentTimeMillis() < until) {
             shadowOf(Looper.getMainLooper()).idle()
             if (condition()) return
             Thread.sleep(25)

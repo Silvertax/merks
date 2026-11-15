@@ -194,7 +194,9 @@ class AppSmokeTest {
 
     /** Saving runs on a background thread and reports back to the screen; wait for both. */
     private fun waitFor(condition: () -> Boolean) {
-        repeat(400) {
+        // By the clock: a busy build server can take seconds for what takes milliseconds here.
+        val until = System.currentTimeMillis() + 30_000
+        while (System.currentTimeMillis() < until) {
             idleMain()
             if (condition()) return
             Thread.sleep(25)
