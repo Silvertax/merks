@@ -70,15 +70,19 @@ object PlanReader {
     private val SHORT = Regex("(?<!\\p{L})(Mo|Di|Mi|Do|Fr|Sa|So|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\.?(?!\\p{L})")
     private val DATE = Regex("(?<![\\d.])(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4}|\\d{2})?(?![\\d])")
 
+    private val CLOCK = Regex("(?<!\\d)\\d{1,2}[:.]\\d{2}(?!\\d)")
+
     /**
      * Whether the text read on a picture looks like a weekly plan: three weekdays or more, four short
-     * ones ("Mo Di Mi Do"), or two and a calendar week.
+     * ones ("Mo Di Mi Do"), or two with a calendar week or with many times. The recognition often
+     * misses a heading or two, so this asks for little; [read] then looks properly.
      */
     fun looksLikePlan(text: String): Boolean {
         val full = text.split(Regex("[^\\p{L}]+")).filter { it.length >= 5 }.mapNotNull { dayOf(it, short = false) }.toSet()
         val short = SHORT.findAll(text).mapNotNull { dayOf(it.value, short = true) }.toSet()
         val week = WEEK.containsMatchIn(text)
-        return full.size >= 3 || short.size >= 4 || (week && (full.size >= 2 || short.size >= 2))
+        val times = CLOCK.findAll(text).count()
+        return full.size >= 3 || short.size >= 4 || ((week || times >= 8) && (full.size >= 2 || short.size >= 2))
     }
 
     /** The weekday a word names, 0 for Monday. A letter misread is all right in a full name. */
@@ -96,6 +100,10 @@ object PlanReader {
     /** One line of words in a column, and what is in it: times, a title, a room. */
     private class Row(val words: List<OcrWord>, h: Float) {
         val y: Float = median(words.map { it.yMid })
+
+        /** The middle of the line, and of the times in it. */
+        val mid: Float = (words.minOf { it.left } + words.maxOf { it.right }) / 2f
+        val timeMid: Float = words.filter { w -> w.text.any { it.isDigit() } }.let { ws -> if (ws.isEmpty()) mid else (ws.minOf { it.left } + ws.maxOf { it.right }) / 2f }
         val raw: String = buildString {
             words.forEachIndexed { i, w ->
                 // "0 8:30" and "-1 1:30": recognition split one time in two, tightly.
@@ -132,6 +140,10 @@ object PlanReader {
         /** Words that can be a title. */
         val titled: Boolean = outside.count { it.isLetter() } >= 3 && !place
 
+        /** A time whose start was lost ("– 11:40"), or one in the small hours, where a digit was likely lost. */
+        val broken: Boolean = clocks.isNotEmpty() &&
+            ((clocks.size == 1 && RANGE_END.containsMatchIn(before)) || clocks[0].time.hour < 6 || (clocks.size > 1 && !clocks[1].time.isAfter(clocks[0].time)))
+
         /** "Sport, 12:45 -": the end follows on the next line. */
         val open: Boolean = clocks.size == 1 && after.replace(UHR, " ").isNotBlank() && RANGE.matches(after.replace(UHR, " "))
     }
@@ -154,6 +166,7 @@ object PlanReader {
     private val HOUR = Regex("(?<![\\d.,:\\p{L}])(\\d{1,2})\\s?(uhr|h|a\\.m\\.|p\\.m\\.|pm|am(?![ \\t]*\\p{L}))(?!\\p{L})", RegexOption.IGNORE_CASE)
     private val SPLIT = Regex("^\\d[:.]\\d")
     private val RANGE = Regex("\\s*(?:-|–|—|=|bis|to|until)?\\s*", RegexOption.IGNORE_CASE)
+    private val RANGE_END = Regex("(?:-|–|—|=|(?<!\\p{L})bis|(?<!\\p{L})to)\\s*$", RegexOption.IGNORE_CASE)
     private val UHR = Regex("(?i)(?<!\\p{L})uhr(?!\\p{L})")
     private val LONE_DASH = Regex("(?<=^|\\s)[-–—=_]+(?=\\s|$)")
     private val PARENS = Regex("\\([^()]*\\)")
@@ -202,9 +215,15 @@ object PlanReader {
 
     /** What is outside brackets and what is inside; a lone bracket is a misread edge of a highlighter. */
     private fun parens(s: String): Pair<String, String> {
-        val inside = PARENS.findAll(s).joinToString(" ") { it.value }
-        val outside = PARENS.replace(s, " ").replace('(', ' ').replace(')', ' ')
-        return clean(outside) to clean(inside)
+        var inside = PARENS.findAll(s).joinToString(" ") { it.value }
+        var outside = PARENS.replace(s, " ")
+        // "Kochen (max. 8": the closing bracket was not read. At the very start a bracket is the edge of a highlighter.
+        val open = outside.indexOf('(')
+        if (open > 0 && outside.substring(0, open).any { it.isLetterOrDigit() }) {
+            inside = (inside + " " + outside.substring(open + 1)).trim()
+            outside = outside.substring(0, open)
+        }
+        return clean(outside.replace('(', ' ').replace(')', ' ')) to clean(inside.replace(Regex("^\\(?(.*?)\\)?$"), "$1").let { if (it.isEmpty()) it else "($it)" })
     }
 
     private fun clean(s: String): String = s.replace(Regex("\\s+"), " ").trim()
@@ -255,64 +274,153 @@ object PlanReader {
 
     private fun text(line: List<OcrWord>) = line.joinToString(" ") { it.text }
 
+    private val HEAD_DATE = Regex("^,?\\s*\\d{1,2}\\.\\s?\\d{1,2}\\.?(\\d{2,4})?$")
+
+    /**
+     * Words that may name a column: a weekday alone on its line, perhaps with a date ("Mo 16.11.") or
+     * beside a scrap the recognition made of a table line. In a sentence a weekday is no heading.
+     */
+    private fun headCandidates(lines: List<List<OcrWord>>): List<Head> {
+        val out = mutableListOf<Head>()
+        for (line in lines) {
+            val tokens = line.filter { w -> w.text.any { it.isLetterOrDigit() } }
+            for ((i, token) in tokens.withIndex()) {
+                val others = tokens.filterIndexed { j, _ -> j != i }
+                val rest = others.joinToString(" ") { it.text }.trim()
+                val dated = others.isNotEmpty() && HEAD_DATE.matches(rest)
+                if (!dated && others.sumOf { o -> o.text.count { it.isLetterOrDigit() } } > 4) continue
+                val word = token.text.trim()
+                val day = dayOf(word, short = word.first().isUpperCase() && (others.isEmpty() || dated)) ?: continue
+                out += Head(day, token, if (dated) rest else "")
+            }
+        }
+        return out
+    }
+
+    /**
+     * The row of headings: the most weekdays side by side, from left to right in the order of the week.
+     * A photo is seldom straight, so the row may climb or fall a little.
+     */
+    private fun headRow(candidates: List<Head>, h: Float): Map<Int, Head> {
+        var best = emptyList<Head>()
+        for (seed in candidates) {
+            val row = candidates
+                .filter { abs(it.word.yMid - seed.word.yMid) <= 2.5f * h + 0.1f * abs(it.word.xMid - seed.word.xMid) }
+                .groupBy { it.day }
+                .map { (_, same) -> same.minBy { abs(it.word.yMid - seed.word.yMid) } }
+                .sortedBy { it.day }
+            // The longest run whose places grow with the days.
+            val runs = Array(row.size) { listOf(row[it]) }
+            for (i in row.indices) for (j in 0 until i) {
+                if (row[j].word.xMid < row[i].word.xMid && runs[j].size + 1 > runs[i].size) runs[i] = runs[j] + row[i]
+            }
+            val run = runs.maxByOrNull { it.size }.orEmpty()
+            if (run.size > best.size || (run.size == best.size && run.isNotEmpty() && run.minOf { it.word.top } < best.minOf { it.word.top })) best = run
+        }
+        return best.associateBy { it.day }
+    }
+
     /**
      * The appointments in a weekly plan, from the words read on its picture with their places. [pixels],
-     * the same picture made smaller, shows what is marked with a highlighter. Null when the words are no
-     * plan: no row of weekdays over columns, or no appointment under them.
+     * the same picture made smaller, shows what is marked with a highlighter. [more] are the words of a
+     * second reading of the same picture, and [seen] is its text read as a page: they help where the
+     * first reading missed a heading, a time or the calendar week. Null when the words are no plan: no
+     * row of weekdays over columns, or no appointment under them.
      */
-    fun read(words: List<OcrWord>, now: LocalDateTime, pixels: Pixels? = null): PhotoFind? {
-        val all = words.filter { it.text.isNotBlank() && it.right > it.left && it.bottom > it.top }
+    fun read(words: List<OcrWord>, now: LocalDateTime, pixels: Pixels? = null, more: List<OcrWord> = emptyList(), seen: String = ""): PhotoFind? {
+        fun usable(ws: List<OcrWord>) = ws.filter { it.text.isNotBlank() && it.right > it.left && it.bottom > it.top }
+        val all = usable(words)
         val sizes = all.filter { w -> w.text.count { it.isLetterOrDigit() } >= 2 }.map { it.height.toFloat() }
         if (sizes.size < 6) return null
         val h = median(sizes)
         val clean = sure(all.filterNot { garbage(it, h) })
+        val again = sure(usable(more).filterNot { garbage(it, h) })
         val lines = chain(clean, h)
 
-        // The weekdays over the columns: a name alone on its line, perhaps with a date ("Mo 16.11.").
-        val found = mutableMapOf<Int, Head>()
-        for (line in lines.sortedBy { l -> l.minOf { it.top } }) {
-            val tokens = line.filter { w -> w.text.any { it.isLetterOrDigit() } }
-            if (tokens.isEmpty() || tokens.size > 3) continue
-            val first = tokens[0].text.trim()
-            val day = dayOf(first, short = first.first().isUpperCase()) ?: continue
-            val rest = tokens.drop(1).joinToString(" ") { it.text }.trim()
-            if (rest.isNotEmpty() && !Regex("^,?\\s*\\d{1,2}\\.\\s?\\d{1,2}\\.?(\\d{2,4})?$").matches(rest)) continue
-            if (day !in found) found[day] = Head(day, tokens[0], rest)
-        }
-        if (found.size < 2) return null
-        val row = median(found.values.map { it.word.yMid })
-        val heads = found.filterValues { abs(it.word.yMid - row) <= 4 * h }.toSortedMap()
+        val heads = headRow(headCandidates(lines) + headCandidates(chain(again, h)), h)
         if (heads.size < 2) return null
-        val days = heads.keys.toList()
+        val days = heads.keys.sorted()
         val xs = days.map { heads.getValue(it).word.xMid }
-        if (xs.zipWithNext().any { (a, b) -> b <= a }) return null
         // x = a + pitch * day: a column whose name was not read lies where the others say.
-        val (a, pitch) = fit(days.map { it.toFloat() }, xs)
+        val pitch = fit(days.map { it.toFloat() }, xs).second
         if (pitch < 2.5f * h) return null
         val (c, slope) = fit(xs, days.map { heads.getValue(it).word.bottom.toFloat() })
-        val lo = if (days.first() <= 2) 0 else days.first()
-        val hi = if (days.last() < 4) 4 else days.last()
+        fun headLine(x: Float) = c + slope * x
+        val headWords = heads.values.map { it.word }
+        fun head(w: OcrWord) = headWords.any { it === w || overlap(it, w) > 0.5f * min((it.right - it.left) * it.height, (w.right - w.left) * w.height) }
+        val under = clean.filter { w -> !head(w) && w.yMid > headLine(w.xMid) - 0.2f * h }
+        // In a cell the lines are centred, so their middles show where a column without a name is.
+        val middles = chain(under, h).filter { l -> l.maxOf { it.right } - l.minOf { it.left } <= 0.9f * pitch }
+            .map { l -> (l.minOf { it.left } + l.maxOf { it.right }) / 2f }
+        val centre = heads.mapValues { it.value.word.xMid }.toMutableMap()
+        fun settle(day: Int, guess: Float) {
+            val near = middles.filter { abs(it - guess) <= 0.3f * pitch }
+            centre[day] = if (near.size >= 3) median(near) else guess
+        }
+        for ((p, q) in days.zipWithNext()) {
+            for (d in p + 1 until q) settle(d, centre.getValue(p) + (centre.getValue(q) - centre.getValue(p)) * (d - p) / (q - p))
+        }
+        fun filled(guess: Float) = under.count { w -> abs(w.xMid - guess) <= 0.45f * pitch && w.text.count { it.isLetterOrDigit() } >= 2 } >= 4
+        // Further columns to the left and right, as far as the week goes and something is written there.
+        var lo = days.first()
+        while (lo > 0 && filled(centre.getValue(lo) - pitch)) {
+            settle(lo - 1, centre.getValue(lo) - pitch)
+            lo--
+        }
+        var hi = days.last()
+        while (hi < 6 && filled(centre.getValue(hi) + pitch)) {
+            settle(hi + 1, centre.getValue(hi) + pitch)
+            hi++
+        }
         val columns = (lo..hi).toList()
-        val centre = columns.associateWith { d -> heads[d]?.word?.xMid ?: (a + pitch * d) }
         val bounds = columns.zipWithNext { p, q -> (centre.getValue(p) + centre.getValue(q)) / 2 }
         fun columnOf(x: Float): Int = columns[bounds.indexOfFirst { x < it }.let { if (it < 0) columns.lastIndex else it }]
-        fun headBottom(col: Int): Float = heads[col]?.word?.bottom?.toFloat() ?: (c + slope * centre.getValue(col))
-        val left = centre.getValue(columns.first()) - 0.75f * pitch
-        val right = centre.getValue(columns.last()) + 0.75f * pitch
-        val headWords = heads.values.map { it.word }.toSet()
-        val body = clean.filter { w -> w !in headWords && w.xMid in left..right && w.yMid > headBottom(columnOf(w.xMid)) - 0.2f * h }
-        val above = clean.filter { w -> w !in headWords && w.bottom < headBottom(columnOf(w.xMid)) - h }
+        fun headBottom(col: Int): Float = heads[col]?.word?.bottom?.toFloat() ?: headLine(centre.getValue(col))
+        val left = centre.getValue(columns.first()) - 0.6f * pitch
+        val right = centre.getValue(columns.last()) + 0.6f * pitch
+        val above = clean.filter { w -> !head(w) && w.bottom < headBottom(columnOf(w.xMid)) - h }
 
         // Lines again, now kept within their column unless the words stand as close as in a sentence.
-        // A sentence across several columns is a note under the plan, no appointment.
-        val bodyLines = chain(body, h) { p, q, gap -> columnOf(p.xMid) == columnOf(q.xMid) || gap < 0.8f * h }
-            .filter { l -> l.maxOf { it.right } - l.minOf { it.left } <= 1.5f * pitch }
-        val byColumn = bodyLines.groupBy { l -> columnOf((l.minOf { it.left } + l.maxOf { it.right }) / 2f) }
-        val rowsOf = byColumn.mapValues { (_, ls) -> ls.map { Row(it, h) }.sortedBy { it.y } }
+        // A sentence across the columns is a note under the plan, no appointment: it goes, with the
+        // scraps of it the recognition left beside it.
+        fun rows(words: List<OcrWord>): Map<Int, List<Row>> {
+            val body = words.filter { w -> !head(w) && w.yMid > headBottom(columnOf(w.xMid)) - 0.2f * h }
+            val allLines = chain(body, h) { p, q, gap -> columnOf(p.xMid) == columnOf(q.xMid) || gap < 0.8f * h }
+            fun sentence(l: List<OcrWord>): Boolean {
+                val from = l.minOf { it.left }
+                val to = l.maxOf { it.right }
+                if (to - from > 1.5f * pitch) return true
+                return l.size >= 5 && bounds.any { b -> b - from >= 2 * h && to - b >= 2 * h }
+            }
+            val notes = allLines.filter { sentence(it) }
+            val noteLines = notes.map { l -> Triple(fit(l.map { it.xMid }, l.map { it.yMid }), l.minOf { it.left } - 10 * h, l.maxOf { it.right } + 10 * h) }
+            // On the same line as a note and beginning near its end: the rest of it.
+            fun ofNote(l: List<OcrWord>) = noteLines.any { (line, from, to) ->
+                l.minOf { it.left } <= to && l.maxOf { it.right } >= from && l.all { w -> abs(w.yMid - (line.first + line.second * w.xMid)) <= 0.7f * h }
+            }
+            return allLines.filter { l -> l !in notes && !ofNote(l) }
+                .map { l -> l.filter { it.xMid in left..right } }.filter { it.isNotEmpty() }
+                .groupBy { l -> columnOf((l.minOf { it.left } + l.maxOf { it.right }) / 2f) }
+                .mapValues { (_, ls) -> ls.map { Row(it, h) }.sortedBy { it.y } }
+        }
+        val firstRows = rows(clean)
+        // Where the first reading lost a time or a line, the second may have it.
+        val secondRows = rows(again)
+        val rowsOf = columns.associateWith { col ->
+            val second = secondRows[col].orEmpty()
+            val first = firstRows[col].orEmpty().map { r ->
+                val other = second.filter { abs(it.y - r.y) <= 0.5f * h }.minByOrNull { abs(it.y - r.y) }
+                if (other != null && (other.clocks.size > r.clocks.size || (other.clocks.size == r.clocks.size && r.broken && !other.broken))) other else r
+            }
+            first.sortedBy { it.y }
+        }
         val gaps = rowsOf.values.flatMap { rs -> rs.zipWithNext { p, q -> q.y - p.y }.filter { it > 0.5f * h } }
         val step = if (gaps.isEmpty()) 1.6f * h else median(gaps)
 
-        val entries = columns.flatMap { col -> entries(col, rowsOf[col].orEmpty(), step) }
+        val listed = columns.flatMap { col -> entries(col, rowsOf[col].orEmpty(), step, h) }
+        // A single appointment in the small hours among many by day: a digit was misread.
+        val night = listed.filter { it.start.hour < 5 }
+        val entries = if (night.size * 8 <= listed.size) listed - night.toSet() else listed
         if (entries.isEmpty()) return null
 
         // A title or a room read slightly otherwise in one place is the spelling the plan has more often.
@@ -331,7 +439,7 @@ object PlanReader {
         val today = now.toLocalDate()
         val byTop = lines.sortedBy { l -> l.minOf { it.top } }.map { text(it) }
         val text = byTop.joinToString("\n")
-        val monday = week(byTop, heads.values, above, today)
+        val monday = week(byTop + seen.lines(), heads.values, above, today)
         val dates = entries.mapNotNull { e ->
             // Without a week on the plan, each weekday is the next one to come.
             val day = monday?.plusDays(e.column.toLong()) ?: today.with(TemporalAdjusters.nextOrSame(DayOfWeek.of(e.column + 1))).let {
@@ -360,7 +468,7 @@ object PlanReader {
     }
 
     /** The appointments in one column, from its lines top to bottom. */
-    private fun entries(column: Int, rows: List<Row>, step: Float): List<Entry> {
+    private fun entries(column: Int, rows: List<Row>, step: Float, h: Float): List<Entry> {
         val out = mutableListOf<Entry>()
         val pending = mutableListOf<Row>()
         var last: Entry? = null
@@ -427,7 +535,13 @@ object PlanReader {
             }
             pending.clear()
             val name = clean(title.joinToString(" "))
-            if (name.count { it.isLetter() } < 3) {
+            // Only the end of "11:00 – 11:40" was read: a dash before it, or it stands to the right of the
+            // middle its title is centred on. A wrong time is worse than a missing entry.
+            val endOnly = row.clocks.size == 1 && (
+                RANGE_END.containsMatchIn(row.before) ||
+                    (row.rest.isEmpty() && titleRows.isNotEmpty() && row.timeMid - titleRows.last().mid > 1.2f * h)
+                )
+            if (name.count { it.isLetter() } < 3 || endOnly) {
                 last = null
                 lastRow = null
                 continue

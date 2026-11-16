@@ -45,6 +45,9 @@ object AiParser {
 
     // Room for models that think before they answer; the JSON itself is tiny.
     private const val MAX_TOKENS = 4000
+
+    /** A weekly plan with a few dozen appointments is a long answer; cut off, it would be lost. */
+    private const val MAX_TOKENS_LIST = 8000
     private val MODEL_NAME = Regex("claude-[a-z0-9][a-z0-9._:@-]{0,90}")
 
     /** Tidies common spellings: "Sonnet 5.5" and "claude_sonnet_5.5" both become "claude-sonnet-5-5". */
@@ -119,17 +122,18 @@ object AiParser {
         return """
             You read $what and find the appointments in it, for a calendar.
             Current local time: ${now.withSecond(0).withNano(0)} ($weekday), time zone ${zone.id}.
-            Reply with one JSON object and nothing else:
-            {"title":string,"note":string|null,"appointments":[{"title":string|null,"start":string,"end":string|null,"all_day":boolean,"detail":string|null,"marked":boolean,"source":string}]}
+            Reply with one JSON object and nothing else, compact on one line, without indentation:
+            {"title":string,"note":string|null,"appointments":[{"title":string,"start":string,"end":string,"all_day":boolean,"detail":string,"marked":boolean,"source":string}]}
+            In an appointment only "start" is required: leave out every other field that is null or false, and "marked" when it is true.
             - appointments: each date the reader is to attend (a visit, a treatment, a group, a course, an event), in time order. List every one, also in a table, a timetable or a weekly plan with dozens of entries; never move an appointment into the note. Several treatment dates on one card are several appointments. Leave out the letter's own date, birth dates, validity or expiry dates, opening hours and dates that are over. A deadline ("register by ...") is no appointment: put it into the note.
             - A weekly plan names weekdays: take the dates from the calendar week written on it (e.g. "KW 12" is ISO week 12), otherwise from the current or coming week. What is over today is left out, what is still to come today is kept.
             - start/end: local time as YYYY-MM-DDTHH:MM. A date without a year is the next such date from now; words like "tomorrow" or "next Tuesday" count from now. end only if an end time is written. all_day: true when no time is given (start then uses T00:00); over several days, end is the last day at T00:00.
             - title (top level): short and clear, in the language of the $it: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie"; for a plan its heading. No date or time.
             - title (of an appointment): when the appointments differ, as in a plan of several groups or treatments, each one's own short title as written, e.g. "Yoga" or "Töpfern"; null when it is the same as the top-level title.
             - detail: the room or place written with this appointment and a short remark, e.g. "Raum 12" or "Turnschuhe mitbringen", in at most 60 characters; null if there is none.
-            - marked: if the reader marked some entries (highlighter, circle, tick, underline) and not others, true for the marked ones and false for the rest; if nothing is marked, true for all.
+            - marked: if the reader marked some entries (highlighter, circle, tick, underline) and not others, false for the ones not marked; otherwise leave it out.
             - note: what to bring or to know for all of them, e.g. to come fasting, in the language of the $it, at most two short lines; null if there is nothing.
-            - source: the words in the $it the date was read from, as written, at most 60 characters.
+            - source: the words in the $it the date was read from, as written, at most 60 characters. Leave it out for an appointment with its own title.
             - If nothing is readable or there is no appointment in it, reply with an empty list.
         """.trimIndent()
     }
@@ -137,10 +141,10 @@ object AiParser {
     private fun findAppointments(apiKey: String, model: String, system: String, content: JSONArray, now: LocalDateTime): AiPhotoResult {
         val body = JSONObject()
             .put("model", model)
-            .put("max_tokens", MAX_TOKENS)
+            .put("max_tokens", MAX_TOKENS_LIST)
             .put("system", system)
             .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", content)))
-        val reply = ask(apiKey, body, readTimeout = 60000)
+        val reply = ask(apiKey, body, readTimeout = 120000)
         val text = reply.text ?: return AiPhotoResult(null, reply.error, reply.modelUnknown)
         return photoFromJson(text, now)?.let { AiPhotoResult(it, null) } ?: AiPhotoResult(null, AiError(AiProblem.UNREADABLE))
     }
@@ -152,7 +156,12 @@ object AiParser {
         if (from < 0 || to <= from) {
             null
         } else {
-            val o = JSONObject(reply.substring(from, to + 1))
+            val o = try {
+                JSONObject(reply.substring(from, to + 1))
+            } catch (e: Exception) {
+                // A long list cut off in the middle: the appointments that are complete still count.
+                JSONObject(reply.substring(from, to + 1) + "]}")
+            }
             val list = o.optJSONArray("appointments") ?: JSONArray()
             val top = o.optString("title").trim().take(80)
             val dates = (0 until list.length()).mapNotNull { i ->

@@ -2,6 +2,15 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.11.1
+
+### Fixed
+
+- **Weekly plans with AI:** a plan with many appointments made the AI's answer longer than it was allowed to be. The answer was lost, and the phone read the plan itself instead. The answer may now be twice as long and is written more briefly; if it is cut off all the same, the appointments that are complete are kept.
+- **Weekly plans without AI:** when the phone could not read some of the weekday headings, their columns were missing, so that for example only Thursday and Friday appeared. Two headings are now enough for the whole week, and the plan is read twice, so that a heading or a time lost in one reading comes from the other.
+- A sentence under the plan ("Every first Thursday ...") no longer turns into an appointment.
+- An appointment of which only the end time could be read is left out instead of being entered at the wrong time.
+
 ## 0.11.0
 
 ### What's new

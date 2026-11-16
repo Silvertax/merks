@@ -1,0 +1,2 @@
+• Weekly plans with AI: plans with many appointments are read completely again, instead of falling back to the phone's own reading.
+• Weekly plans without AI: all weekdays are found even when some headings are hard to read; a note under the plan is no longer taken for an appointment.

@@ -56,8 +56,11 @@ object PhotoScan {
         /** The text on [picture]. Pass 1 reads it as one block, pass 2 looks for columns. */
         fun text(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): String
 
-        /** The words on [picture] one by one, with their places: for a table, whose columns a text mixes. */
-        fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord>
+        /**
+         * The words on [picture] one by one, with their places: for a table, whose columns a text mixes.
+         * Pass 1 and pass 2 tell ink from paper in two ways; each reads some words the other misses.
+         */
+        fun words(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): List<OcrWord>
 
         fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult
 
@@ -174,7 +177,7 @@ object PhotoScan {
         val text = texts.filterNotNull().joinToString("\n\n")
         // A weekly plan is a table: read as one text, its columns get mixed. So it is read once more,
         // word by word with their places, and put back together column by column.
-        val plans = pictures.zip(texts).mapNotNull { (f, t) -> if (t != null && PlanReader.looksLikePlan(t)) plan(ctx, f, open, done, german, now) else null }
+        val plans = pictures.zip(texts).mapNotNull { (f, t) -> if (t != null && PlanReader.looksLikePlan(t)) plan(ctx, f, t, open, done, german, now) else null }
         if (plans.isNotEmpty()) return merged(plans).copy(text = text)
         val first = PhotoReader.read(text, now)
         if (first.dates.isNotEmpty()) return first
@@ -187,11 +190,17 @@ object PhotoScan {
         }
     }
 
-    /** The appointments in the weekly plan on the picture in [file], or null when it is no plan after all. */
-    private fun plan(ctx: Context, file: File, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, german: Boolean, now: LocalDateTime): PhotoFind? {
+    /**
+     * The appointments in the weekly plan on the picture in [file], whose text read as a page is [seen];
+     * null when it is no plan after all.
+     */
+    private fun plan(ctx: Context, file: File, seen: String, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, german: Boolean, now: LocalDateTime): PhotoFind? {
         val picture = open(file) ?: return null
         return try {
-            PlanReader.read(parts.words(ctx, picture, german), now, pixels(picture))
+            val words = parts.words(ctx, picture, german, 1)
+            // Read twice: the second reading finds headings and times the first one lost.
+            val more = runCatching { parts.words(ctx, picture, german, 2) }.getOrDefault(emptyList())
+            PlanReader.read(words, now, pixels(picture), more, seen)
         } catch (e: Exception) {
             // The plain reading follows.
             null
@@ -308,15 +317,16 @@ object PhotoScan {
             }
         }
 
-        override fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord> {
+        override fun words(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): List<OcrWord> {
             val lang = if (german) "deu" else "eng"
             val dir = Ocr.data(ctx, lang)
             val api = TessBaseAPI()
             try {
                 if (!api.init(dir.path, lang, TessBaseAPI.OEM_LSTM_ONLY)) return emptyList()
-                // Words wherever they stand, not the lines of a page; the threshold copes with uneven light.
+                // Words wherever they stand, not the lines of a page. First with the threshold that copes
+                // with uneven light (Sauvola), then with the plain one (Otsu).
                 api.pageSegMode = TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
-                api.setVariable("thresholding_method", "2")
+                api.setVariable("thresholding_method", if (pass == 1) "2" else "0")
                 val pixels = if (picture.config == Bitmap.Config.ARGB_8888) picture else picture.copy(Bitmap.Config.ARGB_8888, false)
                 api.setImage(pixels)
                 api.getUTF8Text()

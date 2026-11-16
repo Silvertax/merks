@@ -1,0 +1,2 @@
+• Wochenpläne mit KI: Pläne mit vielen Terminen werden wieder vollständig gelesen, statt dass das Handy selbst lesen muss.
+• Wochenpläne ohne KI: Alle Wochentage werden gefunden, auch wenn einzelne Überschriften schlecht lesbar sind; ein Hinweis unter dem Plan wird nicht mehr als Termin gelesen.

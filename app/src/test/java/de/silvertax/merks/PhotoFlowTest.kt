@@ -107,10 +107,10 @@ class PhotoFlowTest {
             return if (pass == 1) first else second
         }
 
-        override fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord> {
+        override fun words(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): List<OcrWord> {
             if (!reads) throw UnsatisfiedLinkError("no tesseract here")
             wordReads++
-            return words
+            return if (pass == 1) words else emptyList()
         }
 
         override fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
@@ -508,7 +508,8 @@ class PhotoFlowTest {
         // Read as one text, the columns run into each other; the days show it is a plan.
         val parts = Parts(first = "Kursplan Familienzentrum Lindenhof KW $week\nMontag Dienstag Mittwoch Donnerstag Freitag\n07:45 Frühsport 08:30 Offene Werkstatt 07:45 Frühsport", words = sheet.words)
         val activity = photograph(parts)
-        assertEquals(1, parts.wordReads)
+        // Read as a page once, then word by word twice.
+        assertEquals(2, parts.wordReads)
         assertEquals(listOf(1), parts.passes)
         assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
         val dates = model(activity).dates
@@ -531,7 +532,7 @@ class PhotoFlowTest {
     @Test fun whatLooksLikeAPlanAndIsNoneIsReadAsUsual() {
         val parts = Parts(first = "Montag Dienstag Mittwoch geschlossen\n$card")
         val activity = photograph(parts)
-        assertEquals(1, parts.wordReads)
+        assertEquals(2, parts.wordReads)
         assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
         assertEquals(listOf(day), model(activity).dates.map { it.day })
     }

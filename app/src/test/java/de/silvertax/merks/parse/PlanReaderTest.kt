@@ -42,8 +42,80 @@ class PlanReaderTest {
     }
 
     @Test fun aDayWhoseNameWasNotReadStillHasItsColumn() {
-        val find = PlanReader.read(PlanSheet.courses(monday = null).words, mondayMorning)!!
+        val find = PlanReader.read(PlanSheet.courses(names = listOf(null, "Dienstag", "Mittwoch", "Donnerstag", "Freitag")).words, mondayMorning)!!
         assertEquals(wholeWeek, find.dates.described())
+        // One in the middle, too.
+        val middle = PlanReader.read(PlanSheet.courses(names = listOf("Montag", "Dienstag", null, "Donnerstag", "Freitag")).words, mondayMorning)!!
+        assertEquals(wholeWeek, middle.dates.described())
+    }
+
+    /** Only the last two headings were read: the columns before them are still the days before them. */
+    @Test fun twoHeadingsAreEnoughForTheWholeWeek() {
+        val find = PlanReader.read(PlanSheet.courses(names = listOf(null, null, null, "Donnerstag", "Freitag")).words, mondayMorning)!!
+        assertEquals(wholeWeek, find.dates.described())
+    }
+
+    /** A second reading knows headings the first one missed. */
+    @Test fun headingsFromTheSecondReadingCount() {
+        val first = PlanSheet.courses(names = listOf(null, null, null, null, "Freitag"))
+        assertNull(PlanReader.read(first.words, mondayMorning))
+        val second = PlanSheet.courses(names = listOf("Montag", null, "Mittwoch", null, null))
+        assertEquals(wholeWeek, PlanReader.read(first.words, mondayMorning, more = second.words)!!.dates.described())
+    }
+
+    @Test fun aHeadingBesideAScrapOfATableLineIsStillAHeading() {
+        val sheet = PlanSheet.courses(names = listOf(null, "Dienstag", null, "Donnerstag", null))
+        val heading = sheet.words.first { it.text == "Dienstag" }
+        sheet.words += OcrWord("Bn", heading.right + 8, heading.top, heading.right + 30, heading.bottom, 40f)
+        assertEquals(wholeWeek, PlanReader.read(sheet.words, mondayMorning)!!.dates.described())
+    }
+
+    /** The sentence under the plan, read in two pieces with a gap: neither piece is an appointment. */
+    @Test fun aNoteUnderThePlanIsNoAppointmentEvenInPieces() {
+        val sheet = PlanSheet.courses(names = listOf(null, null, null, "Donnerstag", "Freitag"), note = false)
+        sheet.line("Jeden ersten Dienstag im Monat findet um", 1000, 800)
+        sheet.line("18:00 Uhr der Elternabend statt", 1500, 800)
+        assertEquals(wholeWeek, PlanReader.read(sheet.words, mondayMorning)!!.dates.described())
+    }
+
+    // ---------- Times the recognition lost ----------
+
+    private fun small(vararg monday: String) = PlanSheet().above("KW 47", 1700)
+        .column(0, "Montag", *monday)
+        .column(1, "Dienstag", "Chor", "14:00 – 15:00")
+        .column(2, "Mittwoch", "Malkurs", "10:00 – 11:30")
+
+    @Test fun anEndWithoutItsStartIsLeftOutUnlessTheSecondReadingHasIt() {
+        val lost = small("Töpfern", "– 10:30", "Werkraum")
+        assertEquals(listOf("Chor", "Malkurs"), PlanReader.read(lost.words, mondayMorning)!!.dates.map { it.title })
+        // No dash was read either, but the time stands right of the middle, where an end stands.
+        val shifted = small("Töpfern")
+        shifted.line("10:30", shifted.centre(0) + 60, 332)
+        assertEquals(listOf("Chor", "Malkurs"), PlanReader.read(shifted.words, mondayMorning)!!.dates.map { it.title })
+        // A time alone under its title is a start.
+        assertEquals("2026-11-16 10:30-null Töpfern | null", PlanReader.read(small("Töpfern", "10:30").words, mondayMorning)!!.dates.described()[0])
+
+        val whole = small("Töpfern", "09:00 – 10:30", "Werkraum")
+        val find = PlanReader.read(lost.words, mondayMorning, more = whole.words)!!
+        assertEquals("2026-11-16 09:00-10:30 Töpfern | Werkraum", find.dates.described()[0])
+    }
+
+    @Test fun aSingleHourInTheNightAmongManyByDayIsAMisreading() {
+        val sheet = PlanSheet.courses()
+        sheet.line("Yoga", sheet.centre(1), 520)
+        sheet.line("03:30", sheet.centre(1), 552)
+        assertEquals(wholeWeek, PlanReader.read(sheet.words, mondayMorning)!!.dates.described())
+    }
+
+    @Test fun aBracketThatWasNotClosedStillHoldsARemark() {
+        val find = PlanReader.read(small("Kochgruppe (max. 8", "11:00 – 12:30", "Raum 2").words, mondayMorning)!!
+        assertEquals("2026-11-16 11:00-12:30 Kochgruppe | max. 8, Raum 2", find.dates.described()[0])
+    }
+
+    @Test fun theWeekMayStandOnlyInTheTextReadAsAPage() {
+        val sheet = PlanSheet.courses(week = null)
+        val find = PlanReader.read(sheet.words, wednesdayNoon, seen = "Kursplan KW 48\nMontag Dienstag")!!
+        assertEquals("2026-11-23", find.dates.first().day.toString())
     }
 
     @Test fun shortDayNamesWorkToo() {
@@ -199,13 +271,27 @@ class PlanReaderTest {
         assertNull(PlanReader.read(sheet.words, mondayMorning))
     }
 
+    @Test fun openingHoursInALetterAreNoPlan() {
+        val sheet = PlanSheet()
+        listOf(
+            "Praxis am Markt",
+            "Sprechzeiten: Montag bis Freitag 8:00 - 12:00 Uhr",
+            "Dienstag und Donnerstag auch 14:00 - 18:00 Uhr",
+            "Ihr Termin: 23.11.2026 um 10:30 Uhr",
+        ).forEachIndexed { i, l -> sheet.line(l, 900, 200 + 40 * i) }
+        assertNull(PlanReader.read(sheet.words, mondayMorning))
+    }
+
     @Test fun whatLooksLikeAPlan() {
         assertTrue(PlanReader.looksLikePlan("Kursplan\nMontag Dienstag Mittwoch\n07:45 Frühsport"))
         assertTrue(PlanReader.looksLikePlan("Stundenplan\nMo Di Mi Do Fr\n08:00 Mathe"))
         assertTrue(PlanReader.looksLikePlan("KW 47\nMontag Donnerstag"))
         // Misread a little: still the days.
         assertTrue(PlanReader.looksLikePlan("Mortag Dienstag Mittwcch Donnerstag"))
+        // Two headings read and many times: worth a closer look.
+        assertTrue(PlanReader.looksLikePlan("Dienstag Freitag\n07:45 08:30 09:00 10:30 11:00 12:30 13:00 14:30 15:30"))
         assertFalse(PlanReader.looksLikePlan("Ihr Termin am Montag, 23.11. um 10:30 Uhr. Bitte bis Freitag absagen."))
+        assertFalse(PlanReader.looksLikePlan("Sprechzeiten: Montag bis Freitag 8:00 - 12:00 Uhr und 14:00 - 18:00 Uhr"))
         assertFalse(PlanReader.looksLikePlan("So sind wir am Do und Fr erreichbar."))
     }
 }

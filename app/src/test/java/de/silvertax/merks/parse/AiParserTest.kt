@@ -122,6 +122,19 @@ class AiParserTest {
         assertEquals(f.title, f.dates[0].toParsed(f.title).title)
     }
 
+    /** A long list that ran into the answer's length limit: what is complete is kept. */
+    @Test fun aReplyCutOffInTheMiddleKeepsItsCompleteAppointments() {
+        val reply = """{"title":"Kursplan","note":null,"appointments":[{"title":"A","start":"2026-11-16T08:00","detail":"Raum 1"},{"title":"B","start":"2026-11-17T08:00","end":"2026-11-17T09:00","marked":false},{"title":"C","start":"2026-11-1"""
+        val f = AiParser.photoFromJson(reply, photoNow)!!
+        assertEquals(listOf("A", "B"), f.dates.map { it.title })
+        // Fields left out are as if null or false; "marked" left out is marked.
+        assertEquals("Raum 1", f.dates[0].detail)
+        assertNull(f.dates[0].end)
+        assertTrue(f.dates[0].chosen)
+        assertFalse(f.dates[1].chosen)
+        assertEquals("", f.dates[0].source)
+    }
+
     /** A plan where the reader marked nothing: everything is ticked. */
     @Test fun nothingMarkedMeansAll() {
         val reply = """{"title":"Plan","note":null,"appointments":[

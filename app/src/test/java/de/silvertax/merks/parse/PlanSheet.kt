@@ -55,15 +55,23 @@ internal class PlanSheet(private val left: Int = 500, private val gap: Int = 340
     fun at(day: Int, line: String): List<OcrWord> = placed.getValue(day to line)
 
     companion object {
-        /** A course plan of a neighbourhood centre for calendar week [week]; null leaves the week out. */
-        fun courses(week: String? = "KW 47", monday: String? = "Montag"): PlanSheet = PlanSheet()
+        /**
+         * A course plan of a neighbourhood centre for calendar week [week]; null leaves the week out.
+         * [names] are the headings as the recognition read them, null for one it missed; [note] puts a
+         * sentence under the plan.
+         */
+        fun courses(
+            week: String? = "KW 47",
+            names: List<String?> = listOf("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"),
+            note: Boolean = true,
+        ): PlanSheet = PlanSheet()
             .above("Kursplan Familienzentrum Lindenhof", 1100)
             .apply { if (week != null) above(week, 1700) }
-            .column(0, monday, "07:45 Frühsport", "Turnhalle", "", "Töpfern", "09:00 – 10:30 Uhr", "Werkraum", "", "Chor", "(Noten mitbringen)", "14:00 – 15:00")
-            .column(1, "Dienstag", "Offene Werkstatt", "08:30 – 10:00", "", "Kochgruppe (max. 8 P)", "11:00 – 12:30", "Raum 2")
-            .column(2, "Mittwoch", "07:45 Frühsport", "Turnhalle", "", "Malkurs", "10:00 – 11:30", "Raum 12", "", "Schwimmen, 16:45 –", "17:30 (Hallenbad)")
-            .column(3, "Donnerstag", "Offene Werkstatt", "08:30 – 10:00", "", "Gedächtnistraining", "Bücherei, 1. Stock", "10:15 – 11:00", "", "Spieleabend", "18:00 Uhr")
-            .column(4, "Freitag", "07:45 Frühsport", "Turnhalle", "", "Offene Werkstatt", "13:00 – 14:30", "", "Lesecafé", "Raum 5", "15.30 bis 16.30 Uhr")
-            .below("Jeden ersten Dienstag im Monat um 18:00 Uhr Elternabend in der Aula", 1180)
+            .column(0, names[0], "07:45 Frühsport", "Turnhalle", "", "Töpfern", "09:00 – 10:30 Uhr", "Werkraum", "", "Chor", "(Noten mitbringen)", "14:00 – 15:00")
+            .column(1, names[1], "Offene Werkstatt", "08:30 – 10:00", "", "Kochgruppe (max. 8 P)", "11:00 – 12:30", "Raum 2")
+            .column(2, names[2], "07:45 Frühsport", "Turnhalle", "", "Malkurs", "10:00 – 11:30", "Raum 12", "", "Schwimmen, 16:45 –", "17:30 (Hallenbad)")
+            .column(3, names[3], "Offene Werkstatt", "08:30 – 10:00", "", "Gedächtnistraining", "Bücherei, 1. Stock", "10:15 – 11:00", "", "Spieleabend", "18:00 Uhr")
+            .column(4, names[4], "07:45 Frühsport", "Turnhalle", "", "Offene Werkstatt", "13:00 – 14:30", "", "Lesecafé", "Raum 5", "15.30 bis 16.30 Uhr")
+            .apply { if (note) below("Jeden ersten Dienstag im Monat um 18:00 Uhr Elternabend in der Aula", 1180) }
     }
 }
