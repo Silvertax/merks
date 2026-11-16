@@ -187,6 +187,16 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
 
+                    <!-- On a plan with marked appointments: brings the ones that are not marked. -->
+                    <Button
+                        android:id="@+id/more_dates"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="52dp"
+                        android:visibility="gone" />
+
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/photo_note_box"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"

@@ -483,6 +483,16 @@ class PhotoFlowTest {
         assertEquals("Frühsport", row(activity, 0).findViewById<TextView>(R.id.date_title).text.toString())
         assertEquals("07:30 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
         assertEquals("Saal 1", row(activity, 0).findViewById<TextView>(R.id.date_detail).text.toString())
+        // Only what is marked on the plan is listed; a button brings the rest.
+        assertEquals(2, rows(activity).childCount)
+        assertEquals("Chor", row(activity, 1).findViewById<TextView>(R.id.date_title).text.toString())
+        assertEquals("2 markierte Termine auf dem Plan gefunden. Was angehakt ist, wird eingetragen:", activity.findViewById<TextView>(R.id.review_label).text.toString())
+        val more = activity.findViewById<TextView>(R.id.more_dates)
+        assertEquals(View.VISIBLE, more.visibility)
+        assertEquals("1 weiteren Termin zeigen", more.text.toString())
+        more.performClick()
+        assertEquals(View.GONE, more.visibility)
+        assertEquals(3, rows(activity).childCount)
         assertFalse(row(activity, 1).findViewById<CheckBox>(R.id.date_pick).isChecked)
         assertEquals(View.GONE, row(activity, 2).findViewById<View>(R.id.date_detail).visibility)
         // Why one is not ticked: it was not marked on the plan.
@@ -498,6 +508,23 @@ class PhotoFlowTest {
         // The room goes into the entry's note.
         assertEquals("Saal 1", saved[0].note)
         assertNull(saved[1].note)
+    }
+
+    /** A long plan the AI read with everything ticked: the phone looks for the highlighter itself. */
+    @Test fun aPlanTheAiTickedCompletelyIsCheckedForMarksByThePhone() {
+        Prefs.setApiKey(app, "sk-ant-test")
+        val dates = (0 until 8).map { PhotoDate(day.plusDays(it.toLong()), LocalTime.of(9, 0), title = "Kurs $it") }
+        val parts = Parts(first = card, ai = AiPhotoResult(PhotoFind("Kursplan", null, dates, byAi = true), null), words = PlanSheet.courses().words)
+        val activity = photograph(parts)
+        assertEquals(2, parts.wordReads)
+        assertEquals(8, model(activity).dates.size)
+        // A short list, or one with ticks of the AI's own, is left alone.
+        val few = Parts(first = card, ai = AiPhotoResult(PhotoFind("Kursplan", null, dates.take(3), byAi = true), null))
+        photograph(few)
+        assertEquals(0, few.wordReads)
+        val own = Parts(first = card, ai = AiPhotoResult(PhotoFind("Kursplan", null, dates.mapIndexed { i, d -> d.copy(chosen = i % 2 == 0) }, byAi = true), null))
+        photograph(own)
+        assertEquals(0, own.wordReads)
     }
 
     @Test fun aWeeklyPlanIsReadColumnByColumnWithoutAi() {
@@ -517,6 +544,8 @@ class PhotoFlowTest {
         val monday = next.with(DayOfWeek.MONDAY)
         assertEquals(PhotoDate(monday, LocalTime.of(7, 45), source = "07:45 Frühsport Turnhalle", title = "Frühsport", detail = "Turnhalle"), dates[0])
         assertEquals(View.GONE, activity.findViewById<View>(R.id.photo_title_box).visibility)
+        // Nothing is marked, so nothing is folded away.
+        assertEquals(View.GONE, activity.findViewById<View>(R.id.more_dates).visibility)
         assertEquals("Töpfern", row(activity, 1).findViewById<TextView>(R.id.date_title).text.toString())
         assertEquals("Werkraum", row(activity, 1).findViewById<TextView>(R.id.date_detail).text.toString())
         assertEquals("14 Termine gefunden. Was angehakt ist, wird eingetragen:", activity.findViewById<TextView>(R.id.review_label).text.toString())

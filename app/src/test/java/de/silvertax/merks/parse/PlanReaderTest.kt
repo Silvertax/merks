@@ -5,7 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 /** Weekly plans read from the words on their picture and the places of the words. */
 class PlanReaderTest {
@@ -255,6 +257,26 @@ class PlanReaderTest {
         val pixels = paper(sheet, listOf(sheet.at(0, "Töpfern") to teal))
         val find = PlanReader.read(sheet.words, wednesdayNoon, pixels)!!
         assertTrue(find.dates.all { it.chosen })
+    }
+
+    /** The AI ticked everything; the phone saw what is marked and sets the ticks. */
+    @Test fun theAisListTakesTheMarksThePhoneSaw() {
+        val sheet = PlanSheet.courses()
+        val pixels = paper(sheet, listOf(sheet.at(0, "Töpfern") to teal, sheet.at(2, "Malkurs") to teal, sheet.at(4, "Lesecafé") to yellow))
+        val seen = PlanReader.read(sheet.words, mondayMorning, pixels)!!.dates
+        fun ai(day: Int, hour: Int, minute: Int, title: String) = PhotoDate(LocalDate.of(2026, 11, 16 + day), LocalTime.of(hour, minute), title = title)
+        val listed = listOf(
+            ai(0, 7, 45, "Frühsport"), ai(0, 9, 0, "Töpfern"), ai(0, 14, 0, "Chor"),
+            // The phone misread nothing here, but the AI wrote one title another way and one time the phone has not.
+            ai(2, 10, 0, "Mal-Kurs"), ai(4, 15, 0, "Lesecafé"), ai(4, 7, 45, "Frühsport"),
+            // Not in the phone's reading at all: it keeps its tick.
+            PhotoDate(LocalDate.of(2026, 11, 19), title = "Sommerfest"),
+        )
+        val ticked = PlanReader.withMarks(listed, seen).filter { it.chosen }.map { it.title }
+        assertEquals(listOf("Töpfern", "Mal-Kurs", "Lesecafé", "Sommerfest"), ticked)
+        // Nothing marked on the paper: the list stays as it is.
+        val plain = PlanReader.read(sheet.words, mondayMorning, paper(sheet, emptyList()))!!.dates
+        assertTrue(PlanReader.withMarks(listed, plain).all { it.chosen })
     }
 
     // ---------- No plan ----------

@@ -1,0 +1,2 @@
+• Weekly plans with AI: only what is marked with a highlighter is ticked; before, the AI often ticked everything.
+• On a plan with marked appointments, the list shows only those; a button brings the others.

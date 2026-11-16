@@ -230,6 +230,14 @@
         <item quantity="one">Das habe ich gefunden. Bitte kurz prüfen:</item>
         <item quantity="other">%d Termine gefunden. Angehakt ist, was auf dem Plan markiert ist. Eingetragen wird, was angehakt ist:</item>
     </plurals>
+    <plurals name="photo_found_marked_only">
+        <item quantity="one">Einen markierten Termin auf dem Plan gefunden. Mit Haken wird er eingetragen:</item>
+        <item quantity="other">%d markierte Termine auf dem Plan gefunden. Was angehakt ist, wird eingetragen:</item>
+    </plurals>
+    <plurals name="photo_more_dates">
+        <item quantity="one">%d weiteren Termin zeigen</item>
+        <item quantity="other">%d weitere Termine zeigen</item>
+    </plurals>
     <plurals name="photo_saved">
         <item quantity="one">%d Termin eingetragen</item>
         <item quantity="other">%d Termine eingetragen</item>

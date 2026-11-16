@@ -354,7 +354,27 @@ class PhotoActivity : MerksActivity() {
         }
         // A plan whose own appointments are marked: say why the others are not ticked.
         val marked = f.dates.size > 1 && f.dates.all { it.title != null } && f.dates.any { it.chosen } && f.dates.any { !it.chosen }
-        label.text = resources.getQuantityString(if (marked) R.plurals.photo_found_marked else R.plurals.photo_found, model.dates.size, model.dates.size)
+        // Then only the marked ones are listed, and a button brings the others.
+        val folded = marked && !model.showAll
+        val shown = if (folded) f.dates.count { it.chosen } else model.dates.size
+        label.text = resources.getQuantityString(
+            when {
+                folded -> R.plurals.photo_found_marked_only
+                marked -> R.plurals.photo_found_marked
+                else -> R.plurals.photo_found
+            },
+            shown,
+            shown,
+        )
+        findViewById<Button>(R.id.more_dates).apply {
+            val rest = model.dates.size - shown
+            visibility = if (folded) View.VISIBLE else View.GONE
+            text = resources.getQuantityString(R.plurals.photo_more_dates, rest, rest)
+            setOnClickListener {
+                model.showAll = true
+                fillReview()
+            }
+        }
         // When every date has its own title, a common one is not needed.
         titleBox.visibility = if (model.dates.isNotEmpty() && model.dates.all { it.title != null }) View.GONE else View.VISIBLE
         sourceHint.text = when {
@@ -366,7 +386,7 @@ class PhotoActivity : MerksActivity() {
         sourceHint.visibility = if (sourceHint.text.isEmpty()) View.GONE else View.VISIBLE
         findViewById<View>(R.id.review_show_text).visibility = if (f.text.isBlank()) View.GONE else View.VISIBLE
         rows.removeAllViews()
-        for ((i, d) in model.dates.withIndex()) rows.addView(row(i, d))
+        for ((i, d) in model.dates.withIndex()) if (!folded || f.dates[i].chosen) rows.addView(row(i, d))
     }
 
     private fun row(i: Int, d: PhotoDate): View {
@@ -542,6 +562,9 @@ class PhotoModel : ViewModel() {
     /** Title and note were put into the fields once. */
     var filled = false
 
+    /** On a plan with marked appointments: also the ones that are not marked are listed. */
+    var showAll = false
+
     /** Reading or saving runs in the background. */
     @Volatile
     var busy = false
@@ -627,6 +650,7 @@ class PhotoModel : ViewModel() {
                     dates.clear()
                     dates += f.dates
                     filled = false
+                    showAll = false
                     stage = if (f.dates.isEmpty()) Stage.NOTHING else Stage.REVIEW
                 }
                 onDone?.invoke()
@@ -678,6 +702,7 @@ class PhotoModel : ViewModel() {
             .put("failure", failure)
             .put("editing", editing)
             .put("filled", filled)
+            .put("showAll", showAll)
             .put("picked", pickedDay?.toEpochDay() ?: JSONObject.NULL)
             .put("saved", JSONArray(saved))
             .put("dates", JSONArray(dates.map { dateJson(it) }))
@@ -710,6 +735,7 @@ class PhotoModel : ViewModel() {
         }
         // Once filled, the fields keep what was typed: Android puts it back by itself.
         filled = o.optBoolean("filled")
+        showAll = o.optBoolean("showAll")
     }
 
     private fun dateJson(d: PhotoDate) = JSONObject()

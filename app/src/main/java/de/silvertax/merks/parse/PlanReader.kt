@@ -467,6 +467,39 @@ object PlanReader {
         return PhotoFind(heading.orEmpty(), null, if (dates.any { it.chosen }) dates else dates.map { it.copy(chosen = true) }, text)
     }
 
+    /**
+     * [listed], the appointments someone else read from a plan (the AI), ticked as the phone itself saw
+     * them marked in [seen]: its own reading of the same plan, which tells a highlighter by its colour.
+     * Appointments are matched by weekday, time and title; one without a match keeps its tick. When the
+     * phone saw nothing marked, or everything, [listed] stays as it is.
+     */
+    fun withMarks(listed: List<PhotoDate>, seen: List<PhotoDate>): List<PhotoDate> {
+        if (seen.all { it.chosen } || seen.none { it.chosen }) return listed
+        val left = seen.toMutableList()
+        val match = arrayOfNulls<PhotoDate>(listed.size)
+        fun alike(a: PhotoDate, b: PhotoDate): Boolean {
+            val x = key(a.title.orEmpty())
+            val y = key(b.title.orEmpty())
+            return x.isNotEmpty() && y.isNotEmpty() && distance(x, y) <= (0.3f * max(x.length, y.length)).roundToInt()
+        }
+        fun sameDay(a: PhotoDate, b: PhotoDate) = a.day.dayOfWeek == b.day.dayOfWeek
+        val ways = listOf<(PhotoDate, PhotoDate) -> Boolean>(
+            { a, b -> sameDay(a, b) && a.time == b.time && alike(a, b) },
+            { a, b -> sameDay(a, b) && a.time == b.time },
+            { a, b -> sameDay(a, b) && alike(a, b) },
+        )
+        for (way in ways) {
+            listed.forEachIndexed { i, d ->
+                if (match[i] != null) return@forEachIndexed
+                // Only when it is clear which one is meant.
+                val found = left.filter { way(d, it) }.singleOrNull() ?: return@forEachIndexed
+                match[i] = found
+                left.remove(found)
+            }
+        }
+        return listed.mapIndexed { i, d -> match[i]?.let { d.copy(chosen = it.chosen) } ?: d }
+    }
+
     /** The appointments in one column, from its lines top to bottom. */
     private fun entries(column: Int, rows: List<Row>, step: Float, h: Float): List<Entry> {
         val out = mutableListOf<Entry>()

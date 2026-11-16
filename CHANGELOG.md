@@ -2,6 +2,16 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.11.2
+
+### Changed
+
+- **Weekly plans with marked appointments:** the check list shows only what is marked on the plan. A button below it, e.g. "Show 12 more dates", brings the others to tick as well.
+
+### Fixed
+
+- **Weekly plans with AI:** the AI often ticked every appointment, also when only some were marked with a highlighter. It is now asked about each entry on its own, and when it still ticks everything, the phone looks at the colours itself and ticks only what is marked. Reading such a plan takes a little longer for that.
+
 ## 0.11.1
 
 ### Fixed

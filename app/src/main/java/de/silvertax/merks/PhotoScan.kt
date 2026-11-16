@@ -45,6 +45,9 @@ object PhotoScan {
     private const val MAX_PAGES = 3
     private const val MAX_PICTURES = 4
 
+    /** So many appointments with titles of their own are a plan. */
+    private const val PLAN_SIZE = 6
+
     /** A message or a text file; longer is no message about an appointment. */
     const val MAX_TEXT = 20_000
 
@@ -157,7 +160,7 @@ object PhotoScan {
         val zone = ZoneId.systemDefault()
         val small = lazy { pictures.mapNotNull { f -> open(f)?.let { b -> jpeg(b, AI_SIDE).also { done(b) } } } }
         val ai = Store.askAi(ctx) { key, model -> parts.ai(key, model, small.value, now, zone) }?.find
-        if (ai != null && ai.dates.isNotEmpty()) return ai
+        if (ai != null && ai.dates.isNotEmpty()) return marked(ctx, ai, pictures, ::open, ::done, now)
         // The AI saw no date (or could not be asked): the phone has a look of its own.
         val offline = try {
             offline(ctx, pictures, ::open, ::done, now)
@@ -187,6 +190,24 @@ object PhotoScan {
             second.dates.isNotEmpty() -> second
             second.text.length > first.text.length -> second
             else -> first
+        }
+    }
+
+    /**
+     * A plan the AI read with everything ticked: the AI often does not see what is marked with a
+     * highlighter. The phone tells it by the colour, so it reads the plan itself and sets the ticks.
+     */
+    private fun marked(ctx: Context, ai: PhotoFind, pictures: List<File>, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, now: LocalDateTime): PhotoFind {
+        if (ai.dates.size < PLAN_SIZE || ai.dates.any { !it.chosen } || ai.dates.count { it.title != null } < ai.dates.size - 1) return ai
+        return try {
+            val german = Lang.isGerman(ctx)
+            // From the start of the week, so that what is over today is matched as well.
+            val monday = now.toLocalDate().with(java.time.DayOfWeek.MONDAY).atStartOfDay()
+            val own = pictures.mapNotNull { plan(ctx, it, "", open, done, german, monday) }.flatMap { it.dates }
+            ai.copy(dates = PlanReader.withMarks(ai.dates, own))
+        } catch (e: Throwable) {
+            // Text recognition that does not run on this phone: the AI's list stays as it is.
+            ai
         }
     }
 

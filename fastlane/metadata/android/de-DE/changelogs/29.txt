@@ -1,0 +1,2 @@
+• Wochenpläne mit KI: Angehakt ist nur, was mit Textmarker markiert ist; bisher hat die KI oft alles angehakt.
+• Bei einem Plan mit markierten Terminen zeigt die Liste nur diese; ein Knopf holt die übrigen dazu.
