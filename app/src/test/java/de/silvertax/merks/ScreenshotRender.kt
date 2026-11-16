@@ -320,8 +320,8 @@ class ScreenshotRender {
     @Test fun photoReviewDark() = photoReview(true, "14_photo_review_dark")
 
     /** The check before saving for a weekly plan: each appointment with its own title, the marked ones ticked. */
-    @Test fun planReview() {
-        night(false)
+    private fun planReview(nightMode: Boolean, name: String) {
+        night(nightMode)
         val monday = LocalDate.now().plusWeeks(1).with(java.time.DayOfWeek.MONDAY)
         val dates = listOf(
             PhotoDate(monday, LocalTime.of(7, 45), title = t("Frühsport", "Morning exercise"), detail = t("Turnhalle", "Gym")),
@@ -336,8 +336,11 @@ class ScreenshotRender {
             this.dates += dates
         }
         val state = Bundle().also { model.save(it) }
-        shotActivity(Robolectric.buildActivity(PhotoActivity::class.java).setup(state).get(), "15_plan_review")
+        shotActivity(Robolectric.buildActivity(PhotoActivity::class.java).setup(state).get(), name)
     }
+
+    @Test fun planReviewLight() = planReview(false, "18_plan_review_light")
+    @Test fun planReviewDark() = planReview(true, "18_plan_review_dark")
 
     @Test fun photoWidget() {
         val density = app.resources.displayMetrics.density

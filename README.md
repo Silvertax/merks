@@ -7,7 +7,7 @@ A home screen widget starts listening right away. What you say becomes an appoin
 <p>
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries: what is coming up, soonest first, then the notes">
   <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the All in one widget and the Speak, Photo and Up next widgets, speaking via the widget">
-  <img src="docs/screenshots/en-photo.png" width="200" alt="Appointments read from a photo, to check before they are saved">
+  <img src="docs/screenshots/en-photo.png" width="200" alt="A weekly plan read from a photo: each appointment with its own title and room, the marked ones ticked, to check before they are saved">
   <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings: Merk's as the calendar, and when it reminds you">
 </p>
 
