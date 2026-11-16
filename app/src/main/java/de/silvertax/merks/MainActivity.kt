@@ -40,6 +40,10 @@ class MainActivity : MerksActivity() {
         findViewById<View>(R.id.photo).setOnClickListener {
             startActivity(Intent(this, PhotoActivity::class.java))
         }
+        // A picture someone sent, a PDF, a calendar file: read like a photo.
+        findViewById<View>(R.id.from_file).setOnClickListener {
+            startActivity(Intent(this, PhotoActivity::class.java).putExtra(PhotoActivity.EXTRA_PICK, true))
+        }
         findViewById<View>(R.id.settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -172,9 +176,13 @@ class MainActivity : MerksActivity() {
             if (e.start != null) append(" · ").append(Format.whenText(this@MainActivity, e, starts[e.id]))
             if (e.done) append("\n").append(getString(R.string.is_done))
             e.note?.takeIf { it.isNotBlank() }?.let { append("\n\n").append(getString(R.string.note_label, it)) }
-            // Where it came from: what was said, or the words on the photo.
-            val photo = e.raw.startsWith(Store.PHOTO_MARK)
-            append("\n\n").append(getString(if (photo) R.string.read_from_photo else R.string.said, e.raw.removePrefix(Store.PHOTO_MARK)))
+            // Where it came from: what was said, the words on the photo, or in a file or message.
+            val from = when {
+                e.raw.startsWith(Store.PHOTO_MARK) -> getString(R.string.read_from_photo, e.raw.removePrefix(Store.PHOTO_MARK))
+                e.raw.startsWith(Store.FILE_MARK) -> getString(R.string.read_from_file, e.raw.removePrefix(Store.FILE_MARK))
+                else -> getString(R.string.said, e.raw)
+            }
+            append("\n\n").append(from)
         }
         // A big button for the most common fix: the date or time was missing or wrong.
         val changeButton = com.google.android.material.button.MaterialButton(

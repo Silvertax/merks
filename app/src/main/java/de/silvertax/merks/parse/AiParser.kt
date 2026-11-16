@@ -86,35 +86,56 @@ object AiParser {
     }
 
     /**
-     * Reads a photo of an appointment card, a letter or a poster, handwriting included, and finds
-     * the appointments on it. [jpeg] is the photo; it goes to the API and nowhere else.
+     * Reads photos of an appointment card, a letter or a poster, handwriting included, or the pages
+     * of a letter, and finds the appointments on them. [jpegs] are the pictures; they go to the API
+     * and nowhere else.
      */
-    fun readPhoto(apiKey: String, model: String, jpeg: ByteArray, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
+    fun readPhoto(apiKey: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
         if (!isPlausibleModelName(model)) return AiPhotoResult(null, AiError(AiProblem.BAD_MODEL_NAME), modelUnknown = true)
+        val content = JSONArray()
+        for (jpeg in jpegs) {
+            content.put(
+                JSONObject().put("type", "image").put(
+                    "source",
+                    JSONObject().put("type", "base64").put("media_type", "image/jpeg")
+                        .put("data", java.util.Base64.getEncoder().encodeToString(jpeg)),
+                ),
+            )
+        }
+        val question = if (jpegs.size > 1) "Which appointments are on these pictures? They belong together, e.g. the pages of one letter." else "Which appointments are on this photo?"
+        content.put(JSONObject().put("type", "text").put("text", question))
+        return findAppointments(apiKey, model, system("a photo of an appointment card, a letter, a poster or a handwritten note", "photo", now, zone), content, now)
+    }
+
+    /** Finds the appointments in a text: a message, an e-mail, a letter. It goes to the API and nowhere else. */
+    fun readText(apiKey: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
+        if (!isPlausibleModelName(model)) return AiPhotoResult(null, AiError(AiProblem.BAD_MODEL_NAME), modelUnknown = true)
+        val content = JSONArray().put(JSONObject().put("type", "text").put("text", "Which appointments are in this text?\n\n$text"))
+        return findAppointments(apiKey, model, system("a text (a message, an e-mail or a letter)", "text", now, zone), content, now)
+    }
+
+    private fun system(what: String, it: String, now: LocalDateTime, zone: ZoneId): String {
         val weekday = now.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-        val system = """
-            You read a photo of an appointment card, a letter, a poster or a handwritten note and find the appointments on it, for a calendar.
+        return """
+            You read $what and find the appointments in it, for a calendar.
             Current local time: ${now.withSecond(0).withNano(0)} ($weekday), time zone ${zone.id}.
             Reply with one JSON object and nothing else:
             {"title":string,"note":string|null,"appointments":[{"start":string,"end":string|null,"all_day":boolean,"source":string}]}
             - appointments: each date the reader is to attend (a visit, a treatment, an event), in time order. Several treatment dates on one card are several appointments. Leave out the letter's own date, birth dates, validity or expiry dates, opening hours and dates that are over. A deadline ("register by ...") is no appointment: put it into the note.
-            - start/end: local time as YYYY-MM-DDTHH:MM. A date without a year is the next such date from now. end only if an end time is written. all_day: true when no time is given (start then uses T00:00); over several days, end is the last day at T00:00.
-            - title: short and clear, in the language of the photo: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie". No date or time.
-            - note: what to bring or to know, e.g. the room or to come fasting, in the language of the photo, at most two short lines; null if there is nothing.
-            - source: the words on the photo the date was read from, as written, at most 80 characters.
-            - If nothing is readable or there is no appointment on the photo, reply with an empty list.
+            - start/end: local time as YYYY-MM-DDTHH:MM. A date without a year is the next such date from now; words like "tomorrow" or "next Tuesday" count from now. end only if an end time is written. all_day: true when no time is given (start then uses T00:00); over several days, end is the last day at T00:00.
+            - title: short and clear, in the language of the $it: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie". No date or time.
+            - note: what to bring or to know, e.g. the room or to come fasting, in the language of the $it, at most two short lines; null if there is nothing.
+            - source: the words in the $it the date was read from, as written, at most 80 characters.
+            - If nothing is readable or there is no appointment in it, reply with an empty list.
         """.trimIndent()
-        val image = JSONObject().put("type", "image").put(
-            "source",
-            JSONObject().put("type", "base64").put("media_type", "image/jpeg")
-                .put("data", java.util.Base64.getEncoder().encodeToString(jpeg)),
-        )
-        val question = JSONObject().put("type", "text").put("text", "Which appointments are on this photo?")
+    }
+
+    private fun findAppointments(apiKey: String, model: String, system: String, content: JSONArray, now: LocalDateTime): AiPhotoResult {
         val body = JSONObject()
             .put("model", model)
             .put("max_tokens", MAX_TOKENS)
             .put("system", system)
-            .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", JSONArray().put(image).put(question))))
+            .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", content)))
         val reply = ask(apiKey, body, readTimeout = 60000)
         val text = reply.text ?: return AiPhotoResult(null, reply.error, reply.modelUnknown)
         return photoFromJson(text, now)?.let { AiPhotoResult(it, null) } ?: AiPhotoResult(null, AiError(AiProblem.UNREADABLE))

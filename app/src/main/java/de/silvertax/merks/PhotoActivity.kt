@@ -2,7 +2,10 @@ package de.silvertax.merks
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
+import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +19,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.appbar.MaterialToolbar
@@ -27,6 +31,8 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import de.silvertax.merks.parse.PhotoDate
 import de.silvertax.merks.parse.PhotoFind
+import de.silvertax.merks.parse.Repeat
+import de.silvertax.merks.parse.RepeatUnit
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -41,6 +47,10 @@ import java.time.temporal.ChronoUnit
  * "Termin fotografieren": opens the camera, reads the photo and shows what it found, to check and
  * change before it goes into the calendar. The photo is deleted as soon as it has been read; only the
  * words a date was read from stay with the entry.
+ *
+ * The same for what comes from elsewhere: a picture, a PDF, a calendar file or a text passed on from
+ * another app ("Share" → Merk's), or picked with "From a picture or file". Copies are read and
+ * deleted; the original stays as it is.
  */
 class PhotoActivity : MerksActivity() {
     // The screen is rebuilt only by Android itself; the model carries the photo being read over that.
@@ -49,6 +59,7 @@ class PhotoActivity : MerksActivity() {
     private lateinit var model: PhotoModel
     private val handler = Handler(Looper.getMainLooper())
     private val camera = registerForActivityResult(ActivityResultContracts.TakePicture()) { taken -> photoTaken(taken) }
+    private val picker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> picked(uri) }
 
     private lateinit var message: View
     private lateinit var icon: ImageView
@@ -100,8 +111,8 @@ class PhotoActivity : MerksActivity() {
         rows = findViewById(R.id.dates)
         sourceHint = findViewById(R.id.source_hint)
 
-        retake.setOnClickListener { openCamera() }
-        findViewById<View>(R.id.review_retake).setOnClickListener { openCamera() }
+        retake.setOnClickListener { again() }
+        findViewById<View>(R.id.review_retake).setOnClickListener { again() }
         byHand.setOnClickListener {
             model.editing = -1
             pickDay(LocalDate.now())
@@ -122,10 +133,14 @@ class PhotoActivity : MerksActivity() {
 
         model.onDone = { if (!isFinishing && !isDestroyed) show() }
         when (model.stage) {
-            PhotoModel.Stage.START -> openCamera()
+            PhotoModel.Stage.START -> begin()
             // The app was ended while reading or saving: read again if the photo is still there.
             PhotoModel.Stage.READING -> if (!model.busy) {
-                if (shot.length() > 0) model.read(this, shot) else openCamera()
+                when {
+                    model.source != PhotoModel.Source.CAMERA -> model.readShared(this, model.uris, model.shared)
+                    shot.length() > 0 -> model.read(this, shot)
+                    else -> openCamera()
+                }
             }
             PhotoModel.Stage.SAVING -> if (!model.busy) model.stage = PhotoModel.Stage.REVIEW
             else -> {}
@@ -144,9 +159,81 @@ class PhotoActivity : MerksActivity() {
         super.onDestroy()
     }
 
+    /** What this screen was opened for: something passed on from another app, picking a file, or the camera. */
+    private fun begin() {
+        val (uris, text) = passedOn(intent)
+        val shared = intent.action in listOf(Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE, Intent.ACTION_VIEW)
+        when {
+            uris.isNotEmpty() || text != null -> {
+                model.source = if (uris.isEmpty()) PhotoModel.Source.TEXT else PhotoModel.Source.FILE
+                model.uris = uris
+                model.shared = text
+                model.readShared(this, uris, text)
+            }
+            shared -> {
+                model.source = PhotoModel.Source.FILE
+                model.fail(R.string.photo_file_unreadable)
+            }
+            intent.getBooleanExtra(EXTRA_PICK, false) -> {
+                model.source = PhotoModel.Source.FILE
+                openPicker()
+            }
+            else -> openCamera()
+        }
+    }
+
+    /** The files and the text another app passed on, as "Share" and "Open with" do. */
+    private fun passedOn(intent: Intent): Pair<List<Uri>, String?> {
+        val uris = mutableListOf<Uri>()
+        when (intent.action) {
+            Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let { uris += it }
+            Intent.ACTION_SEND_MULTIPLE -> IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)?.let { uris += it }
+            Intent.ACTION_VIEW -> intent.data?.let { uris += it }
+            else -> return emptyList<Uri>() to null
+        }
+        // Some apps put what they pass on only here.
+        if (uris.isEmpty()) intent.clipData?.let { clip -> for (i in 0 until clip.itemCount) clip.getItemAt(i).uri?.let { uris += it } }
+        // A mail's subject often says what it is about; the text then says when.
+        val text = listOfNotNull(intent.getStringExtra(Intent.EXTRA_SUBJECT), intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString())
+            .map { it.trim() }.filter { it.isNotEmpty() }.distinct().joinToString("\n").ifEmpty { null }
+            ?.takeIf { intent.action == Intent.ACTION_SEND }
+        return uris.filter { it.scheme == ContentResolver.SCHEME_CONTENT }.distinct() to text
+    }
+
+    /** "Try again": a new photo, or another file. */
+    private fun again() = if (model.source == PhotoModel.Source.CAMERA) openCamera() else openPicker()
+
+    private fun openPicker() {
+        model.stage = PhotoModel.Stage.PICKING
+        try {
+            picker.launch(arrayOf("image/*", "application/pdf", "text/calendar", "text/plain"))
+        } catch (e: ActivityNotFoundException) {
+            model.fail(R.string.photo_no_picker)
+        }
+        show()
+    }
+
+    private fun picked(uri: Uri?) {
+        if (uri == null) {
+            // Nothing picked: back to what was there before, or out.
+            if (model.find == null) {
+                finish()
+                return
+            }
+            model.stage = if (model.dates.isEmpty()) PhotoModel.Stage.NOTHING else PhotoModel.Stage.REVIEW
+        } else {
+            model.source = PhotoModel.Source.FILE
+            model.uris = listOf(uri)
+            model.shared = null
+            model.readShared(this, listOf(uri), null)
+        }
+        show()
+    }
+
     private fun openCamera() {
         val dir = File(cacheDir, PHOTO_DIR).apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
+        model.source = PhotoModel.Source.CAMERA
         model.stage = PhotoModel.Stage.CAMERA
         try {
             camera.launch(FileProvider.getUriForFile(this, "$packageName.files", shot))
@@ -183,16 +270,35 @@ class PhotoActivity : MerksActivity() {
         review.visibility = if (stage == PhotoModel.Stage.REVIEW) View.VISIBLE else View.GONE
         message.visibility = if (stage == PhotoModel.Stage.REVIEW) View.GONE else View.VISIBLE
         progress.visibility = if (stage == PhotoModel.Stage.READING || stage == PhotoModel.Stage.SAVING) View.VISIBLE else View.GONE
-        icon.setImageResource(if (stage == PhotoModel.Stage.SAVED) R.drawable.ic_check else R.drawable.ic_camera)
+        val camera = model.source == PhotoModel.Source.CAMERA
+        icon.setImageResource(if (stage == PhotoModel.Stage.SAVED) R.drawable.ic_check else if (camera) R.drawable.ic_camera else R.drawable.ic_attach)
+        findViewById<MaterialToolbar>(R.id.toolbar).setTitle(
+            when (model.source) {
+                PhotoModel.Source.CAMERA -> R.string.photo_title
+                PhotoModel.Source.FILE -> R.string.photo_title_file
+                PhotoModel.Source.TEXT -> R.string.photo_title_text
+            },
+        )
+        retake.setText(if (camera) R.string.photo_retake else R.string.photo_pick_other)
+        findViewById<Button>(R.id.review_retake).apply {
+            setText(if (camera) R.string.photo_retake else R.string.photo_pick_other)
+            visibility = if (model.source == PhotoModel.Source.TEXT) View.GONE else View.VISIBLE
+        }
         handler.removeCallbacks(close)
         when (stage) {
-            PhotoModel.Stage.START, PhotoModel.Stage.CAMERA -> {
+            PhotoModel.Stage.START, PhotoModel.Stage.CAMERA, PhotoModel.Stage.PICKING -> {
                 status.text = ""
                 detail.text = ""
                 only()
             }
             PhotoModel.Stage.READING -> {
-                status.setText(R.string.photo_reading)
+                status.setText(
+                    when (model.source) {
+                        PhotoModel.Source.CAMERA -> R.string.photo_reading
+                        PhotoModel.Source.FILE -> R.string.photo_reading_file
+                        PhotoModel.Source.TEXT -> R.string.photo_reading_text
+                    },
+                )
                 detail.text = if (Prefs.apiKey(this).isNotEmpty()) getString(R.string.photo_reading_ai) else ""
                 only()
             }
@@ -204,11 +310,16 @@ class PhotoActivity : MerksActivity() {
             PhotoModel.Stage.NOTHING -> {
                 val noText = find == null || (!find.byAi && find.text.isBlank())
                 status.setText(if (noText) R.string.photo_no_text else R.string.photo_no_date)
-                detail.text = listOfNotNull(
-                    getString(R.string.photo_tip),
-                    getString(R.string.photo_tip_handwriting).takeIf { Prefs.apiKey(this).isEmpty() },
-                ).joinToString("\n\n")
-                if (find != null && find.text.isNotBlank()) only(retake, byHand, showText) else only(retake, byHand)
+                detail.text = when (model.source) {
+                    PhotoModel.Source.CAMERA -> listOfNotNull(
+                        getString(R.string.photo_tip),
+                        getString(R.string.photo_tip_handwriting).takeIf { Prefs.apiKey(this).isEmpty() },
+                    ).joinToString("\n\n")
+                    PhotoModel.Source.FILE -> getString(R.string.photo_tip_file)
+                    PhotoModel.Source.TEXT -> ""
+                }
+                val tryAgain = if (model.source == PhotoModel.Source.TEXT) null else retake
+                if (find != null && find.text.isNotBlank()) only(*listOfNotNull(tryAgain, byHand, showText).toTypedArray()) else only(*listOfNotNull(tryAgain, byHand).toTypedArray())
             }
             PhotoModel.Stage.SAVED -> {
                 val entries = model.saved.mapNotNull { Db(this).get(it) }
@@ -223,7 +334,11 @@ class PhotoActivity : MerksActivity() {
             PhotoModel.Stage.FAILED -> {
                 status.setText(model.failure.takeIf { it != 0 } ?: R.string.photo_unreadable)
                 detail.text = ""
-                if (model.failure == R.string.photo_no_camera) only(done) else only(retake, done)
+                when {
+                    model.failure == R.string.photo_no_camera || model.failure == R.string.photo_no_picker -> only(done)
+                    model.source == PhotoModel.Source.TEXT -> only(done)
+                    else -> only(retake, done)
+                }
             }
             PhotoModel.Stage.REVIEW -> fillReview()
         }
@@ -260,7 +375,9 @@ class PhotoActivity : MerksActivity() {
         pick.isChecked = d.chosen
         pick.setOnCheckedChangeListener { _, on -> model.dates[i] = model.dates[i].copy(chosen = on) }
         v.findViewById<TextView>(R.id.date_day).text = Format.dayText(this, d.day)
-        v.findViewById<TextView>(R.id.date_time).text = Format.photoTime(this, d)
+        // From a calendar file a date can bring its own title and be a series.
+        v.findViewById<TextView>(R.id.date_time).text =
+            listOfNotNull(Format.photoTime(this, d), d.title, d.repeat?.let { Format.repeatText(this, it) }).joinToString(" · ")
         v.findViewById<View>(R.id.date_row).setOnClickListener { if (several) pick.toggle() else change(i) }
         v.findViewById<View>(R.id.date_change).setOnClickListener { change(i) }
         return v
@@ -363,7 +480,7 @@ class PhotoActivity : MerksActivity() {
 
     private fun showRead() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.photo_text_title)
+            .setTitle(if (model.source == PhotoModel.Source.CAMERA) R.string.photo_text_title else R.string.photo_text_title_file)
             .setMessage(model.find?.text.orEmpty().trim())
             .setPositiveButton(R.string.close, null)
             .show()
@@ -371,6 +488,12 @@ class PhotoActivity : MerksActivity() {
 
     companion object {
         const val PHOTO_DIR = "photo"
+
+        /** Where copies of what came from elsewhere are read; emptied before and after. */
+        const val IMPORT_DIR = "import"
+
+        /** Opens the screen for picking a picture or a file instead of the camera. */
+        const val EXTRA_PICK = "pick"
         private const val DAY = "photo_day"
         private const val TIME = "photo_time"
         private const val CLOSE_AFTER_MS = 10_000L
@@ -379,9 +502,17 @@ class PhotoActivity : MerksActivity() {
 
 /** What the photo screen is doing. Outlives turning the phone, and is saved for a restart. */
 class PhotoModel : ViewModel() {
-    enum class Stage { START, CAMERA, READING, REVIEW, NOTHING, SAVING, SAVED, FAILED }
+    enum class Stage { START, CAMERA, PICKING, READING, REVIEW, NOTHING, SAVING, SAVED, FAILED }
+
+    /** Where it came from: the camera, a file, or a text another app passed on. */
+    enum class Source { CAMERA, FILE, TEXT }
 
     var stage = Stage.START
+    var source = Source.CAMERA
+
+    /** What came from elsewhere, kept for reading it once more after Android ended the app. */
+    var uris: List<Uri> = emptyList()
+    var shared: String? = null
     var find: PhotoFind? = null
 
     /** The dates as shown, with what was ticked and changed. */
@@ -416,21 +547,64 @@ class PhotoModel : ViewModel() {
     }
 
     /** Reads the photo in [file] in the background and deletes it afterwards, whatever happens. */
-    fun read(ctx: Context, file: File) {
+    fun read(ctx: Context, file: File) = work(R.string.photo_unreadable, { file.delete() }) { PhotoScan.read(ctx.applicationContext, file) }
+
+    /**
+     * Reads what another app passed on or what was picked: [uris] are copied into the cache first,
+     * since the right to read them ends with this screen, and the copies are deleted afterwards.
+     * Only what other apps hand over is read: not the app's own files, not plain paths.
+     */
+    fun readShared(ctx: Context, uris: List<Uri>, text: String?) {
         val app = ctx.applicationContext
+        val dir = File(app.cacheDir, PhotoActivity.IMPORT_DIR)
+        work(R.string.photo_file_unreadable, { dir.deleteRecursively() }) {
+            dir.deleteRecursively()
+            dir.mkdirs()
+            val files = uris.take(MAX_FILES).mapIndexedNotNull { i, uri -> copy(app, uri, File(dir, "in$i")) }
+            if (files.isEmpty() && text.isNullOrBlank()) throw PhotoScan.Unreadable(R.string.photo_file_unreadable)
+            PhotoScan.readAll(app, files, text?.take(PhotoScan.MAX_TEXT))
+        }
+    }
+
+    private fun copy(ctx: Context, uri: Uri, to: File): File? {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT || uri.authority == "${ctx.packageName}.files") return null
+        return try {
+            val complete = ctx.contentResolver.openInputStream(uri)?.use { input ->
+                to.outputStream().use { out ->
+                    val buffer = ByteArray(64 * 1024)
+                    var total = 0L
+                    while (true) {
+                        val n = input.read(buffer)
+                        if (n < 0) break
+                        total += n
+                        // A film or a whole archive is no letter: stop rather than fill the phone.
+                        if (total > MAX_FILE_BYTES) return@use false
+                        out.write(buffer, 0, n)
+                    }
+                    true
+                }
+            } ?: false
+            to.takeIf { complete && it.length() > 0 }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Runs [reading] in the background, then [cleanUp] whatever happens, and shows what was found. */
+    private fun work(unreadable: Int, cleanUp: () -> Unit, reading: () -> PhotoFind) {
         stage = Stage.READING
         busy = true
         Thread {
             var found: PhotoFind? = null
-            var why = R.string.photo_unreadable
+            var why = unreadable
             try {
-                found = PhotoScan.read(app, file)
+                found = reading()
             } catch (e: PhotoScan.Unreadable) {
                 why = e.why
             } catch (e: Throwable) {
-                why = R.string.photo_unreadable
+                why = unreadable
             } finally {
-                file.delete()
+                runCatching(cleanUp)
             }
             main.post {
                 busy = false
@@ -453,11 +627,12 @@ class PhotoModel : ViewModel() {
     fun store(ctx: Context, title: String, note: String) {
         val app = ctx.applicationContext
         val picked = dates.filter { it.chosen }
+        val mark = if (source == Source.CAMERA) Store.PHOTO_MARK else Store.FILE_MARK
         stage = Stage.SAVING
         busy = true
         Thread {
             val ids = try {
-                picked.map { d -> Store.save(app, d.toParsed(title), Store.PHOTO_MARK + d.source.ifEmpty { title }, note).id }
+                picked.map { d -> Store.save(app, d.toParsed(title), mark + d.source.ifEmpty { d.title ?: title }, note).id }
             } catch (e: Exception) {
                 null
             }
@@ -482,6 +657,9 @@ class PhotoModel : ViewModel() {
         val f = find
         val o = JSONObject()
             .put("stage", stage.name)
+            .put("source", source.name)
+            .put("uris", JSONArray(uris.map { it.toString() }))
+            .put("shared", shared ?: JSONObject.NULL)
             .put("failure", failure)
             .put("editing", editing)
             .put("filled", filled)
@@ -497,6 +675,9 @@ class PhotoModel : ViewModel() {
     fun restore(from: Bundle) {
         val o = from.getString(STATE)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return
         stage = runCatching { Stage.valueOf(o.getString("stage")) }.getOrDefault(Stage.START)
+        source = runCatching { Source.valueOf(o.getString("source")) }.getOrDefault(Source.CAMERA)
+        uris = o.optJSONArray("uris")?.let { a -> (0 until a.length()).map { Uri.parse(a.getString(it)) } }.orEmpty()
+        shared = if (o.isNull("shared")) null else o.optString("shared")
         failure = o.optInt("failure")
         editing = o.optInt("editing", -1)
         pickedDay = if (o.isNull("picked")) null else LocalDate.ofEpochDay(o.getLong("picked"))
@@ -517,6 +698,8 @@ class PhotoModel : ViewModel() {
     }
 
     private fun dateJson(d: PhotoDate) = JSONObject()
+        .put("title", d.title ?: JSONObject.NULL)
+        .put("repeat", d.repeat?.let { "${it.unit.name}:${it.every}" } ?: JSONObject.NULL)
         .put("day", d.day.toEpochDay())
         .put("time", d.time?.toSecondOfDay() ?: -1)
         .put("end", d.end?.toSecondOfDay() ?: -1)
@@ -531,9 +714,15 @@ class PhotoModel : ViewModel() {
         if (o.isNull("last")) null else LocalDate.ofEpochDay(o.getLong("last")),
         o.optString("source"),
         o.optBoolean("chosen", true),
+        if (o.isNull("title")) null else o.optString("title").ifEmpty { null },
+        if (o.isNull("repeat")) null else runCatching { o.optString("repeat").split(':').let { (unit, every) -> Repeat(RepeatUnit.valueOf(unit), every.toInt()) } }.getOrNull(),
     )
 
     private companion object {
         const val STATE = "photo_state"
+
+        /** A letter, a few photos or the pages of a booking: more at once is something else. */
+        const val MAX_FILES = 5
+        const val MAX_FILE_BYTES = 30L * 1024 * 1024
     }
 }

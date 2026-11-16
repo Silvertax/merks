@@ -37,6 +37,16 @@ The photo is not kept: it is deleted as soon as it has been read, and it never l
 
 Without an AI key, the phone reads the photo itself (Tesseract, built in). That works well for printed text; handwriting it can hardly read. With an AI key, the AI reads the photo, handwriting included; without internet, the phone reads it itself.
 
+## Appointments from a picture, a file or a message
+
+Someone sent you the appointment as a picture, a PDF or a message? In that app tap "Share" and pick Merk's: it is read like a photo and shown to check the same way. The other way round works too: "From a picture or file" in Merk's opens a picture, a PDF or a calendar file from the phone.
+
+- **Pictures and PDFs** are read like photos; of a PDF, the first three pages, together.
+- **Calendar files** (.ics), as booking pages and invitations send them, are taken over exactly: title, place, start and end, a series as a series. Tapping such a file in a mail can open it in Merk's too.
+- **Messages** are searched for dates like a letter; a short one like "tomorrow at 10 dentist" is understood like something said.
+
+Merk's reads a copy and deletes it afterwards; the original stays where it is. The entry notes that it was taken from a file or message.
+
 ## Calendar and reminders
 
 Appointments go into your phone's calendar, so you see them there too. For anyone who keeps their appointments in Merk's and never opens the phone's calendar: switch on Settings → Merk's as the calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merk's can go into the calendar.
@@ -78,7 +88,7 @@ No ads, no tracking, no account. Your entries stay on your phone and in your cal
 
 - Speech recognition is done by the recognizer installed on your phone.
 - Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version, and only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
-- Photos are read on the phone and deleted right after. Only if you enter an AI key, the spoken text and the photo are sent to Anthropic to be sorted and read.
+- Photos, and copies of pictures, files and messages passed on to Merk's, are read on the phone and deleted right after. Only if you enter an AI key, the spoken text, the photo or what was passed on is sent to Anthropic to be sorted and read; calendar files never are.
 
 ## Status
 

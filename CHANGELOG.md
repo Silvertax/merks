@@ -2,6 +2,19 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.11.0
+
+### What's new
+
+- **Appointments from a picture, a file or a message:** in WhatsApp, a mail or the gallery tap "Share" and pick Merk's. A picture is read like a photo, a PDF with its first three pages together, a message is searched for dates; a short one like "tomorrow at 10 dentist" is understood like something said.
+- **"From a picture or file"** on the main screen opens a picture, a PDF or a calendar file from the phone.
+- **Calendar files (.ics)** from booking pages and invitations are taken over exactly: title, place, start and end, a series as a series. Merk's can also open them from a mail.
+
+### Good to know
+
+- Merk's reads a copy and deletes it afterwards; the original stays where it is. Entries say that they were taken from a file or message.
+- With an AI key, pictures and messages go to the AI as photos do. Calendar files are read on the phone only.
+
 ## 0.10.0
 
 ### What's new

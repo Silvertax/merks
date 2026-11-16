@@ -274,6 +274,9 @@ object Store {
     /** In front of what an entry was read from when it came from a photo, not from speaking. */
     const val PHOTO_MARK = "📷 "
 
+    /** The same for a picture, a file or a text that came from another app. */
+    const val FILE_MARK = "📄 "
+
     /** Sorts the spoken text: AI when a key is set and the request works, fixed rules otherwise. */
     fun sort(ctx: Context, text: String): Parsed {
         val now = LocalDateTime.now()

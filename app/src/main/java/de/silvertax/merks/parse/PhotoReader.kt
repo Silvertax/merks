@@ -18,11 +18,15 @@ data class PhotoDate(
     val source: String = "",
     /** Ticked on the screen from the start: what is plainly an appointment, not a deadline. */
     val chosen: Boolean = true,
+    /** Its own title, when a calendar file holds several different appointments; otherwise the common one. */
+    val title: String? = null,
+    /** A series, from a calendar file. */
+    val repeat: Repeat? = null,
 ) {
-    /** As an appointment for the calendar, under [title]. */
+    /** As an appointment for the calendar, under its own title or [title]. */
     fun toParsed(title: String): Parsed = Parsed(
         Kind.APPOINTMENT,
-        title,
+        this.title ?: title,
         day.atTime(time ?: LocalTime.MIDNIGHT),
         when {
             time == null -> lastDay?.atStartOfDay()
@@ -30,10 +34,11 @@ data class PhotoDate(
             else -> null
         },
         allDay = time == null,
+        repeat = repeat,
     )
 }
 
-/** What a photo says: what it is about, what goes with it, and the dates on it. */
+/** What a photo (or a file, or a message) says: what it is about, what goes with it, and the dates in it. */
 data class PhotoFind(
     /** Empty when nothing fitting was found; the screen then offers a plain word. */
     val title: String,

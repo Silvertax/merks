@@ -4,22 +4,31 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 import androidx.annotation.VisibleForTesting
 import com.googlecode.tesseract.android.TessBaseAPI
 import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.AiPhotoResult
+import de.silvertax.merks.parse.IcsReader
+import de.silvertax.merks.parse.Kind
+import de.silvertax.merks.parse.PhotoDate
 import de.silvertax.merks.parse.PhotoFind
 import de.silvertax.merks.parse.PhotoReader
+import de.silvertax.merks.parse.RuleParser
+import de.silvertax.merks.parse.RuleParserEn
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 /**
- * From the camera's photo to the appointments on it. With an AI key, the AI reads the photo, which
- * also works for handwriting. Without one, or when the AI cannot be reached, the phone reads the text
- * itself and fixed rules find the dates. Whoever reads it, the photo is not kept.
+ * From a photo, a picture, a PDF, a calendar file or a text to the appointments in it. With an AI
+ * key, the AI reads pictures and texts, which also works for handwriting. Without one, or when the
+ * AI cannot be reached, the phone reads the text itself and fixed rules find the dates. A calendar
+ * file says exactly what it holds and is just read. Whoever reads it, nothing is kept.
  */
 object PhotoScan {
     /** Small print in a letter still has enough pixels at this size, and reading stays quick. */
@@ -29,6 +38,13 @@ object PhotoScan {
     /** The longest side the AI reads at; it would shrink a larger photo anyway. */
     private const val AI_SIDE = 1568
 
+    /** A letter's appointment is on its first pages; more would only take long. */
+    private const val MAX_PAGES = 3
+    private const val MAX_PICTURES = 4
+
+    /** A message or a text file; longer is no message about an appointment. */
+    const val MAX_TEXT = 20_000
+
     /** The parts that need a camera picture, native code or the network. Tests put stand-ins here. */
     interface Parts {
         /** The photo upright and at most [maxSide] pixels long, or null when it cannot be opened. */
@@ -37,7 +53,12 @@ object PhotoScan {
         /** The text on [picture]. Pass 1 reads it as one block, pass 2 looks for columns. */
         fun text(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): String
 
-        fun ai(key: String, model: String, jpeg: ByteArray, now: LocalDateTime, zone: ZoneId): AiPhotoResult
+        fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult
+
+        fun aiText(key: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiPhotoResult
+
+        /** The first [max] pages of the PDF in [file] as pictures in [dir]; empty when it cannot be opened. */
+        fun pages(file: File, dir: File, maxSide: Int, max: Int): List<File>
     }
 
     @VisibleForTesting
@@ -46,20 +67,91 @@ object PhotoScan {
     /** Why nothing could be read at all. */
     class Unreadable(val why: Int) : Exception()
 
+    /** What a file is, by its first bytes: names and types given by other apps are often wrong. */
+    enum class Content { PICTURE, PDF, CALENDAR, TEXT }
+
+    fun contentOf(file: File): Content {
+        val head = file.inputStream().use { input -> ByteArray(512).let { it.copyOf(input.read(it).coerceAtLeast(0)) } }
+        val text = String(head, Charsets.UTF_8)
+        return when {
+            text.startsWith("%PDF-") -> Content.PDF
+            IcsReader.isCalendar(text) -> Content.CALENDAR
+            // Pictures start with bytes no text has: JPEG, PNG, GIF, WebP, HEIC.
+            head.isNotEmpty() && head.take(512).none { it == 0.toByte() } && looksLikeText(head) -> Content.TEXT
+            else -> Content.PICTURE
+        }
+    }
+
+    private fun looksLikeText(head: ByteArray): Boolean {
+        val s = String(head, Charsets.UTF_8)
+        return s.count { it == '\uFFFD' || (it < ' ' && it != '\n' && it != '\r' && it != '\t') } <= s.length / 50
+    }
+
     /**
-     * Reads the photo in [file]. Throws [Unreadable] when the photo cannot be opened or the phone
-     * cannot read text; otherwise returns what was found, possibly without any date.
+     * Reads what came in: files of any kind (pictures, PDFs, calendar files, texts) and a [text]
+     * shared on its own. A calendar file says exactly what it holds and goes first; then pictures
+     * and pages; then texts. Throws [Unreadable] when nothing could be opened at all.
      */
-    fun read(ctx: Context, file: File): PhotoFind {
-        val picture = parts.load(file, READ_SIDE, READ_SIDE_MIN) ?: throw Unreadable(R.string.photo_unreadable)
+    fun readAll(ctx: Context, files: List<File>, text: String?): PhotoFind {
+        val contents = files.associateWith { runCatching { contentOf(it) }.getOrNull() }
         val now = LocalDateTime.now()
         val zone = ZoneId.systemDefault()
-        val small = lazy { jpeg(picture, AI_SIDE) }
+        val calendars = contents.filterValues { it == Content.CALENDAR }.keys.map { IcsReader.read(it.readText().take(MAX_TEXT * 10), now, zone) }
+        if (calendars.any { it.dates.isNotEmpty() }) return merged(calendars)
+        val texts = (listOfNotNull(text) + contents.filterValues { it == Content.TEXT }.keys.map { it.readText().take(MAX_TEXT) })
+            .map { it.trim() }.filter { it.isNotEmpty() }
+        val pictures = contents.filterValues { it == Content.PICTURE || it == Content.PDF }.keys.toList()
+        if (pictures.isNotEmpty()) {
+            val read = try {
+                read(ctx, pictures)
+            } catch (e: Unreadable) {
+                if (texts.isEmpty()) throw e
+                null
+            }
+            if (read != null && (read.dates.isNotEmpty() || texts.isEmpty())) return read
+        }
+        if (texts.isNotEmpty()) return readText(ctx, texts.joinToString("\n\n"))
+        if (calendars.isNotEmpty()) return merged(calendars)
+        throw Unreadable(R.string.photo_file_unreadable)
+    }
+
+    private fun merged(finds: List<PhotoFind>): PhotoFind {
+        if (finds.size == 1) return finds[0]
+        val first = finds.firstOrNull { it.dates.isNotEmpty() } ?: finds.first()
+        return first.copy(dates = finds.flatMap { it.dates }.sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_DATES), text = finds.joinToString("\n\n") { it.text })
+    }
+
+    /** Reads the photo in [file]. */
+    fun read(ctx: Context, file: File): PhotoFind = read(ctx, listOf(file))
+
+    /**
+     * Reads the pictures in [files]: photos and the pages of PDFs. Throws [Unreadable] when nothing
+     * can be opened or the phone cannot read text; otherwise returns what was found, possibly
+     * without any date.
+     */
+    fun read(ctx: Context, files: List<File>): PhotoFind {
+        val pictures = files.flatMap { f ->
+            if (runCatching { contentOf(f) }.getOrNull() == Content.PDF) {
+                parts.pages(f, File(f.parentFile, f.name + "-pages").apply { mkdirs() }, READ_SIDE, MAX_PAGES)
+            } else {
+                listOf(f)
+            }
+        }.take(MAX_PICTURES)
+        if (pictures.isEmpty()) throw Unreadable(R.string.photo_file_unreadable)
+        // One picture is opened once for both readings; several one after the other, to spare memory.
+        val single = if (pictures.size == 1) parts.load(pictures[0], READ_SIDE, READ_SIDE_MIN) ?: throw Unreadable(R.string.photo_unreadable) else null
+        fun open(f: File): Bitmap? = single ?: parts.load(f, READ_SIDE, READ_SIDE_MIN)
+        fun done(b: Bitmap) {
+            if (b !== single) b.recycle()
+        }
+        val now = LocalDateTime.now()
+        val zone = ZoneId.systemDefault()
+        val small = lazy { pictures.mapNotNull { f -> open(f)?.let { b -> jpeg(b, AI_SIDE).also { done(b) } } } }
         val ai = Store.askAi(ctx) { key, model -> parts.ai(key, model, small.value, now, zone) }?.find
         if (ai != null && ai.dates.isNotEmpty()) return ai
         // The AI saw no date (or could not be asked): the phone has a look of its own.
         val offline = try {
-            offline(ctx, picture, now)
+            offline(ctx, pictures, ::open, ::done, now)
         } catch (e: Throwable) {
             // Native code that does not load on this phone, or recognition data that cannot be unpacked.
             if (ai != null) return ai
@@ -68,18 +160,50 @@ object PhotoScan {
         return if (offline.dates.isEmpty() && ai != null) ai else offline
     }
 
-    private fun offline(ctx: Context, picture: Bitmap, now: LocalDateTime): PhotoFind {
+    private fun offline(ctx: Context, pictures: List<File>, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, now: LocalDateTime): PhotoFind {
         val german = Lang.isGerman(ctx)
-        val first = PhotoReader.read(parts.text(ctx, picture, german, 1), now)
+        fun readAll(pass: Int) = pictures.mapNotNull { f -> open(f)?.let { b -> parts.text(ctx, b, german, pass).also { done(b) } } }.joinToString("\n\n")
+        val first = PhotoReader.read(readAll(1), now)
         if (first.dates.isNotEmpty()) return first
         // Read once more the other way: columns kept apart, another threshold for the light.
-        val second = PhotoReader.read(parts.text(ctx, picture, german, 2), now)
+        val second = PhotoReader.read(readAll(2), now)
         return when {
             second.dates.isNotEmpty() -> second
             second.text.length > first.text.length -> second
             else -> first
         }
     }
+
+    /**
+     * Finds the appointments in a text: a message passed on from another app, or a text file. A
+     * letter's dates are found as on a photo; a short message as one says it ("tomorrow at 10
+     * dentist") by the rules for speaking.
+     */
+    fun readText(ctx: Context, text: String): PhotoFind {
+        val clean = text.trim().take(MAX_TEXT)
+        val now = LocalDateTime.now()
+        val zone = ZoneId.systemDefault()
+        if (IcsReader.isCalendar(clean)) return IcsReader.read(clean, now, zone)
+        val ai = Store.askAi(ctx) { key, model -> parts.aiText(key, model, clean, now, zone) }?.find
+        if (ai != null && ai.dates.isNotEmpty()) return ai.copy(text = clean)
+        val found = PhotoReader.read(clean, now)
+        if (found.dates.isNotEmpty()) return found.copy(text = clean)
+        val spoken = if (Lang.isGerman(ctx)) RuleParser.parse(clean, now) else RuleParserEn.parse(clean, now)
+        val start = spoken.start
+        if (spoken.kind != Kind.NOTE && start != null && start.isAfter(now)) {
+            val date = PhotoDate(
+                start.toLocalDate(),
+                start.toLocalTime().takeUnless { spoken.allDay },
+                spoken.end?.takeIf { !spoken.allDay && it.toLocalDate() == start.toLocalDate() }?.toLocalTime(),
+                spoken.end?.toLocalDate()?.takeIf { spoken.allDay && it.isAfter(start.toLocalDate()) },
+                source = clean.take(100),
+                repeat = spoken.repeat,
+            )
+            return PhotoFind(spoken.title, null, listOf(date), clean)
+        }
+        return (ai ?: found).copy(text = clean)
+    }
+
 
     /** The picture as a JPEG of at most [side] pixels, as the AI gets it. */
     fun jpeg(picture: Bitmap, side: Int): ByteArray {
@@ -146,8 +270,37 @@ object PhotoScan {
             }
         }
 
-        override fun ai(key: String, model: String, jpeg: ByteArray, now: LocalDateTime, zone: ZoneId): AiPhotoResult =
-            AiParser.readPhoto(key, model, jpeg, now, zone)
+        override fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult =
+            AiParser.readPhoto(key, model, jpegs, now, zone)
+
+        override fun aiText(key: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiPhotoResult =
+            AiParser.readText(key, model, text, now, zone)
+
+        /** Each page drawn on white, its longer side [maxSide] pixels: sharp print, which reads well. */
+        override fun pages(file: File, dir: File, maxSide: Int, max: Int): List<File> {
+            val out = mutableListOf<File>()
+            try {
+                ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+                    PdfRenderer(fd).use { pdf ->
+                        for (i in 0 until minOf(pdf.pageCount, max)) {
+                            pdf.openPage(i).use { page ->
+                                val f = maxSide.toFloat() / maxOf(page.width, page.height)
+                                val picture = Bitmap.createBitmap((page.width * f).toInt().coerceAtLeast(1), (page.height * f).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+                                picture.eraseColor(Color.WHITE)
+                                page.render(picture, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                val target = File(dir, "page${i + 1}.png")
+                                target.outputStream().use { picture.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                                picture.recycle()
+                                out += target
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Locked with a password, or not a PDF after all: what was drawn is used.
+            }
+            return out
+        }
     }
 }
 

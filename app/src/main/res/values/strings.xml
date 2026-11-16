@@ -287,4 +287,17 @@
     <string name="widget_sample_month">Nov</string>
     <string name="widget_sample_title">Dentist, Dr. Miller</string>
     <string name="widget_sample_when">Tomorrow, 10:00 AM</string>
+
+    <!-- Appointments from a picture, a PDF, a calendar file or a text: picked, or passed on from another app. -->
+    <string name="from_file">From a picture or file</string>
+    <string name="photo_title_file">Appointment from a file</string>
+    <string name="photo_title_text">Appointment from a text</string>
+    <string name="photo_reading_file">Reading the file …</string>
+    <string name="photo_reading_text">Reading the text …</string>
+    <string name="photo_pick_other">Choose another file</string>
+    <string name="photo_tip_file">Tip: a sharp, straight photo of the letter itself reads best. A calendar file (.ics) is taken over exactly.</string>
+    <string name="photo_text_title_file">Text read</string>
+    <string name="photo_file_unreadable">The file could not be opened.</string>
+    <string name="photo_no_picker">No app found for choosing files.</string>
+    <string name="read_from_file">Taken from a file or message: “%1$s”</string>
 </resources>

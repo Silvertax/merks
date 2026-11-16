@@ -136,12 +136,24 @@
             app:iconPadding="12dp"
             app:iconSize="26dp" />
 
+        <!-- A picture someone sent, a PDF, a calendar file: read like a photo. -->
+        <Button
+            android:id="@+id/from_file"
+            style="@style/Widget.Material3.Button.TextButton.Icon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="52dp"
+            android:text="@string/from_file"
+            app:icon="@drawable/ic_attach"
+            app:iconGravity="textStart" />
+
         <Button
             android:id="@+id/add_widget"
             style="@style/Widget.Material3.Button.TextButton.Icon"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="0dp"
             android:minHeight="52dp"
             android:text="@string/add_widget"
             app:icon="@drawable/ic_widgets"

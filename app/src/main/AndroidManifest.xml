@@ -49,12 +49,37 @@
 
         <!-- Opened by the "Photo" button too: a task of its own, so it never clears the list
              behind it, and gone from the recent apps once the appointment is in. -->
+        <!--
+            Also where other apps pass things on: "Share" a photo, a PDF, a calendar file or a text
+            to Merk's, or open a calendar file with it.
+        -->
         <activity
             android:name=".PhotoActivity"
             android:autoRemoveFromRecents="true"
-            android:exported="false"
+            android:exported="true"
             android:taskAffinity="de.silvertax.merks.photo"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/calendar" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".SettingsActivity"

@@ -40,7 +40,7 @@ class LiveApiTest {
         assumeTrue("set MERKS_API_KEY for this one", !key.isNullOrBlank())
         val jpeg = javaClass.getResource("/photos/de_card.jpg")!!.readBytes()
         val before = LocalDateTime.of(2026, 11, 15, 10, 0)
-        val r = AiParser.readPhoto(key, AiParser.DEFAULT_MODEL, jpeg, before, zone)
+        val r = AiParser.readPhoto(key, AiParser.DEFAULT_MODEL, listOf(jpeg), before, zone)
         assertNotNull(r.error?.toString(), r.find)
         val date = r.find!!.dates.single()
         assertEquals(java.time.LocalDate.of(2026, 11, 23), date.day)

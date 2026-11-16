@@ -280,4 +280,16 @@
     <string name="widget_sample_month">Nov</string>
     <string name="widget_sample_title">Zahnarzt bei Neupert</string>
     <string name="widget_sample_when">Morgen, 10:00 Uhr</string>
+
+    <string name="from_file">Aus Bild oder Datei</string>
+    <string name="photo_title_file">Termin aus Datei</string>
+    <string name="photo_title_text">Termin aus Text</string>
+    <string name="photo_reading_file">Ich lese die Datei …</string>
+    <string name="photo_reading_text">Ich lese den Text …</string>
+    <string name="photo_pick_other">Andere Datei wählen</string>
+    <string name="photo_tip_file">Tipp: Ein scharfes, gerades Foto vom Brief selbst liest sich am besten. Eine Kalenderdatei (.ics) wird genau übernommen.</string>
+    <string name="photo_text_title_file">Gelesener Text</string>
+    <string name="photo_file_unreadable">Die Datei ließ sich nicht öffnen.</string>
+    <string name="photo_no_picker">Keine App zum Auswählen von Dateien gefunden.</string>
+    <string name="read_from_file">Aus Datei oder Nachricht übernommen: „%1$s“</string>
 </resources>

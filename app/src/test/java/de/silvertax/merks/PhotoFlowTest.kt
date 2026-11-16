@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -70,30 +71,49 @@ class PhotoFlowTest {
             .getStaticField<MutableMap<String, Any>>(androidx.core.content.FileProvider::class.java, "sCache").clear()
     }
 
-    /** Stand-ins for the picture, the text recognition and the AI. */
+    /** Stand-ins for the picture, the text recognition, the AI and the pages of a PDF. */
     private class Parts(
         var first: String = "",
         var second: String = "",
         var ai: AiPhotoResult? = null,
         var opens: Boolean = true,
         var reads: Boolean = true,
+        /** What each page of a PDF "says"; the recognition reads a page's own words. */
+        var pdfPages: List<String> = emptyList(),
     ) : PhotoScan.Parts {
         val passes = mutableListOf<Int>()
         var asked = 0
 
+        /** How many pictures the AI got, and the text it was asked about. */
+        var pictures = 0
+        var askedText: String? = null
+        private val opened = java.util.IdentityHashMap<Bitmap, File>()
+
         override fun load(file: File, maxSide: Int, minSide: Int): Bitmap? =
-            if (opens) Bitmap.createBitmap(40, 30, Bitmap.Config.ARGB_8888) else null
+            if (opens) Bitmap.createBitmap(40, 30, Bitmap.Config.ARGB_8888).also { opened[it] = file } else null
 
         override fun text(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): String {
             if (!reads) throw UnsatisfiedLinkError("no tesseract here")
             passes += pass
+            val page = opened[picture]?.name?.let { Regex("page(\\d+)\\.png").matchEntire(it) }?.groupValues?.get(1)?.toInt()
+            if (page != null) return pdfPages[page - 1]
             return if (pass == 1) first else second
         }
 
-        override fun ai(key: String, model: String, jpeg: ByteArray, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
+        override fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
             asked++
+            pictures = jpegs.size
             return ai ?: AiPhotoResult(null, AiError(AiProblem.NO_CONNECTION, detail = "offline"))
         }
+
+        override fun aiText(key: String, model: String, text: String, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
+            asked++
+            askedText = text
+            return ai ?: AiPhotoResult(null, AiError(AiProblem.NO_CONNECTION, detail = "offline"))
+        }
+
+        override fun pages(file: File, dir: File, maxSide: Int, max: Int): List<File> =
+            pdfPages.take(max).indices.map { i -> File(dir, "page${i + 1}.png").apply { writeBytes(byteArrayOf(1, 2, 3)) } }
     }
 
     private val day = LocalDate.now().plusDays(5)
@@ -427,5 +447,159 @@ class PhotoFlowTest {
         assertEquals(R.drawable.w_photo_button, shadowOf(icon.drawable).createdFromResId)
         view.findViewById<View>(android.R.id.background).performClick()
         assertEquals(PhotoActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+    }
+
+    // ---------- From elsewhere: passed on from another app, or picked ----------
+
+    /** A file another app hands over, as WhatsApp's "Share" does, served by its content provider. */
+    private fun offer(name: String, bytes: ByteArray): Uri {
+        val uri = Uri.parse("content://com.example.chat.files/$name")
+        shadowOf(app.contentResolver).registerInputStream(uri, java.io.ByteArrayInputStream(bytes))
+        return uri
+    }
+
+    private val jpegBytes = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte(), 0, 16, 0x4A, 0x46)
+
+    /** Opens the photo screen as another app's "Share" or "Open with" does, and waits until it has read. */
+    private fun passOn(intent: Intent, parts: Parts): PhotoActivity {
+        PhotoScan.parts = parts
+        val activity = Robolectric.buildActivity(PhotoActivity::class.java, intent).setup().get()
+        waitFor { !model(activity).busy && model(activity).stage != PhotoModel.Stage.READING }
+        return activity
+    }
+
+    private fun toolbarTitle(a: Activity) = a.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar).title.toString()
+    private fun imports() = File(app.cacheDir, PhotoActivity.IMPORT_DIR).list().orEmpty().toList()
+
+    @Test fun aPictureSharedFromAnotherAppIsReadLikeAPhoto() {
+        fakeCalendar()
+        val parts = Parts(first = card)
+        val uri = offer("IMG-20261116-WA0006.jpg", jpegBytes)
+        val activity = passOn(Intent(Intent.ACTION_SEND).setType("image/jpeg").putExtra(Intent.EXTRA_STREAM, uri), parts)
+        // No camera: what was passed on is read, and the copy of it is gone afterwards.
+        assertNull(shadowOf(activity).peekNextStartedActivityForResult())
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals(emptyList<String>(), imports())
+        assertEquals("Termin aus Datei", toolbarTitle(activity))
+        assertEquals("Zahnarztpraxis Dr. Anna Neupert", activity.findViewById<EditText>(R.id.photo_title).text.toString())
+        assertEquals("10:30 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+        // Trying again picks another file rather than opening the camera.
+        assertEquals("Andere Datei wählen", activity.findViewById<TextView>(R.id.review_retake).text.toString())
+
+        activity.findViewById<View>(R.id.save).performClick()
+        waitFor { model(activity).stage == PhotoModel.Stage.SAVED }
+        val e = Db(app).all().single()
+        assertEquals(day.atTime(10, 30).atZone(zone).toInstant().toEpochMilli(), e.start)
+        assertEquals("📄 Mo, ${day.format(dotted)} um 10:30 Uhr", e.raw)
+    }
+
+    /** A letter as a PDF: its pages are read together, the title on the first, the dates on the second. */
+    @Test fun thePagesOfAPdfAreReadTogether() {
+        val later = day.plusDays(7)
+        val parts = Parts(pdfPages = listOf("Praxis für Physiotherapie Lößnitz\nIhre Behandlungstermine", "${day.format(dotted)} 9:00 Uhr\n${later.format(dotted)} 9:00 Uhr"))
+        val pdf = offer("Termine.pdf", "%PDF-1.7\n1 0 obj".toByteArray())
+        val activity = passOn(Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, pdf), parts)
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals(listOf(day, later), model(activity).dates.map { it.day })
+        assertEquals(emptyList<String>(), imports())
+
+        // With the AI, both pages go in one request.
+        Prefs.setApiKey(app, "sk-ant-test")
+        val ai = Parts(pdfPages = parts.pdfPages, ai = AiPhotoResult(PhotoFind("Physiotherapie", null, listOf(PhotoDate(day, LocalTime.of(9, 0))), byAi = true), null))
+        passOn(Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, offer("Termine2.pdf", "%PDF-1.7\n".toByteArray())), ai)
+        assertEquals(1, ai.asked)
+        assertEquals(2, ai.pictures)
+    }
+
+    /** A booking confirmation's calendar file: taken over exactly, nothing is guessed. */
+    @Test fun aCalendarFileIsTakenOverExactly() {
+        fakeCalendar()
+        val stamp = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
+        val ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Zahnarzt Dr. Neupert\r\n" +
+            "DTSTART:${day.atTime(10, 30).format(stamp)}\r\nDTEND:${day.atTime(11, 0).format(stamp)}\r\nLOCATION:Meißner Str. 12\\, Radebeul\r\n" +
+            "END:VEVENT\r\nEND:VCALENDAR\r\n"
+        val parts = Parts()
+        val activity = passOn(Intent(Intent.ACTION_VIEW).setDataAndType(offer("termin.ics", ics.toByteArray()), "text/calendar"), parts)
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertTrue(parts.passes.isEmpty())
+        assertEquals(0, parts.asked)
+        assertEquals("Zahnarzt Dr. Neupert", activity.findViewById<EditText>(R.id.photo_title).text.toString())
+        assertEquals("Meißner Str. 12, Radebeul", activity.findViewById<EditText>(R.id.photo_note).text.toString())
+        assertEquals("10:30–11:00 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+
+        activity.findViewById<View>(R.id.save).performClick()
+        waitFor { model(activity).stage == PhotoModel.Stage.SAVED }
+        val e = Db(app).all().single()
+        assertEquals(day.atTime(10, 30).atZone(zone).toInstant().toEpochMilli(), e.start)
+        assertEquals(day.atTime(11, 0).atZone(zone).toInstant().toEpochMilli(), e.end)
+        assertEquals("📄 Zahnarzt Dr. Neupert, Meißner Str. 12, Radebeul", e.raw)
+    }
+
+    @Test fun aMessagePassedOnAsTextIsRead() {
+        val text = "Hallo Frau Lukomski, Ihr nächster Termin ist am ${day.format(dotted)} um 10:30 Uhr. Praxis Dr. Neupert"
+        val activity = passOn(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), Parts())
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals("Termin aus Text", toolbarTitle(activity))
+        assertEquals(listOf(day), model(activity).dates.map { it.day })
+        assertEquals("10:30 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+        // From a text there is no other file to choose.
+        assertEquals(View.GONE, activity.findViewById<View>(R.id.review_retake).visibility)
+    }
+
+    /** A short message reads like something said, and is understood the same way. */
+    @Test fun aShortMessageIsUnderstoodLikeSpeaking() {
+        val activity = passOn(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "Morgen um 10 Zahnarzt"), Parts())
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals("Zahnarzt", activity.findViewById<EditText>(R.id.photo_title).text.toString())
+        assertEquals(Format.dayText(activity, LocalDate.now().plusDays(1)), row(activity, 0).findViewById<TextView>(R.id.date_day).text.toString())
+        assertEquals("10:00 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+    }
+
+    @Test fun aPictureOrFileCanBePickedFromTheMainScreen() {
+        Prefs.setAskedPermissions(app)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val button = main.findViewById<TextView>(R.id.from_file)
+        assertEquals("Aus Bild oder Datei", button.text.toString())
+        button.performClick()
+        val started = shadowOf(main).nextStartedActivity
+        assertEquals(PhotoActivity::class.java.name, started.component?.className)
+
+        PhotoScan.parts = Parts(first = card)
+        val activity = Robolectric.buildActivity(PhotoActivity::class.java, started).setup().get()
+        val asked = shadowOf(activity).peekNextStartedActivityForResult()
+        assertEquals(Intent.ACTION_OPEN_DOCUMENT, asked.intent.action)
+        assertEquals(listOf("image/*", "application/pdf", "text/calendar", "text/plain"), asked.intent.getStringArrayExtra(Intent.EXTRA_MIME_TYPES)?.toList())
+        shadowOf(activity).receiveResult(asked.intent, Activity.RESULT_OK, Intent().setData(offer("Brief.jpg", jpegBytes)))
+        waitFor { !model(activity).busy && model(activity).stage != PhotoModel.Stage.READING }
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals("10:30 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+    }
+
+    @Test fun pickingNothingCloses() {
+        PhotoScan.parts = Parts(first = card)
+        val activity = Robolectric.buildActivity(PhotoActivity::class.java, Intent(app, PhotoActivity::class.java).putExtra(PhotoActivity.EXTRA_PICK, true)).setup().get()
+        val asked = shadowOf(activity).peekNextStartedActivityForResult()
+        shadowOf(activity).receiveResult(asked.intent, Activity.RESULT_CANCELED, null)
+        assertTrue(activity.isFinishing)
+    }
+
+    /** Another app cannot make Merk's read its own files, nor plain paths on the phone. */
+    @Test fun theAppsOwnFilesAreNotRead() {
+        for (uri in listOf(Uri.parse("content://de.silvertax.merks.files/photo/shot.jpg"), Uri.parse("file:///sdcard/Download/brief.jpg"))) {
+            val activity = passOn(Intent(Intent.ACTION_SEND).setType("image/jpeg").putExtra(Intent.EXTRA_STREAM, uri), Parts(first = card))
+            assertEquals(PhotoModel.Stage.FAILED, model(activity).stage)
+            assertEquals("Die Datei ließ sich nicht öffnen.", status(activity))
+        }
+    }
+
+    @Test fun theListSaysWhenAnEntryCameFromAFile() {
+        Prefs.setAskedPermissions(app)
+        Store.save(app, PhotoDate(day, LocalTime.of(9, 0)).toParsed("Zahnarzt"), Store.FILE_MARK + "Zahnarzt Dr. Neupert")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<android.widget.ListView>(R.id.list)
+        list.adapter.getView(0, null, list).findViewById<View>(R.id.card).performClick()
+        val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
+        assertTrue(text, text.endsWith("Aus Datei oder Nachricht übernommen: „Zahnarzt Dr. Neupert“"))
     }
 }
