@@ -21,8 +21,10 @@ import de.silvertax.merks.parse.AiError
 import de.silvertax.merks.parse.AiPhotoResult
 import de.silvertax.merks.parse.AiProblem
 import de.silvertax.merks.parse.Kind
+import de.silvertax.merks.parse.OcrWord
 import de.silvertax.merks.parse.PhotoDate
 import de.silvertax.merks.parse.PhotoFind
+import de.silvertax.merks.parse.PlanSheet
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,11 +38,13 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowDialog
 import java.io.File
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.IsoFields
 
 /**
  * The way from the photo button to the calendar, in a simulated Android. The camera, the text
@@ -80,8 +84,11 @@ class PhotoFlowTest {
         var reads: Boolean = true,
         /** What each page of a PDF "says"; the recognition reads a page's own words. */
         var pdfPages: List<String> = emptyList(),
+        /** The words with their places, as read word by word. */
+        var words: List<OcrWord> = emptyList(),
     ) : PhotoScan.Parts {
         val passes = mutableListOf<Int>()
+        var wordReads = 0
         var asked = 0
 
         /** How many pictures the AI got, and the text it was asked about. */
@@ -98,6 +105,12 @@ class PhotoFlowTest {
             val page = opened[picture]?.name?.let { Regex("page(\\d+)\\.png").matchEntire(it) }?.groupValues?.get(1)?.toInt()
             if (page != null) return pdfPages[page - 1]
             return if (pass == 1) first else second
+        }
+
+        override fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord> {
+            if (!reads) throw UnsatisfiedLinkError("no tesseract here")
+            wordReads++
+            return words
         }
 
         override fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult {
@@ -447,6 +460,80 @@ class PhotoFlowTest {
         assertEquals(R.drawable.w_photo_button, shadowOf(icon.drawable).createdFromResId)
         view.findViewById<View>(android.R.id.background).performClick()
         assertEquals(PhotoActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+    }
+
+    /** A weekly plan read by the AI: each entry with its own title and room, the marked ones ticked. */
+    @Test fun aWeeklyPlanBecomesAppointmentsWithTheirOwnTitles() {
+        fakeCalendar()
+        Prefs.setApiKey(app, "sk-ant-test")
+        val plan = PhotoFind(
+            "Kursplan Familienzentrum",
+            null,
+            listOf(
+                PhotoDate(day, LocalTime.of(7, 30), title = "Frühsport", detail = "Saal 1"),
+                PhotoDate(day, LocalTime.of(9, 0), LocalTime.of(10, 0), title = "Töpfern", detail = "Raum 12", chosen = false),
+                PhotoDate(day.plusDays(1), LocalTime.of(13, 30), title = "Chor"),
+            ),
+            byAi = true,
+        )
+        val activity = photograph(Parts(first = card, ai = AiPhotoResult(plan, null)))
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        // Every entry has its own title, so there is no common one to fill in.
+        assertEquals(View.GONE, activity.findViewById<View>(R.id.photo_title_box).visibility)
+        assertEquals("Frühsport", row(activity, 0).findViewById<TextView>(R.id.date_title).text.toString())
+        assertEquals("07:30 Uhr", row(activity, 0).findViewById<TextView>(R.id.date_time).text.toString())
+        assertEquals("Saal 1", row(activity, 0).findViewById<TextView>(R.id.date_detail).text.toString())
+        assertFalse(row(activity, 1).findViewById<CheckBox>(R.id.date_pick).isChecked)
+        assertEquals(View.GONE, row(activity, 2).findViewById<View>(R.id.date_detail).visibility)
+        // Why one is not ticked: it was not marked on the plan.
+        assertEquals(
+            "3 Termine gefunden. Angehakt ist, was auf dem Plan markiert ist. Eingetragen wird, was angehakt ist:",
+            activity.findViewById<TextView>(R.id.review_label).text.toString(),
+        )
+
+        activity.findViewById<View>(R.id.save).performClick()
+        waitFor { model(activity).stage == PhotoModel.Stage.SAVED }
+        val saved = Db(app).all().sortedBy { it.start }
+        assertEquals(listOf("Frühsport", "Chor"), saved.map { it.title })
+        // The room goes into the entry's note.
+        assertEquals("Saal 1", saved[0].note)
+        assertNull(saved[1].note)
+    }
+
+    @Test fun aWeeklyPlanIsReadColumnByColumnWithoutAi() {
+        fakeCalendar()
+        val next = LocalDate.now().plusWeeks(1)
+        val week = next.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+        val sheet = PlanSheet.courses(week = "KW $week")
+        // Read as one text, the columns run into each other; the days show it is a plan.
+        val parts = Parts(first = "Kursplan Familienzentrum Lindenhof KW $week\nMontag Dienstag Mittwoch Donnerstag Freitag\n07:45 Frühsport 08:30 Offene Werkstatt 07:45 Frühsport", words = sheet.words)
+        val activity = photograph(parts)
+        assertEquals(1, parts.wordReads)
+        assertEquals(listOf(1), parts.passes)
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        val dates = model(activity).dates
+        assertEquals(14, dates.size)
+        val monday = next.with(DayOfWeek.MONDAY)
+        assertEquals(PhotoDate(monday, LocalTime.of(7, 45), source = "07:45 Frühsport Turnhalle", title = "Frühsport", detail = "Turnhalle"), dates[0])
+        assertEquals(View.GONE, activity.findViewById<View>(R.id.photo_title_box).visibility)
+        assertEquals("Töpfern", row(activity, 1).findViewById<TextView>(R.id.date_title).text.toString())
+        assertEquals("Werkraum", row(activity, 1).findViewById<TextView>(R.id.date_detail).text.toString())
+        assertEquals("14 Termine gefunden. Was angehakt ist, wird eingetragen:", activity.findViewById<TextView>(R.id.review_label).text.toString())
+
+        activity.findViewById<View>(R.id.save).performClick()
+        waitFor { model(activity).stage == PhotoModel.Stage.SAVED }
+        val saved = Db(app).all().sortedBy { it.start }
+        assertEquals(14, saved.size)
+        assertEquals("Frühsport", saved[0].title)
+        assertEquals("Turnhalle", saved[0].note)
+    }
+
+    @Test fun whatLooksLikeAPlanAndIsNoneIsReadAsUsual() {
+        val parts = Parts(first = "Montag Dienstag Mittwoch geschlossen\n$card")
+        val activity = photograph(parts)
+        assertEquals(1, parts.wordReads)
+        assertEquals(PhotoModel.Stage.REVIEW, model(activity).stage)
+        assertEquals(listOf(day), model(activity).dates.map { it.day })
     }
 
     // ---------- From elsewhere: passed on from another app, or picked ----------

@@ -104,7 +104,7 @@ object AiParser {
         }
         val question = if (jpegs.size > 1) "Which appointments are on these pictures? They belong together, e.g. the pages of one letter." else "Which appointments are on this photo?"
         content.put(JSONObject().put("type", "text").put("text", question))
-        return findAppointments(apiKey, model, system("a photo of an appointment card, a letter, a poster or a handwritten note", "photo", now, zone), content, now)
+        return findAppointments(apiKey, model, system("a photo of an appointment card, a letter, a weekly plan, a poster or a handwritten note", "photo", now, zone), content, now)
     }
 
     /** Finds the appointments in a text: a message, an e-mail, a letter. It goes to the API and nowhere else. */
@@ -120,12 +120,16 @@ object AiParser {
             You read $what and find the appointments in it, for a calendar.
             Current local time: ${now.withSecond(0).withNano(0)} ($weekday), time zone ${zone.id}.
             Reply with one JSON object and nothing else:
-            {"title":string,"note":string|null,"appointments":[{"start":string,"end":string|null,"all_day":boolean,"source":string}]}
-            - appointments: each date the reader is to attend (a visit, a treatment, an event), in time order. Several treatment dates on one card are several appointments. Leave out the letter's own date, birth dates, validity or expiry dates, opening hours and dates that are over. A deadline ("register by ...") is no appointment: put it into the note.
+            {"title":string,"note":string|null,"appointments":[{"title":string|null,"start":string,"end":string|null,"all_day":boolean,"detail":string|null,"marked":boolean,"source":string}]}
+            - appointments: each date the reader is to attend (a visit, a treatment, a group, a course, an event), in time order. List every one, also in a table, a timetable or a weekly plan with dozens of entries; never move an appointment into the note. Several treatment dates on one card are several appointments. Leave out the letter's own date, birth dates, validity or expiry dates, opening hours and dates that are over. A deadline ("register by ...") is no appointment: put it into the note.
+            - A weekly plan names weekdays: take the dates from the calendar week written on it (e.g. "KW 12" is ISO week 12), otherwise from the current or coming week. What is over today is left out, what is still to come today is kept.
             - start/end: local time as YYYY-MM-DDTHH:MM. A date without a year is the next such date from now; words like "tomorrow" or "next Tuesday" count from now. end only if an end time is written. all_day: true when no time is given (start then uses T00:00); over several days, end is the last day at T00:00.
-            - title: short and clear, in the language of the $it: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie". No date or time.
-            - note: what to bring or to know, e.g. the room or to come fasting, in the language of the $it, at most two short lines; null if there is nothing.
-            - source: the words in the $it the date was read from, as written, at most 80 characters.
+            - title (top level): short and clear, in the language of the $it: what, and with whom or where, e.g. "Zahnarzt Dr. Neupert" or "Physiotherapie"; for a plan its heading. No date or time.
+            - title (of an appointment): when the appointments differ, as in a plan of several groups or treatments, each one's own short title as written, e.g. "Yoga" or "Töpfern"; null when it is the same as the top-level title.
+            - detail: the room or place written with this appointment and a short remark, e.g. "Raum 12" or "Turnschuhe mitbringen", in at most 60 characters; null if there is none.
+            - marked: if the reader marked some entries (highlighter, circle, tick, underline) and not others, true for the marked ones and false for the rest; if nothing is marked, true for all.
+            - note: what to bring or to know for all of them, e.g. to come fasting, in the language of the $it, at most two short lines; null if there is nothing.
+            - source: the words in the $it the date was read from, as written, at most 60 characters.
             - If nothing is readable or there is no appointment in it, reply with an empty list.
         """.trimIndent()
     }
@@ -150,6 +154,7 @@ object AiParser {
         } else {
             val o = JSONObject(reply.substring(from, to + 1))
             val list = o.optJSONArray("appointments") ?: JSONArray()
+            val top = o.optString("title").trim().take(80)
             val dates = (0 until list.length()).mapNotNull { i ->
                 val a = list.optJSONObject(i) ?: return@mapNotNull null
                 val start = dateTime(a, "start") ?: return@mapNotNull null
@@ -161,10 +166,19 @@ object AiParser {
                     PhotoDate(start.toLocalDate(), start.toLocalTime(), end?.takeIf { it.toLocalDate() == start.toLocalDate() && it.isAfter(start) }?.toLocalTime())
                 }
                 val over = if (allDay) date.day.isBefore(now.toLocalDate()) else start.isBefore(now)
-                if (over) null else date.copy(source = a.optString("source").trim().take(100))
-            }.distinct().sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_DATES)
+                if (over) return@mapNotNull null
+                date.copy(
+                    source = a.optString("source").trim().take(100),
+                    title = text(a, "title")?.take(80)?.takeIf { it != top },
+                    detail = text(a, "detail")?.take(100),
+                    // Unmarked entries next to marked ones are shown, but not ticked.
+                    chosen = a.optBoolean("marked", true),
+                )
+            }.distinct().sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_LISTED)
+                // Nothing marked as the reader's: then all of them are.
+                .let { found -> if (found.none { it.chosen }) found.map { it.copy(chosen = true) } else found }
             PhotoFind(
-                title = o.optString("title").trim().take(80),
+                title = top,
                 note = if (o.isNull("note")) null else o.optString("note").trim().ifEmpty { null },
                 dates = dates,
                 byAi = true,
@@ -338,6 +352,9 @@ object AiParser {
         val every = r.optInt("every", 1)
         return if (every in 1..1000) Repeat(unit, every) else null
     }
+
+    /** A text value, or null when it is missing, empty or JSON null. */
+    private fun text(o: JSONObject, key: String): String? = if (o.isNull(key)) null else o.optString(key).trim().ifEmpty { null }
 
     private fun dateTime(o: JSONObject, key: String): LocalDateTime? {
         if (o.isNull(key)) return null

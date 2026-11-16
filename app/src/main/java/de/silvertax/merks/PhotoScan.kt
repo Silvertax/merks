@@ -14,9 +14,12 @@ import de.silvertax.merks.parse.AiParser
 import de.silvertax.merks.parse.AiPhotoResult
 import de.silvertax.merks.parse.IcsReader
 import de.silvertax.merks.parse.Kind
+import de.silvertax.merks.parse.OcrWord
 import de.silvertax.merks.parse.PhotoDate
 import de.silvertax.merks.parse.PhotoFind
 import de.silvertax.merks.parse.PhotoReader
+import de.silvertax.merks.parse.Pixels
+import de.silvertax.merks.parse.PlanReader
 import de.silvertax.merks.parse.RuleParser
 import de.silvertax.merks.parse.RuleParserEn
 import java.io.ByteArrayOutputStream
@@ -52,6 +55,9 @@ object PhotoScan {
 
         /** The text on [picture]. Pass 1 reads it as one block, pass 2 looks for columns. */
         fun text(ctx: Context, picture: Bitmap, german: Boolean, pass: Int): String
+
+        /** The words on [picture] one by one, with their places: for a table, whose columns a text mixes. */
+        fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord>
 
         fun ai(key: String, model: String, jpegs: List<ByteArray>, now: LocalDateTime, zone: ZoneId): AiPhotoResult
 
@@ -118,7 +124,7 @@ object PhotoScan {
     private fun merged(finds: List<PhotoFind>): PhotoFind {
         if (finds.size == 1) return finds[0]
         val first = finds.firstOrNull { it.dates.isNotEmpty() } ?: finds.first()
-        return first.copy(dates = finds.flatMap { it.dates }.sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_DATES), text = finds.joinToString("\n\n") { it.text })
+        return first.copy(dates = finds.flatMap { it.dates }.sortedWith(compareBy({ it.day }, { it.time })).take(PhotoReader.MAX_LISTED), text = finds.joinToString("\n\n") { it.text })
     }
 
     /** Reads the photo in [file]. */
@@ -162,8 +168,15 @@ object PhotoScan {
 
     private fun offline(ctx: Context, pictures: List<File>, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, now: LocalDateTime): PhotoFind {
         val german = Lang.isGerman(ctx)
-        fun readAll(pass: Int) = pictures.mapNotNull { f -> open(f)?.let { b -> parts.text(ctx, b, german, pass).also { done(b) } } }.joinToString("\n\n")
-        val first = PhotoReader.read(readAll(1), now)
+        fun read(f: File, pass: Int) = open(f)?.let { b -> parts.text(ctx, b, german, pass).also { done(b) } }
+        fun readAll(pass: Int) = pictures.mapNotNull { read(it, pass) }.joinToString("\n\n")
+        val texts = pictures.map { read(it, 1) }
+        val text = texts.filterNotNull().joinToString("\n\n")
+        // A weekly plan is a table: read as one text, its columns get mixed. So it is read once more,
+        // word by word with their places, and put back together column by column.
+        val plans = pictures.zip(texts).mapNotNull { (f, t) -> if (t != null && PlanReader.looksLikePlan(t)) plan(ctx, f, open, done, german, now) else null }
+        if (plans.isNotEmpty()) return merged(plans).copy(text = text)
+        val first = PhotoReader.read(text, now)
         if (first.dates.isNotEmpty()) return first
         // Read once more the other way: columns kept apart, another threshold for the light.
         val second = PhotoReader.read(readAll(2), now)
@@ -172,6 +185,31 @@ object PhotoScan {
             second.text.length > first.text.length -> second
             else -> first
         }
+    }
+
+    /** The appointments in the weekly plan on the picture in [file], or null when it is no plan after all. */
+    private fun plan(ctx: Context, file: File, open: (File) -> Bitmap?, done: (Bitmap) -> Unit, german: Boolean, now: LocalDateTime): PhotoFind? {
+        val picture = open(file) ?: return null
+        return try {
+            PlanReader.read(parts.words(ctx, picture, german), now, pixels(picture))
+        } catch (e: Exception) {
+            // The plain reading follows.
+            null
+        } finally {
+            done(picture)
+        }
+    }
+
+    /** The picture a third of its size, as pixels: enough to see the colour of a highlighter. */
+    private fun pixels(picture: Bitmap): Pixels? = try {
+        val small = Bitmap.createScaledBitmap(picture, (picture.width / 3).coerceAtLeast(1), (picture.height / 3).coerceAtLeast(1), true)
+        val argb = IntArray(small.width * small.height)
+        small.getPixels(argb, 0, small.width, 0, 0, small.width, small.height)
+        Pixels(small.width, small.height, argb, picture.width.toFloat() / small.width).also { if (small !== picture) small.recycle() }
+    } catch (e: Exception) {
+        null
+    } catch (e: OutOfMemoryError) {
+        null
     }
 
     /**
@@ -265,6 +303,37 @@ object PhotoScan {
                 val pixels = if (picture.config == Bitmap.Config.ARGB_8888) picture else picture.copy(Bitmap.Config.ARGB_8888, false)
                 api.setImage(pixels)
                 return api.getUTF8Text().orEmpty()
+            } finally {
+                api.recycle()
+            }
+        }
+
+        override fun words(ctx: Context, picture: Bitmap, german: Boolean): List<OcrWord> {
+            val lang = if (german) "deu" else "eng"
+            val dir = Ocr.data(ctx, lang)
+            val api = TessBaseAPI()
+            try {
+                if (!api.init(dir.path, lang, TessBaseAPI.OEM_LSTM_ONLY)) return emptyList()
+                // Words wherever they stand, not the lines of a page; the threshold copes with uneven light.
+                api.pageSegMode = TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
+                api.setVariable("thresholding_method", "2")
+                val pixels = if (picture.config == Bitmap.Config.ARGB_8888) picture else picture.copy(Bitmap.Config.ARGB_8888, false)
+                api.setImage(pixels)
+                api.getUTF8Text()
+                val word = TessBaseAPI.PageIteratorLevel.RIL_WORD
+                val it = api.resultIterator ?: return emptyList()
+                val out = mutableListOf<OcrWord>()
+                try {
+                    it.begin()
+                    do {
+                        val text = it.getUTF8Text(word) ?: continue
+                        val box = it.getBoundingRect(word)
+                        out += OcrWord(text, box.left, box.top, box.right, box.bottom, it.confidence(word))
+                    } while (it.next(word))
+                } finally {
+                    it.delete()
+                }
+                return out
             } finally {
                 api.recycle()
             }

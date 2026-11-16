@@ -13,7 +13,7 @@ Was du zum Beispiel sagen kannst:
 Funktionen:
 • Widgets für den Startbildschirm: „Alles in einem“ mit dem, was als Nächstes ansteht, und den Knöpfen zum Sprechen und Fotografieren, oder alles einzeln; große runde Knöpfe, bis 1x1
 • Termine vom Foto: Merk's liest Datum, Uhrzeit und worum es geht, und du prüfst alles, bevor es gespeichert wird. Das Foto wird gleich danach gelöscht
-• Bilder, PDFs und Nachrichten aus anderen Apps: „Teilen“ antippen und Merk's wählen. Kalenderdateien (.ics) werden genau übernommen
+• Bilder, PDFs und Nachrichten aus anderen Apps: „Teilen“ antippen und Merk's wählen. Kalenderdateien (.ics) werden genau übernommen, Wochenpläne mit jedem Termin
 • Termine kommen in deinen Kalender, wiederkehrende als Serie, oder bleiben in Merk's, wenn Merk's dein Kalender ist
 • Du wählst, wann Termine erinnern: eine Woche, einen Tag oder zwei Stunden vorher, am Vorabend, eine Stunde, 30 oder 15 Minuten vorher oder zu Beginn
 • Jede Erinnerung hat die Knöpfe „In 15 Min.“ und „In 1 Std.“

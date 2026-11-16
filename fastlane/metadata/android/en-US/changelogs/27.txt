@@ -1,3 +1,4 @@
 • Appointments from a picture, a PDF or a message: tap "Share" in WhatsApp, a mail or the gallery and pick Merk's.
 • "From a picture or file" on the main screen opens a picture, a PDF or a calendar file from the phone.
 • Calendar files (.ics) from booking pages and invitations are taken over exactly, series included.
+• Weekly plans: every appointment with its own title and room; what is marked with a highlighter is ticked. Also without AI.

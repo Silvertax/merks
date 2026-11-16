@@ -91,6 +91,45 @@ class AiParserTest {
         assertTrue(f.dates.all { it.chosen })
     }
 
+    /**
+     * A weekly plan of courses: every entry has its own title and room, the reader marked some of
+     * them, and there are more than a photo of a letter would ever hold.
+     */
+    @Test fun aWeeklyPlanKeepsEveryEntryWithItsOwnTitle() {
+        val entries = (0 until 20).joinToString(",\n") { i ->
+            val day = 16 + i / 4
+            val hour = 8 + 2 * (i % 4)
+            val marked = i % 3 == 0
+            """{"title":"Kurs ${i + 1}","start":"2026-11-${day}T${"%02d".format(hour)}:00","end":"2026-11-${day}T${"%02d".format(hour)}:45","all_day":false,"detail":"Raum ${100 + i}","marked":$marked,"source":"Kurs ${i + 1} $hour:00"}"""
+        }
+        val reply = """{"title":"Kursplan Familienzentrum","note":"Hallenschuhe mitbringen","appointments":[
+            {"title":"Kursplan Familienzentrum","start":"2026-11-15T09:00","end":null,"all_day":false,"detail":null,"marked":true,"source":"Sonntag 9:00"},
+            $entries]}"""
+        val f = AiParser.photoFromJson(reply, photoNow)!!
+        assertEquals("Kursplan Familienzentrum", f.title)
+        // All of them, not just the first twelve.
+        assertEquals(21, f.dates.size)
+        // An entry named like the plan takes the plan's title.
+        assertNull(f.dates[0].title)
+        assertEquals("Kurs 1", f.dates[1].title)
+        assertEquals("Raum 100", f.dates[1].detail)
+        assertEquals(LocalTime.of(8, 45), f.dates[1].end)
+        // Only the marked entries are ticked; the others are there to tick by hand.
+        assertTrue(f.dates[1].chosen)
+        assertFalse(f.dates[2].chosen)
+        assertEquals(1 + 7, f.dates.count { it.chosen })
+        assertEquals("Kurs 1", f.dates[1].toParsed(f.title).title)
+        assertEquals(f.title, f.dates[0].toParsed(f.title).title)
+    }
+
+    /** A plan where the reader marked nothing: everything is ticked. */
+    @Test fun nothingMarkedMeansAll() {
+        val reply = """{"title":"Plan","note":null,"appointments":[
+            {"title":"A","start":"2026-11-16T08:00","end":null,"all_day":false,"detail":null,"marked":false,"source":"A"},
+            {"title":"B","start":"2026-11-17T08:00","end":null,"all_day":false,"detail":null,"marked":false,"source":"B"}]}"""
+        assertTrue(AiParser.photoFromJson(reply, photoNow)!!.dates.all { it.chosen })
+    }
+
     @Test fun photoReplyWithoutAppointments() {
         val f = AiParser.photoFromJson("""{"title":"","note":null,"appointments":[]}""", photoNow)!!
         assertTrue(f.dates.isEmpty())

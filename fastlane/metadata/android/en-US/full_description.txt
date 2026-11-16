@@ -13,7 +13,7 @@ What you can say, for example:
 Features:
 • Home screen widgets: "All in one" with what comes next and the buttons to speak and to photograph, or each on its own; big round buttons, down to 1x1
 • Appointments from a photo: Merk's reads the date, the time and what it is about, and you check it before it is saved. The photo is deleted right after
-• Pictures, PDFs and messages from other apps: tap "Share" and pick Merk's. Calendar files (.ics) are taken over exactly
+• Pictures, PDFs and messages from other apps: tap "Share" and pick Merk's. Calendar files (.ics) are taken over exactly, weekly plans with every appointment
 • Appointments go into your calendar, repeating ones as a series, or stay in Merk's if it is your calendar
 • You choose when appointments remind you: a week, a day or two hours ahead, the evening before, an hour, 30 or 15 minutes ahead, or when it starts
 • Every reminder has "In 15 min" and "In 1 hr" buttons

@@ -39,7 +39,7 @@ object IcsReader {
         val many = titles.size > 1
         val dates = events.flatMap { e -> dates(e, now).map { if (many) it.copy(title = e.title.ifEmpty { null }) else it } }
             .sortedWith(compareBy({ it.day }, { it.time }))
-            .take(PhotoReader.MAX_DATES)
+            .take(PhotoReader.MAX_LISTED)
         val first = events.firstOrNull { e -> dates.any { it.title == null || it.title == e.title } }
         val note = first?.let { e ->
             listOf(e.place, e.details.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }.orEmpty())

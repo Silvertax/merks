@@ -9,6 +9,12 @@ What changed for users, per version. When a GitHub release is created with an em
 - **Appointments from a picture, a file or a message:** in WhatsApp, a mail or the gallery tap "Share" and pick Merk's. A picture is read like a photo, a PDF with its first three pages together, a message is searched for dates; a short one like "tomorrow at 10 dentist" is understood like something said.
 - **"From a picture or file"** on the main screen opens a picture, a PDF or a calendar file from the phone.
 - **Calendar files (.ics)** from booking pages and invitations are taken over exactly: title, place, start and end, a series as a series. Merk's can also open them from a mail.
+- **Weekly plans:** a plan of courses, groups or treatments with a column for each weekday becomes all its appointments, each with its own title and with the room or a remark in its note. What is marked on the plan with a highlighter is ticked; the rest can be ticked as well.
+
+### Changed
+
+- **Without AI,** the phone now reads a weekly plan column by column, so each time goes with its own title and day; misread titles are evened out with the way the plan writes them elsewhere.
+- **With AI,** a plan comes with all its appointments (up to 40, before only 12), and none of them ends up in the note any more.
 
 ### Good to know
 

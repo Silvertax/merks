@@ -18,10 +18,12 @@ data class PhotoDate(
     val source: String = "",
     /** Ticked on the screen from the start: what is plainly an appointment, not a deadline. */
     val chosen: Boolean = true,
-    /** Its own title, when a calendar file holds several different appointments; otherwise the common one. */
+    /** Its own title, when a plan or a calendar file holds several different appointments; otherwise the common one. */
     val title: String? = null,
     /** A series, from a calendar file. */
     val repeat: Repeat? = null,
+    /** Where it is and what is written with it, e.g. "Raum 12": goes into the entry's note. */
+    val detail: String? = null,
 ) {
     /** As an appointment for the calendar, under its own title or [title]. */
     fun toParsed(title: String): Parsed = Parsed(
@@ -56,8 +58,14 @@ data class PhotoFind(
  * birthdays, validity dates, phone numbers and whatever is over. Pure Kotlin, for tests on the JVM.
  */
 object PhotoReader {
-    /** More than this on one photo is a list of something else, not appointments. */
+    /** More than this guessed from one photo's text is a list of something else, not appointments. */
     const val MAX_DATES = 12
+
+    /**
+     * What the AI or a calendar file lists may be more: a weekly plan of courses or shifts holds a
+     * few dozen appointments, each with its own title.
+     */
+    const val MAX_LISTED = 40
 
     private val monthNames: Map<String, Int> = buildMap {
         listOf(

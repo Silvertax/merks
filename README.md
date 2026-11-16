@@ -44,6 +44,7 @@ Someone sent you the appointment as a picture, a PDF or a message? In that app t
 - **Pictures and PDFs** are read like photos; of a PDF, the first three pages, together.
 - **Calendar files** (.ics), as booking pages and invitations send them, are taken over exactly: title, place, start and end, a series as a series. Tapping such a file in a mail can open it in Merk's too.
 - **Messages** are searched for dates like a letter; a short one like "tomorrow at 10 dentist" is understood like something said.
+- **Weekly plans** with a column for each day, as for courses, groups or treatments, become all their appointments, each with its own title and the room in its note. What is marked with a highlighter is ticked. The phone reads the columns itself; with an AI key the AI reads the plan, also one written by hand.
 
 Merk's reads a copy and deletes it afterwards; the original stays where it is. The entry notes that it was taken from a file or message.
 

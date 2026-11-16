@@ -231,6 +231,10 @@
         <item quantity="one">Here is what I found. Please check:</item>
         <item quantity="other">Found %d dates. The ticked ones will be saved:</item>
     </plurals>
+    <plurals name="photo_found_marked">
+        <item quantity="one">Here is what I found. Please check:</item>
+        <item quantity="other">Found %d dates. The ones marked on the plan are ticked; the ticked ones will be saved:</item>
+    </plurals>
     <plurals name="photo_saved">
         <item quantity="one">%d appointment added</item>
         <item quantity="other">%d appointments added</item>

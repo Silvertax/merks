@@ -352,7 +352,11 @@ class PhotoActivity : MerksActivity() {
             noteText.setText(f.note.orEmpty())
             model.filled = true
         }
-        label.text = resources.getQuantityString(R.plurals.photo_found, model.dates.size, model.dates.size)
+        // A plan whose own appointments are marked: say why the others are not ticked.
+        val marked = f.dates.size > 1 && f.dates.all { it.title != null } && f.dates.any { it.chosen } && f.dates.any { !it.chosen }
+        label.text = resources.getQuantityString(if (marked) R.plurals.photo_found_marked else R.plurals.photo_found, model.dates.size, model.dates.size)
+        // When every date has its own title, a common one is not needed.
+        titleBox.visibility = if (model.dates.isNotEmpty() && model.dates.all { it.title != null }) View.GONE else View.VISIBLE
         sourceHint.text = when {
             f.byAi -> getString(R.string.photo_by_ai)
             // The AI was asked for this photo and its answer did not come.
@@ -375,9 +379,16 @@ class PhotoActivity : MerksActivity() {
         pick.isChecked = d.chosen
         pick.setOnCheckedChangeListener { _, on -> model.dates[i] = model.dates[i].copy(chosen = on) }
         v.findViewById<TextView>(R.id.date_day).text = Format.dayText(this, d.day)
-        // From a calendar file a date can bring its own title and be a series.
-        v.findViewById<TextView>(R.id.date_time).text =
-            listOfNotNull(Format.photoTime(this, d), d.title, d.repeat?.let { Format.repeatText(this, it) }).joinToString(" · ")
+        // From a plan or a calendar file a date can bring its own title and room, and be a series.
+        v.findViewById<TextView>(R.id.date_time).text = listOfNotNull(Format.photoTime(this, d), d.repeat?.let { Format.repeatText(this, it) }).joinToString(" · ")
+        v.findViewById<TextView>(R.id.date_title).apply {
+            text = d.title.orEmpty()
+            visibility = if (d.title == null) View.GONE else View.VISIBLE
+        }
+        v.findViewById<TextView>(R.id.date_detail).apply {
+            text = d.detail.orEmpty()
+            visibility = if (d.detail == null) View.GONE else View.VISIBLE
+        }
         v.findViewById<View>(R.id.date_row).setOnClickListener { if (several) pick.toggle() else change(i) }
         v.findViewById<View>(R.id.date_change).setOnClickListener { change(i) }
         return v
@@ -458,7 +469,7 @@ class PhotoActivity : MerksActivity() {
 
     private fun saveAll() {
         val title = titleText.text.toString().trim()
-        if (title.isEmpty()) {
+        if (title.isEmpty() && model.dates.any { it.chosen && it.title == null }) {
             titleBox.error = getString(R.string.edit_empty)
             return
         }
@@ -632,7 +643,11 @@ class PhotoModel : ViewModel() {
         busy = true
         Thread {
             val ids = try {
-                picked.map { d -> Store.save(app, d.toParsed(title), mark + d.source.ifEmpty { d.title ?: title }, note).id }
+                picked.map { d ->
+                    // The room or remark of this date first, then what goes for all of them.
+                    val own = listOfNotNull(d.detail, note.trim().ifEmpty { null }).joinToString("\n")
+                    Store.save(app, d.toParsed(title), mark + d.source.ifEmpty { d.title ?: title }, own).id
+                }
             } catch (e: Exception) {
                 null
             }
@@ -699,6 +714,7 @@ class PhotoModel : ViewModel() {
 
     private fun dateJson(d: PhotoDate) = JSONObject()
         .put("title", d.title ?: JSONObject.NULL)
+        .put("detail", d.detail ?: JSONObject.NULL)
         .put("repeat", d.repeat?.let { "${it.unit.name}:${it.every}" } ?: JSONObject.NULL)
         .put("day", d.day.toEpochDay())
         .put("time", d.time?.toSecondOfDay() ?: -1)
@@ -716,6 +732,7 @@ class PhotoModel : ViewModel() {
         o.optBoolean("chosen", true),
         if (o.isNull("title")) null else o.optString("title").ifEmpty { null },
         if (o.isNull("repeat")) null else runCatching { o.optString("repeat").split(':').let { (unit, every) -> Repeat(RepeatUnit.valueOf(unit), every.toInt()) } }.getOrNull(),
+        if (o.isNull("detail")) null else o.optString("detail").ifEmpty { null },
     )
 
     private companion object {

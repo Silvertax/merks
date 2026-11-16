@@ -319,6 +319,26 @@ class ScreenshotRender {
     @Test fun photoReviewLight() = photoReview(false, "14_photo_review_light")
     @Test fun photoReviewDark() = photoReview(true, "14_photo_review_dark")
 
+    /** The check before saving for a weekly plan: each appointment with its own title, the marked ones ticked. */
+    @Test fun planReview() {
+        night(false)
+        val monday = LocalDate.now().plusWeeks(1).with(java.time.DayOfWeek.MONDAY)
+        val dates = listOf(
+            PhotoDate(monday, LocalTime.of(7, 45), title = t("Frühsport", "Morning exercise"), detail = t("Turnhalle", "Gym")),
+            PhotoDate(monday, LocalTime.of(9, 0), LocalTime.of(10, 30), title = t("Töpfern", "Pottery"), detail = t("Werkraum", "Workshop"), chosen = false),
+            PhotoDate(monday, LocalTime.of(14, 0), LocalTime.of(15, 0), title = t("Chor", "Choir"), detail = t("Noten mitbringen", "Bring your sheet music")),
+            PhotoDate(monday.plusDays(1), LocalTime.of(8, 30), LocalTime.of(10, 0), title = t("Offene Werkstatt", "Open workshop"), chosen = false),
+            PhotoDate(monday.plusDays(2), LocalTime.of(10, 0), LocalTime.of(11, 30), title = t("Malkurs", "Painting"), detail = t("Raum 12", "Room 12")),
+        )
+        val model = PhotoModel().apply {
+            stage = PhotoModel.Stage.REVIEW
+            find = PhotoFind(t("Kursplan Familienzentrum", "Course plan"), null, dates, text = "…")
+            this.dates += dates
+        }
+        val state = Bundle().also { model.save(it) }
+        shotActivity(Robolectric.buildActivity(PhotoActivity::class.java).setup(state).get(), "15_plan_review")
+    }
+
     @Test fun photoWidget() {
         val density = app.resources.displayMetrics.density
         val v = LayoutInflater.from(app).inflate(R.layout.widget_photo, null)
