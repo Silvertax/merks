@@ -17,13 +17,15 @@ object Appearance {
     // Accent colours to choose in the settings; teal is the app's own.
     const val TEAL = "teal"
     const val ROSE = "rose"
+    const val RED = "red"
     const val LILAC = "lilac"
     const val BLUE = "blue"
     const val GREEN = "green"
-    val ACCENTS = listOf(TEAL, ROSE, LILAC, BLUE, GREEN)
+    val ACCENTS = listOf(TEAL, RED, ROSE, LILAC, BLUE, GREEN)
 
     /** The theme overlay of an accent colour, or 0 for teal, which is the theme itself. */
     fun accentOverlay(accent: String): Int = when (accent) {
+        RED -> R.style.ThemeOverlay_Merks_Accent_Red
         ROSE -> R.style.ThemeOverlay_Merks_Accent_Rose
         LILAC -> R.style.ThemeOverlay_Merks_Accent_Lilac
         BLUE -> R.style.ThemeOverlay_Merks_Accent_Blue

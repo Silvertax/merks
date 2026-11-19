@@ -72,9 +72,9 @@ Repeating things work too: "Every Monday take out the trash", "Every weekday at 
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
-The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes, with headings such as "Tomorrow" and "Next week" where each part begins. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
-The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, pink, purple, blue or green; the widgets take it too.
+The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, red, pink, purple, blue or green; the widgets take it too.
 
 ## Language
 

@@ -158,6 +158,7 @@
     <string name="settings_accent">Farbe</string>
     <string name="settings_accent_hint">Für die App und ihre Widgets.</string>
     <string name="accent_teal">Türkis</string>
+    <string name="accent_red">Rot</string>
     <string name="accent_rose">Rosa</string>
     <string name="accent_lilac">Lila</string>
     <string name="accent_blue">Blau</string>
@@ -317,4 +318,11 @@
     <string name="photo_file_unreadable">Die Datei ließ sich nicht öffnen.</string>
     <string name="photo_no_picker">Keine App zum Auswählen von Dateien gefunden.</string>
     <string name="read_from_file">Aus Datei oder Nachricht übernommen: „%1$s“</string>
+    <string name="section_today">Heute</string>
+    <string name="section_tomorrow">Morgen</string>
+    <string name="section_this_week">Diese Woche</string>
+    <string name="section_next_week">Nächste Woche</string>
+    <string name="section_later">Später</string>
+    <string name="section_notes">Notizen</string>
+    <string name="section_done">Erledigt</string>
 </resources>

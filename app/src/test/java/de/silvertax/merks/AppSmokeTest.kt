@@ -1130,6 +1130,31 @@ class AppSmokeTest {
 
     // ---------- Main list ----------
 
+    /** Headings show where a part of the list begins, so an appointment further away is seen to be further away. */
+    @Test fun mainListHasHeadings() {
+        Prefs.setAskedPermissions(app)
+        val today = LocalDate.now()
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Yoga", today.plusDays(1).atTime(13, 30), null, false), "Yoga")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Töpfern", today.plusDays(1).atTime(14, 0), null, false), "Töpfern")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Friseur", today.plusDays(40).atTime(9, 0), null, false), "Friseur")
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = activity.findViewById<ListView>(R.id.list)
+        val rows = (0 until list.adapter.count).map { list.adapter.getView(it, null, list) }
+        fun head(v: View) = v.findViewById<TextView>(R.id.section).let { if (it.visibility == View.VISIBLE) it.text.toString() else "" }
+        assertEquals(listOf("Yoga", "Töpfern", "Friseur", "Milch kaufen"), rows.map { it.findViewById<TextView>(R.id.title).text.toString() })
+        assertEquals(listOf("Morgen", "", "Später", "Notizen"), rows.map { head(it) })
+    }
+
+    /** One part only: no heading. */
+    @Test fun mainListWithOnePartHasNoHeading() {
+        Prefs.setAskedPermissions(app)
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = activity.findViewById<ListView>(R.id.list)
+        assertEquals(View.GONE, list.adapter.getView(0, null, list).findViewById<View>(R.id.section).visibility)
+    }
+
     /** What has a date shows day and month in place of the symbol; notes and done things keep their symbol. */
     @Test fun mainListShowsTheDateAtAGlance() {
         Prefs.setAskedPermissions(app)

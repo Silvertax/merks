@@ -131,6 +131,16 @@ class ScreenshotRender {
         main(false, true, "20_main_rose")
     }
 
+    @Test fun mainRed() {
+        Prefs.setAccent(app, Appearance.RED)
+        main(false, true, "20_main_red")
+    }
+
+    @Test fun mainRedDark() {
+        Prefs.setAccent(app, Appearance.RED)
+        main(true, true, "20_main_red_dark")
+    }
+
     @Test fun mainLilacDark() {
         Prefs.setAccent(app, Appearance.LILAC)
         main(true, true, "20_main_lilac_dark")
@@ -495,7 +505,8 @@ class ScreenshotRender {
         val next = Glance.nextUp(app)
         val now = System.currentTimeMillis()
         val looks = listOf(
-            Triple(Appearance.ROSE, Appearance.LIGHT, false), Triple(Appearance.ROSE, Appearance.DARK, false),
+            Triple(Appearance.RED, Appearance.LIGHT, false), Triple(Appearance.RED, Appearance.DARK, false),
+            Triple(Appearance.ROSE, Appearance.LIGHT, false),
             Triple(Appearance.LILAC, Appearance.LIGHT, false), Triple(Appearance.BLUE, Appearance.DARK, true),
             Triple(Appearance.GREEN, Appearance.LIGHT, false), Triple(Appearance.TEAL, Appearance.DARK, true),
         )

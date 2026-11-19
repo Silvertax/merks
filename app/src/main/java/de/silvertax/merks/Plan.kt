@@ -207,6 +207,28 @@ object Plan {
         return next
     }
 
+    /** The parts of the list, in their order: what is going on today, tomorrow, ..., notes, ticked off. */
+    enum class Section { TODAY, TOMORROW, THIS_WEEK, NEXT_WEEK, LATER, NOTES, DONE }
+
+    /**
+     * Where an entry goes in the list. [start] is the date shown for it; something that began before
+     * today and still goes on counts as today. Weeks begin on [firstDay].
+     */
+    fun section(e: Entry, start: Long?, now: Long, zone: ZoneId, firstDay: java.time.DayOfWeek): Section {
+        if (e.done) return Section.DONE
+        if (start == null) return Section.NOTES
+        val day = Instant.ofEpochMilli(start).atZone(zone).toLocalDate()
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        val week = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(firstDay))
+        return when {
+            !day.isAfter(today) -> Section.TODAY
+            day == today.plusDays(1) -> Section.TOMORROW
+            day.isBefore(week.plusWeeks(1)) -> Section.THIS_WEEK
+            day.isBefore(week.plusWeeks(2)) -> Section.NEXT_WEEK
+            else -> Section.LATER
+        }
+    }
+
     /** Start of the occurrence that matters now: the first one today or later, else the last one. */
     fun currentStart(e: Entry, now: Long, zone: ZoneId): Long? {
         val today: LocalDate = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()

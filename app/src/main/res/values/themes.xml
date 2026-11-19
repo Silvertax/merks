@@ -108,6 +108,38 @@
         <item name="merksWidgetAccent">@color/rose_primary</item>
     </style>
 
+    <style name="ThemeOverlay.Merks.Accent.Red" parent="">
+        <item name="colorPrimary">@color/red_primary</item>
+        <item name="colorOnPrimary">@color/red_on_primary</item>
+        <item name="colorPrimaryContainer">@color/red_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/red_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/red_inverse_primary</item>
+        <item name="android:colorBackground">@color/red_background</item>
+        <item name="colorOnBackground">@color/red_on_background</item>
+        <item name="colorSurface">@color/red_background</item>
+        <item name="colorOnSurface">@color/red_on_background</item>
+        <item name="colorSurfaceVariant">@color/red_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/red_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/red_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/red_container_low</item>
+        <item name="colorSurfaceContainer">@color/red_container</item>
+        <item name="colorSurfaceContainerHigh">@color/red_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/red_container_highest</item>
+        <item name="colorOutline">@color/red_outline</item>
+        <item name="colorOutlineVariant">@color/red_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/red_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/red_inverse_on_surface</item>
+        <item name="merksWidgetSurface">@color/red_w_surface</item>
+        <item name="merksWidgetOnSurface">@color/red_on_background</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/red_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/red_w_outline</item>
+        <item name="merksWidgetPrimary">@color/red_primary</item>
+        <item name="merksWidgetOnPrimary">@color/red_on_primary</item>
+        <item name="merksWidgetTonal">@color/red_primary_container</item>
+        <item name="merksWidgetOnTonal">@color/red_on_primary_container</item>
+        <item name="merksWidgetAccent">@color/red_primary</item>
+    </style>
+
     <style name="ThemeOverlay.Merks.Accent.Lilac" parent="">
         <item name="colorPrimary">@color/lilac_primary</item>
         <item name="colorOnPrimary">@color/lilac_on_primary</item>

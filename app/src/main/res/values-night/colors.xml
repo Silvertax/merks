@@ -123,4 +123,24 @@
     <color name="green_inverse_on_surface">#2D322C</color>
     <color name="green_w_surface">#1B231B</color>
     <color name="green_w_outline">#343F33</color>
+    <color name="red_primary">#FFB4AB</color>
+    <color name="red_on_primary">#690005</color>
+    <color name="red_primary_container">#8C1D18</color>
+    <color name="red_on_primary_container">#FFDAD6</color>
+    <color name="red_inverse_primary">#B42A2A</color>
+    <color name="red_background">#1A1110</color>
+    <color name="red_on_background">#F1DEDC</color>
+    <color name="red_surface_variant">#534341</color>
+    <color name="red_on_surface_variant">#D8C2BF</color>
+    <color name="red_container_lowest">#140C0B</color>
+    <color name="red_container_low">#231918</color>
+    <color name="red_container">#271D1C</color>
+    <color name="red_container_high">#322827</color>
+    <color name="red_container_highest">#3D3231</color>
+    <color name="red_outline">#A08C8A</color>
+    <color name="red_outline_variant">#534341</color>
+    <color name="red_inverse_surface">#F1DEDC</color>
+    <color name="red_inverse_on_surface">#392E2C</color>
+    <color name="red_w_surface">#2B1D1C</color>
+    <color name="red_w_outline">#463634</color>
 </resources>

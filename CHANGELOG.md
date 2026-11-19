@@ -6,7 +6,7 @@ What changed for users, per version. When a GitHub release is created with an em
 
 ### What's new
 
-- **Colours:** in the settings, under "Colour", the app and its widgets can be teal, pink, purple, blue or green. The background takes on a hint of the colour too.
+- **Colours:** in the settings, under "Colour", the app and its widgets can be teal, red, pink, purple, blue or green. The background takes on a hint of the colour too.
 - **Widgets follow the app's design:** light, dark or OLED black as chosen in the settings, no longer only as the phone is set (Android 12 and newer).
 - **"Read file" widget:** a button for the home screen that opens a picture, a PDF or a calendar file right away. The "All in one" widget has this button too, from three cells wide; "Photo" beside it now shows its symbol only.
 - **The note in the widgets:** what goes with the next appointment, e.g. what to bring, is shown in "Up next" and "All in one" where "Up next" or a following entry would be.
@@ -17,6 +17,7 @@ What changed for users, per version. When a GitHub release is created with an em
 
 - **Speaking:** a pause no longer changes anything on the screen. "Still listening ... More to add?" is gone; the screen keeps saying "Listening" until it is over.
 - **All-day appointments in the widgets:** they no longer hide what happens at a time on the same day. Two hours before an appointment, and while it lasts, the widgets show that one; afterwards the all-day one is back on top.
+- **Headings in the list:** "Today", "Tomorrow", "This week", "Next week", "Later", "Notes" and "Ticked off" show where each part begins, so an appointment further away is seen to be further away.
 - **The list** sorts a series by its next date once its time today is over, and a reminder that was put off by its new time.
 
 ### Fixed

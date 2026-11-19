@@ -24,6 +24,7 @@ class MainActivity : MerksActivity() {
     private var entries: List<Entry> = emptyList()
     private var upcoming: List<Entry> = emptyList()
     private var starts: Map<Long, Long?> = emptyMap()
+    private var heads: Map<Int, String> = emptyMap()
     private lateinit var list: ListView
     private lateinit var empty: View
 
@@ -181,11 +182,29 @@ class MainActivity : MerksActivity() {
         // then notes, then what is ticked off but not over yet.
         upcoming = all.filter { e -> !e.done && e.start != null }.sortedWith(compareBy({ starts[it.id] }, { it.title.lowercase() }))
         entries = upcoming + (all - upcoming.toSet()).sortedBy { it.done }
+        // A heading where a new part of the list begins: today, tomorrow, this week, next week, later,
+        // notes, ticked off. So a date further away is seen to be further away. Only with two parts or more.
+        val firstDay = java.time.temporal.WeekFields.of(Lang.locale(this)).firstDayOfWeek
+        val sections = entries.map { Plan.section(it, starts[it.id], now, zone, firstDay) }
+        heads = if (sections.distinct().size < 2) emptyMap() else
+            sections.withIndex().filter { (i, s) -> i == 0 || sections[i - 1] != s }.associate { (i, s) -> i to sectionName(s) }
         adapter.notifyDataSetChanged()
         findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE
         empty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
         list.visibility = if (entries.isEmpty()) View.GONE else View.VISIBLE
     }
+
+    private fun sectionName(s: Plan.Section): String = getString(
+        when (s) {
+            Plan.Section.TODAY -> R.string.section_today
+            Plan.Section.TOMORROW -> R.string.section_tomorrow
+            Plan.Section.THIS_WEEK -> R.string.section_this_week
+            Plan.Section.NEXT_WEEK -> R.string.section_next_week
+            Plan.Section.LATER -> R.string.section_later
+            Plan.Section.NOTES -> R.string.section_notes
+            Plan.Section.DONE -> R.string.section_done
+        },
+    )
 
     private fun label(e: Entry): String = getString(
         when (e.kind) {
@@ -327,6 +346,13 @@ class MainActivity : MerksActivity() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val v = convertView ?: layoutInflater.inflate(R.layout.item_entry, parent, false)
             val e = entries[position]
+            v.findViewById<TextView>(R.id.section).apply {
+                val head = heads[position]
+                text = head
+                visibility = if (head == null) View.GONE else View.VISIBLE
+                // The very first heading sits close under the top.
+                setPadding(paddingLeft, if (position == 0) 0 else (12 * resources.displayMetrics.density).toInt(), paddingRight, paddingBottom)
+            }
             v.findViewById<View>(R.id.card).setOnClickListener { details(e) }
             v.findViewById<TextView>(R.id.title).text = e.title
             v.findViewById<TextView>(R.id.sub).text =

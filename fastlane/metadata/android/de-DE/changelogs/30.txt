@@ -1,5 +1,6 @@
-• Farben: Merk's und die Widgets in Türkis, Rosa, Lila, Blau oder Grün (Einstellungen, „Farbe“).
+• Farben: Merk's und die Widgets in Türkis, Rot, Rosa, Lila, Blau oder Grün.
 • Widgets folgen dem Design der App, auch OLED-Schwarz; neues Widget „Datei lesen“, Notiz im Widget.
+• Überschriften in der Liste (Morgen, Nächste Woche …)
 • Ganztagstermine machen in den Widgets zwei Stunden vor einem Termin Platz.
 • Sprechen: keine Nachfrage mehr in Pausen, der Text verschwindet nicht; neu „Bis ich auf Fertig tippe“.
 • Neue Versionen werden beim Öffnen gefunden und erst auf Tippen installiert.

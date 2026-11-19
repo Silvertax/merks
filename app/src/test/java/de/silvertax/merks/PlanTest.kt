@@ -174,6 +174,24 @@ class PlanTest {
         assertEquals(at("2026-11-13T16:00"), Plan.nextChange(entries, at("2026-11-13T15:00"), zone))
     }
 
+    /** The parts of the list: next Thursday is "next week", after tomorrow's appointments. */
+    @Test fun theListIsSplitIntoParts() {
+        val now = at("2026-11-19T18:20") // a Thursday
+        fun part(start: String?, done: Boolean = false, firstDay: java.time.DayOfWeek = java.time.DayOfWeek.MONDAY) =
+            Plan.section(item(1, Kind.APPOINTMENT, start, done = done), start?.let { at(it) }, now, zone, firstDay)
+        assertEquals(Plan.Section.TODAY, part("2026-11-19T20:00"))
+        assertEquals(Plan.Section.TODAY, part("2026-11-17T00:00")) // began before today, still going on
+        assertEquals(Plan.Section.TOMORROW, part("2026-11-20T13:30"))
+        assertEquals(Plan.Section.THIS_WEEK, part("2026-11-22T10:00"))
+        assertEquals(Plan.Section.NEXT_WEEK, part("2026-11-23T08:00"))
+        assertEquals(Plan.Section.NEXT_WEEK, part("2026-11-26T09:00"))
+        assertEquals(Plan.Section.LATER, part("2026-11-30T09:00"))
+        assertEquals(Plan.Section.NOTES, part(null))
+        assertEquals(Plan.Section.DONE, part("2026-11-20T09:00", done = true))
+        // Where the week begins on Sunday, Sunday is next week already.
+        assertEquals(Plan.Section.NEXT_WEEK, part("2026-11-22T10:00", firstDay = java.time.DayOfWeek.SUNDAY))
+    }
+
     @Test fun workdaySeriesSkipsTheWeekend() {
         val e = entry(Kind.REMINDER, "2026-11-12T07:00", "2026-11-11T20:00", repeat = Repeat(RepeatUnit.WORKDAY, 1))
         assertEquals(at("2026-11-12T07:00"), next(e, "2026-11-11T20:00"))

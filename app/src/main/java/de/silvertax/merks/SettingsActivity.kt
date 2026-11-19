@@ -318,6 +318,7 @@ class SettingsActivity : MerksActivity() {
     private fun accentName(accent: String): CharSequence {
         val name = getString(
             when (accent) {
+                Appearance.RED -> R.string.accent_red
                 Appearance.ROSE -> R.string.accent_rose
                 Appearance.LILAC -> R.string.accent_lilac
                 Appearance.BLUE -> R.string.accent_blue
@@ -327,6 +328,7 @@ class SettingsActivity : MerksActivity() {
         )
         val color = getColor(
             when (accent) {
+                Appearance.RED -> R.color.red_primary
                 Appearance.ROSE -> R.color.rose_primary
                 Appearance.LILAC -> R.color.lilac_primary
                 Appearance.BLUE -> R.color.blue_primary
@@ -341,7 +343,7 @@ class SettingsActivity : MerksActivity() {
         }
     }
 
-    /** Teal, pink, purple, blue or green, for the app and the widgets alike. */
+    /** Teal, red, pink, purple, blue or green, for the app and the widgets alike. */
     private fun chooseAccent() {
         val choices = Appearance.ACCENTS
         MaterialAlertDialogBuilder(this)
