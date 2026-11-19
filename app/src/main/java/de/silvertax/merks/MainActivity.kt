@@ -25,6 +25,9 @@ class MainActivity : MerksActivity() {
     private var upcoming: List<Entry> = emptyList()
     private var starts: Map<Long, Long?> = emptyMap()
     private var heads: Map<Int, String> = emptyMap()
+
+    // The colours in use; several in the mixed mode (see Appearance.mix).
+    private lateinit var tones: List<Appearance.Tone>
     private lateinit var list: ListView
     private lateinit var empty: View
 
@@ -49,6 +52,8 @@ class MainActivity : MerksActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         findViewById<View>(R.id.add_widget).setOnClickListener { addWidget() }
+        tones = Appearance.tones(this)
+        if (tones.size > 1) mixButtons()
         // Everything that is coming up as a text, e.g. for the family chat.
         findViewById<View>(R.id.share).setOnClickListener {
             Share.send(this, Share.list(this, upcoming.map { it to starts[it.id] }))
@@ -192,6 +197,22 @@ class MainActivity : MerksActivity() {
         findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE
         empty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
         list.visibility = if (entries.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    /** Mixed colours: "Speak" keeps the first, the buttons below it take the next ones. */
+    private fun mixButtons() {
+        fun tone(i: Int) = tones[i % tones.size]
+        findViewById<com.google.android.material.button.MaterialButton>(R.id.photo).apply {
+            backgroundTintList = ColorStateList.valueOf(tone(1).container)
+            setTextColor(tone(1).onContainer)
+            iconTint = ColorStateList.valueOf(tone(1).onContainer)
+        }
+        for ((id, i) in listOf(R.id.from_file to 2, R.id.add_widget to 3)) {
+            findViewById<com.google.android.material.button.MaterialButton>(id).apply {
+                setTextColor(tone(i).primary)
+                iconTint = ColorStateList.valueOf(tone(i).primary)
+            }
+        }
     }
 
     private fun sectionName(s: Plan.Section): String = getString(
@@ -368,10 +389,13 @@ class MainActivity : MerksActivity() {
                 else -> Triple(R.drawable.ic_note, M.attr.colorSurfaceContainerHigh, M.attr.colorOnSurfaceVariant)
             }
             val badge = v.findViewById<View>(R.id.badge)
-            val ink = MaterialColors.getColor(badge, foreground)
-            badge.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(badge, background))
             // What has a date shows it in place of the symbol, so the day is found without reading the lines.
             val day = starts[e.id].takeIf { !e.done }
+            // Mixed colours: an appointment's tile in the colour of its day, the same as in the widgets.
+            val mixed = tones.takeIf { it.size > 1 && e.kind == Kind.APPOINTMENT && day != null }
+                ?.let { it[Math.floorMod(Appearance.slotOfDay(day!!), it.size)] }
+            val ink = mixed?.onContainer ?: MaterialColors.getColor(badge, foreground)
+            badge.backgroundTintList = ColorStateList.valueOf(mixed?.container ?: MaterialColors.getColor(badge, background))
             v.findViewById<View>(R.id.badge_date).visibility = if (day != null) View.VISIBLE else View.GONE
             v.findViewById<ImageView>(R.id.badge_icon).apply {
                 visibility = if (day != null) View.GONE else View.VISIBLE

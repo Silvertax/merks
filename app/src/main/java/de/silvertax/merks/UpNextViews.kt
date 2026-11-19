@@ -129,20 +129,23 @@ object UpNextViews {
         rv.setTextViewTextSize(R.id.next_when, sp, if (look.low || look.compact) 13f else 14f)
 
         WidgetTheme.paint(ctx, rv) {
-            badge(R.id.next_badge)
-            for (id in listOf(R.id.next_badge_weekday, R.id.next_badge_day, R.id.next_badge_month)) badgeText(id)
+            // In the mixed mode each day has its own colour, the same as on the date tiles in the list.
+            val day = first?.let { Appearance.slotOfDay(it.start) } ?: 0
+            badge(R.id.next_badge, day)
+            for (id in listOf(R.id.next_badge_weekday, R.id.next_badge_day, R.id.next_badge_month)) badgeText(id, day)
             image(R.id.next_badge_icon) { onTonal }
             text(R.id.next_label) { onSurfaceVariant }
-            text(R.id.next_day) { accent }
+            text(R.id.next_day, day) { accent }
             text(R.id.next_title) { onSurface }
-            text(R.id.next_when) { accent }
+            text(R.id.next_when, day) { accent }
             text(R.id.next_note) { onSurfaceVariant }
             background(R.id.next_divider) { outline }
-            for (row in rowViews) {
-                text(row.day) { accent }
+            for ((i, row) in rowViews.withIndex()) {
+                val its = rest.getOrNull(i)?.let { Appearance.slotOfDay(it.start) } ?: 0
+                text(row.day, its) { accent }
                 text(row.title) { onSurface }
                 text(row.time) { onSurfaceVariant }
-                text(row.stackDay) { accent }
+                text(row.stackDay, its) { accent }
                 text(row.stackTitle) { onSurface }
             }
         }

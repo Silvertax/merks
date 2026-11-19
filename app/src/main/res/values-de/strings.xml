@@ -163,6 +163,8 @@
     <string name="accent_lilac">Lila</string>
     <string name="accent_blue">Blau</string>
     <string name="accent_green">Grün</string>
+    <string name="accent_mixed">Bunt gemischt</string>
+    <string name="accent_mix_title">Welche Farben mischen?</string>
     <string name="section_reminders">Erinnerungen</string>
     <string name="section_app">App</string>
     <string name="back">Zurück</string>

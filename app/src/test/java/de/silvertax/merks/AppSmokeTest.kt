@@ -1130,6 +1130,66 @@ class AppSmokeTest {
 
     // ---------- Main list ----------
 
+    /** Mixed colours: each day its own colour on the date tiles, and each button below "Speak" another one. */
+    @Test fun mixedColoursInTheList() {
+        Prefs.setAskedPermissions(app)
+        val today = LocalDate.now()
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Yoga", today.plusDays(1).atTime(9, 0), null, false), "Yoga")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Töpfern", today.plusDays(1).atTime(14, 0), null, false), "Töpfern")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Friseur", today.plusDays(2).atTime(9, 0), null, false), "Friseur")
+        fun tiles(): List<Int> {
+            val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+            val list = activity.findViewById<ListView>(R.id.list)
+            return (0 until list.adapter.count).map { list.adapter.getView(it, null, list).findViewById<View>(R.id.badge).backgroundTintList!!.defaultColor }
+        }
+        val one = tiles()
+        assertEquals(1, one.distinct().size)
+        Prefs.setMixedAccents(app, listOf(Appearance.RED, Appearance.BLUE))
+        Prefs.setAccent(app, Appearance.MIXED)
+        assertEquals(listOf(Appearance.RED, Appearance.BLUE), Appearance.mix(app))
+        val mixed = tiles()
+        // The same day the same colour, the next day the other one.
+        assertEquals(mixed[0], mixed[1])
+        assertTrue(mixed[1] != mixed[2])
+        assertEquals(setOf(app.getColor(R.color.red_primary_container), app.getColor(R.color.blue_primary_container)), mixed.toSet())
+    }
+
+    /** The mixed mode in the settings: all colours ticked at first; with one left, that one is the colour. */
+    @Test fun mixedColoursAreChosenInTheSettings() {
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        settings.findViewById<View>(R.id.row_accent).performClick()
+        val single = (ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog).listView
+        assertEquals(7, single.adapter.count)
+        assertTrue(single.adapter.getItem(6).toString().endsWith("Bunt gemischt"))
+        single.performItemClick(single.adapter.getView(6, null, single), 6, single.adapter.getItemId(6))
+        val mix = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
+        val list = mix.listView
+        assertEquals(6, list.adapter.count)
+        // Drawing the rows ticks them, as on the screen.
+        for (i in 0 until 6) list.adapter.getView(i, null, list)
+        assertEquals(6, (0 until 6).count { list.isItemChecked(it) })
+        // Teal, pink and purple out: red, blue and green stay.
+        for (i in listOf(0, 2, 3)) list.performItemClick(list.adapter.getView(i, null, list), i, list.adapter.getItemId(i))
+        mix.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick()
+        idleMain()
+        assertEquals(Appearance.MIXED, Prefs.accent(app))
+        assertEquals(listOf(Appearance.RED, Appearance.BLUE, Appearance.GREEN), Prefs.mixedAccents(app))
+        assertEquals(Appearance.RED, Appearance.base(app))
+    }
+
+    /** In the mixed mode the widget buttons take one colour each. */
+    @Test fun mixedColoursInTheWidgets() {
+        Prefs.setMixedAccents(app, listOf(Appearance.RED, Appearance.BLUE, Appearance.GREEN))
+        Prefs.setAccent(app, Appearance.MIXED)
+        val all = AllInOneWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
+        fun tint(id: Int) = all.findViewById<View>(id).backgroundTintList!!.defaultColor
+        assertEquals(app.getColor(R.color.red_primary), tint(R.id.all_speak))
+        assertEquals(app.getColor(R.color.blue_primary_container), tint(R.id.all_photo))
+        assertEquals(app.getColor(R.color.green_primary_container), tint(R.id.all_file))
+        val file = FileWidget().views(app, ButtonWidget.Companion.Shape.TALL).apply(app, null)
+        assertEquals(app.getColor(R.color.green_primary_container), file.findViewById<View>(R.id.widget_icon).backgroundTintList!!.defaultColor)
+    }
+
     /** Headings show where a part of the list begins, so an appointment further away is seen to be further away. */
     @Test fun mainListHasHeadings() {
         Prefs.setAskedPermissions(app)

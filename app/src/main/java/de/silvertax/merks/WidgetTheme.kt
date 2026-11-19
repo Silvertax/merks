@@ -32,15 +32,16 @@ object WidgetTheme {
         val accent: Int,
     )
 
-    /** The colours of the light or, with [dark], the dark look, with the accent and OLED as chosen. */
-    fun colors(ctx: Context, dark: Boolean): Colors {
+    /** The colours of the light or, with [dark], the dark look, in [accent], with OLED as chosen. */
+    fun colors(ctx: Context, dark: Boolean, accent: String = Appearance.base(ctx)): Colors {
         val config = Configuration(ctx.resources.configuration).apply {
             uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
                 if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
         }
         val themed = ContextThemeWrapper(ctx.createConfigurationContext(config), R.style.Theme_Merks)
-        Appearance.style(themed.theme, ctx, dark)
         val t = themed.theme
+        Appearance.accentOverlay(accent).takeIf { it != 0 }?.let { t.applyStyle(it, true) }
+        if (dark && Prefs.oled(ctx)) t.applyStyle(R.style.ThemeOverlay_Merks_Oled, true)
         return Colors(
             surface = t.color(R.attr.merksWidgetSurface),
             onSurface = t.color(R.attr.merksWidgetOnSurface),
@@ -63,46 +64,58 @@ object WidgetTheme {
     }
 
     // The colours are asked for by every layout of every widget; they only change with the settings.
-    private var cached: Pair<String, Pair<Colors, Colors>>? = null
+    private var cached: Pair<String, List<Pair<Colors, Colors>>>? = null
 
     /**
-     * The colours for a light and for a dark home screen. The home screen picks by its own mode, so a
-     * widget that goes with the phone switches by itself; when the app is set to light or dark, both are the same.
+     * The colours for a light and for a dark home screen, one pair for each colour in use (several in
+     * the mixed mode, the app's own first). The home screen picks by its own mode, so a widget that
+     * goes with the phone switches by itself; when the app is set to light or dark, both are the same.
      */
-    fun pair(ctx: Context): Pair<Colors, Colors> {
+    fun mix(ctx: Context): List<Pair<Colors, Colors>> {
         val theme = Prefs.theme(ctx)
-        val key = listOf(theme, Prefs.accent(ctx), Prefs.oled(ctx)).joinToString("|")
+        val key = listOf(theme, Appearance.colourKey(ctx), Prefs.oled(ctx)).joinToString("|")
         cached?.let { (k, colors) -> if (k == key) return colors }
-        val colors = when (theme) {
-            Appearance.LIGHT -> colors(ctx, false).let { it to it }
-            Appearance.DARK -> colors(ctx, true).let { it to it }
-            else -> colors(ctx, false) to colors(ctx, true)
+        val colors = Appearance.mix(ctx).map { accent ->
+            when (theme) {
+                Appearance.LIGHT -> colors(ctx, false, accent).let { it to it }
+                Appearance.DARK -> colors(ctx, true, accent).let { it to it }
+                else -> colors(ctx, false, accent) to colors(ctx, true, accent)
+            }
         }
         cached = key to colors
         return colors
     }
 
+    /** The colours of the app's own accent, light and dark. */
+    fun pair(ctx: Context): Pair<Colors, Colors> = mix(ctx).first()
+
     /** Colours [rv] with [paint]; nothing happens before Android 12 (see above). */
     fun paint(ctx: Context, rv: RemoteViews, paint: Painter.() -> Unit) {
         if (Build.VERSION.SDK_INT < 31) return
-        val (light, dark) = pair(ctx)
-        Painter(rv, light, dark).paint()
+        val mix = mix(ctx)
+        Painter(rv, mix.map { it.first }, mix.map { it.second }).paint()
     }
 
-    /** Made by [paint] only, on Android 12 and newer: the colour methods of RemoteViews come with it. */
+    /**
+     * Made by [paint] only, on Android 12 and newer: the colour methods of RemoteViews come with it.
+     * A [slot] picks one of the mixed colours (see Appearance.mix); with one colour, all slots are that one.
+     */
     @SuppressLint("NewApi")
-    class Painter internal constructor(private val rv: RemoteViews, private val light: Colors, private val dark: Colors) {
+    class Painter internal constructor(private val rv: RemoteViews, private val lights: List<Colors>, private val darks: List<Colors>) {
+        private fun light(slot: Int) = lights[Math.floorMod(slot, lights.size)]
+        private fun dark(slot: Int) = darks[Math.floorMod(slot, darks.size)]
         private fun list(c: Int) = ColorStateList.valueOf(c)
 
         /** The shape behind a view: the card, a button, a line. */
-        fun background(id: Int, pick: Colors.() -> Int) =
-            rv.setColorStateList(id, "setBackgroundTintList", list(light.pick()), list(dark.pick()))
+        fun background(id: Int, slot: Int = 0, pick: Colors.() -> Int) =
+            rv.setColorStateList(id, "setBackgroundTintList", list(light(slot).pick()), list(dark(slot).pick()))
 
         /** The picture in an image view, e.g. the microphone on a button. */
-        fun image(id: Int, pick: Colors.() -> Int) =
-            rv.setColorStateList(id, "setImageTintList", list(light.pick()), list(dark.pick()))
+        fun image(id: Int, slot: Int = 0, pick: Colors.() -> Int) =
+            rv.setColorStateList(id, "setImageTintList", list(light(slot).pick()), list(dark(slot).pick()))
 
-        fun text(id: Int, pick: Colors.() -> Int) = rv.setColorInt(id, "setTextColor", light.pick(), dark.pick())
+        fun text(id: Int, slot: Int = 0, pick: Colors.() -> Int) =
+            rv.setColorInt(id, "setTextColor", light(slot).pick(), dark(slot).pick())
 
         /** Amber when switched off (a reminder), the accent's tonal colour otherwise; see drawable/w_badge.xml. */
         private fun badgeList(c: Colors, on: Colors.() -> Int, off: Colors.() -> Int) = ColorStateList(
@@ -110,12 +123,12 @@ object WidgetTheme {
             intArrayOf(c.off(), c.on()),
         )
 
-        fun badge(id: Int) = rv.setColorStateList(
-            id, "setBackgroundTintList", badgeList(light, { tonal }, { amber }), badgeList(dark, { tonal }, { amber }),
+        fun badge(id: Int, slot: Int = 0) = rv.setColorStateList(
+            id, "setBackgroundTintList", badgeList(light(slot), { tonal }, { amber }), badgeList(dark(slot), { tonal }, { amber }),
         )
 
-        fun badgeText(id: Int) = rv.setColorStateList(
-            id, "setTextColor", badgeList(light, { onTonal }, { onAmber }), badgeList(dark, { onTonal }, { onAmber }),
+        fun badgeText(id: Int, slot: Int = 0) = rv.setColorStateList(
+            id, "setTextColor", badgeList(light(slot), { onTonal }, { onAmber }), badgeList(dark(slot), { onTonal }, { onAmber }),
         )
 
         /** The card every widget sits on. */

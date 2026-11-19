@@ -125,21 +125,22 @@ class AllInOneWidget : AppWidgetProvider() {
                 if (head != null) UpNextViews.fill(this, ctx, next, now, head)
                 WidgetTheme.paint(ctx, this) {
                     card()
-                    background(R.id.all_speak) { primary }
-                    background(R.id.all_photo) { tonal }
+                    // Each button its own colour in the mixed mode, as the round button widgets.
+                    background(R.id.all_speak, 0) { primary }
+                    background(R.id.all_photo, 1) { tonal }
                     if (look.tall) {
-                        image(R.id.all_speak_icon) { onPrimary }
-                        text(R.id.all_speak_label) { onPrimary }
-                        image(R.id.all_photo_icon) { onTonal }
+                        image(R.id.all_speak_icon, 0) { onPrimary }
+                        text(R.id.all_speak_label, 0) { onPrimary }
+                        image(R.id.all_photo_icon, 1) { onTonal }
                         if (look.file) {
-                            background(R.id.all_file) { tonal }
-                            image(R.id.all_file_icon) { onTonal }
+                            background(R.id.all_file, 2) { tonal }
+                            image(R.id.all_file_icon, 2) { onTonal }
                         } else {
-                            text(R.id.all_photo_label) { onTonal }
+                            text(R.id.all_photo_label, 1) { onTonal }
                         }
                     } else {
-                        image(R.id.all_speak) { onPrimary }
-                        image(R.id.all_photo) { onTonal }
+                        image(R.id.all_speak, 0) { onPrimary }
+                        image(R.id.all_photo, 1) { onTonal }
                     }
                 }
             }

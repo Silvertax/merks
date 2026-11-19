@@ -314,10 +314,27 @@ class SettingsActivity : MerksActivity() {
         },
     )
 
-    /** The accent's name with a dot in its colour, as it looks in the current design. */
-    private fun accentName(accent: String): CharSequence {
+    private fun accentColor(accent: String): Int = getColor(
+        when (accent) {
+            Appearance.RED -> R.color.red_primary
+            Appearance.ROSE -> R.color.rose_primary
+            Appearance.LILAC -> R.color.lilac_primary
+            Appearance.BLUE -> R.color.blue_primary
+            Appearance.GREEN -> R.color.green_primary
+            else -> R.color.m_primary
+        },
+    )
+
+    /** Dots, one in each colour, as they look in the current design. */
+    private fun dots(accents: List<String>): CharSequence = SpannableStringBuilder().apply {
+        for (a in accents) append("●", ForegroundColorSpan(accentColor(a)), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+
+    /** The accent's name with a dot in its colour; the mixed mode with a dot for each of its colours. */
+    private fun accentName(accent: String, mixed: List<String> = Prefs.mixedAccents(this)): CharSequence {
         val name = getString(
             when (accent) {
+                Appearance.MIXED -> R.string.accent_mixed
                 Appearance.RED -> R.string.accent_red
                 Appearance.ROSE -> R.string.accent_rose
                 Appearance.LILAC -> R.string.accent_lilac
@@ -326,37 +343,55 @@ class SettingsActivity : MerksActivity() {
                 else -> R.string.accent_teal
             },
         )
-        val color = getColor(
-            when (accent) {
-                Appearance.RED -> R.color.red_primary
-                Appearance.ROSE -> R.color.rose_primary
-                Appearance.LILAC -> R.color.lilac_primary
-                Appearance.BLUE -> R.color.blue_primary
-                Appearance.GREEN -> R.color.green_primary
-                else -> R.color.m_primary
-            },
-        )
         return SpannableStringBuilder().apply {
-            append("●", ForegroundColorSpan(color), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            append(dots(if (accent == Appearance.MIXED) mixed else listOf(accent)))
             append("  ")
             append(name)
         }
     }
 
-    /** Teal, red, pink, purple, blue or green, for the app and the widgets alike. */
+    /** Teal, red, pink, purple, blue or green, or several of them mixed, for the app and the widgets alike. */
     private fun chooseAccent() {
-        val choices = Appearance.ACCENTS
+        val choices = Appearance.ACCENTS + Appearance.MIXED
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.settings_accent)
             .setSingleChoiceItems(choices.map { accentName(it) }.toTypedArray(), choices.indexOf(Prefs.accent(this))) { dialog, which ->
                 dialog.dismiss()
                 val choice = choices[which]
-                if (choice == Prefs.accent(this)) return@setSingleChoiceItems
-                Prefs.setAccent(this, choice)
-                ButtonWidget.updateAll(this)
-                recreate()
+                when {
+                    choice == Appearance.MIXED -> chooseMix()
+                    choice != Prefs.accent(this) -> setAccent(choice)
+                }
             }
             .show()
+    }
+
+    /** Which colours to mix: all of them at first. With only one ticked, that one is the colour. */
+    private fun chooseMix() {
+        val all = Appearance.ACCENTS
+        val ticked = all.map { it in Prefs.mixedAccents(this) }.toBooleanArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.accent_mix_title)
+            .setMultiChoiceItems(all.map { accentName(it) }.toTypedArray(), ticked) { _, which, on -> ticked[which] = on }
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val picked = all.filterIndexed { i, _ -> ticked[i] }
+                when (picked.size) {
+                    0 -> {}
+                    1 -> setAccent(picked.single())
+                    else -> {
+                        Prefs.setMixedAccents(this, picked)
+                        setAccent(Appearance.MIXED)
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun setAccent(accent: String) {
+        Prefs.setAccent(this, accent)
+        ButtonWidget.updateAll(this)
+        recreate()
     }
 
     /** Like the phone, light or dark. AppCompat redraws the screens itself when that changes their look. */

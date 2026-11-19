@@ -27,6 +27,9 @@ abstract class ButtonWidget : AppWidgetProvider() {
     /** The strong colour like "Speak", or the quieter one like "Photo", as in the app. */
     protected abstract val strong: Boolean
 
+    /** Which of the mixed colours it takes (see Appearance.mix): each button its own. */
+    protected abstract val slot: Int
+
     /** The shape with the word below; it is also the preview in the widget list. */
     protected abstract val tallLayout: Int
 
@@ -58,8 +61,8 @@ abstract class ButtonWidget : AppWidgetProvider() {
             if (shape != Shape.SMALL) setTextViewText(R.id.widget_label, text)
             WidgetTheme.paint(ctx, this) {
                 card()
-                background(R.id.widget_icon) { if (strong) primary else tonal }
-                image(R.id.widget_icon) { if (strong) onPrimary else onTonal }
+                background(R.id.widget_icon, slot) { if (strong) primary else tonal }
+                image(R.id.widget_icon, slot) { if (strong) onPrimary else onTonal }
                 if (shape != Shape.SMALL) text(R.id.widget_label) { onSurface }
             }
         }
@@ -126,6 +129,7 @@ class SpeakWidget : ButtonWidget() {
     override val label = R.string.speak
     override val glyph = R.drawable.w_speak_glyph
     override val strong = true
+    override val slot = 0
     override val tallLayout = R.layout.widget_speak
     override fun target(ctx: Context) = Intent(ctx, RecordActivity::class.java)
 }
@@ -135,6 +139,7 @@ class PhotoWidget : ButtonWidget() {
     override val label = R.string.photo
     override val glyph = R.drawable.w_photo_glyph
     override val strong = false
+    override val slot = 1
     override val tallLayout = R.layout.widget_photo
     override fun target(ctx: Context) = Intent(ctx, PhotoActivity::class.java)
 }
@@ -145,6 +150,7 @@ class FileWidget : ButtonWidget() {
     override val description = R.string.file_widget
     override val glyph = R.drawable.w_file_glyph
     override val strong = false
+    override val slot = 2
     override val tallLayout = R.layout.widget_file
     override fun target(ctx: Context) = PhotoActivity.pickIntent(ctx)
 }

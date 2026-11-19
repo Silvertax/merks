@@ -186,8 +186,16 @@ object Prefs {
 
     /** The accent colour of the app and its widgets; teal until another is chosen. */
     fun accent(ctx: Context): String =
-        p(ctx).getString("accent", null)?.takeIf { it in Appearance.ACCENTS } ?: Appearance.TEAL
+        p(ctx).getString("accent", null)?.takeIf { it in Appearance.ACCENTS || it == Appearance.MIXED } ?: Appearance.TEAL
     fun setAccent(ctx: Context, accent: String) = p(ctx).edit().putString("accent", accent).apply()
+
+    /** The colours mixed in the mixed mode, in the order of the list; all of them until some are picked. */
+    fun mixedAccents(ctx: Context): List<String> {
+        val picked = p(ctx).getString("mixed_accents", null)?.split(',')?.toSet() ?: return Appearance.ACCENTS
+        return Appearance.ACCENTS.filter { it in picked }.ifEmpty { Appearance.ACCENTS }
+    }
+    fun setMixedAccents(ctx: Context, accents: Collection<String>) =
+        p(ctx).edit().putString("mixed_accents", accents.joinToString(",")).apply()
 
     /** Extra notification at 18:00 on the day before an appointment. */
     /** When appointments remind. Until chosen, what the former "evening before" switch said. */

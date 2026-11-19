@@ -141,6 +141,16 @@ class ScreenshotRender {
         main(true, true, "20_main_red_dark")
     }
 
+    @Test fun mainMixed() {
+        Prefs.setAccent(app, Appearance.MIXED)
+        main(false, true, "20_main_mixed")
+    }
+
+    @Test fun mainMixedDark() {
+        Prefs.setAccent(app, Appearance.MIXED)
+        main(true, true, "20_main_mixed_dark")
+    }
+
     @Test fun mainLilacDark() {
         Prefs.setAccent(app, Appearance.LILAC)
         main(true, true, "20_main_lilac_dark")
@@ -506,6 +516,7 @@ class ScreenshotRender {
         val now = System.currentTimeMillis()
         val looks = listOf(
             Triple(Appearance.RED, Appearance.LIGHT, false), Triple(Appearance.RED, Appearance.DARK, false),
+            Triple(Appearance.MIXED, Appearance.LIGHT, false), Triple(Appearance.MIXED, Appearance.DARK, false),
             Triple(Appearance.ROSE, Appearance.LIGHT, false),
             Triple(Appearance.LILAC, Appearance.LIGHT, false), Triple(Appearance.BLUE, Appearance.DARK, true),
             Triple(Appearance.GREEN, Appearance.LIGHT, false), Triple(Appearance.TEAL, Appearance.DARK, true),

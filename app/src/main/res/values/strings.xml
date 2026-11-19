@@ -166,6 +166,8 @@
     <string name="accent_lilac">Purple</string>
     <string name="accent_blue">Blue</string>
     <string name="accent_green">Green</string>
+    <string name="accent_mixed">Mixed colours</string>
+    <string name="accent_mix_title">Which colours to mix?</string>
     <string name="section_reminders">Reminders</string>
     <string name="section_app">App</string>
     <string name="back">Back</string>

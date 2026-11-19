@@ -23,6 +23,46 @@ object Appearance {
     const val GREEN = "green"
     val ACCENTS = listOf(TEAL, RED, ROSE, LILAC, BLUE, GREEN)
 
+    /** Several colours mixed: chosen in the settings, see [mix]. */
+    const val MIXED = "mixed"
+
+    /**
+     * The colours in use: the one chosen, or in the mixed mode those picked for it, in their order.
+     * The first is the app's own colour; the others take turns, e.g. one per day on the date tiles.
+     */
+    fun mix(ctx: Context): List<String> =
+        if (Prefs.accent(ctx) == MIXED) Prefs.mixedAccents(ctx) else listOf(Prefs.accent(ctx))
+
+    /** The colour of everything that is not mixed: the app's buttons, switches and headings. */
+    fun base(ctx: Context): String = mix(ctx).first()
+
+    /** Everything that decides the colours, to tell when they changed. */
+    fun colourKey(ctx: Context): String = Prefs.accent(ctx) + ":" + mix(ctx).joinToString(",")
+
+    /** Which of the mixed colours a day gets: the same date always the same, the next day the next colour. */
+    fun slotOfDay(start: Long): Int =
+        java.time.Instant.ofEpochMilli(start).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toEpochDay().toInt()
+
+    /** Main colours of one accent, as they look on [ctx] (light or dark). */
+    class Tone(val primary: Int, val onPrimary: Int, val container: Int, val onContainer: Int)
+
+    /** The tones of [mix] for the screen [ctx]; a single one when nothing is mixed. */
+    fun tones(ctx: Context): List<Tone> = mix(ctx).map { accent ->
+        val t = android.view.ContextThemeWrapper(ctx, R.style.Theme_Merks).theme
+        accentOverlay(accent).takeIf { it != 0 }?.let { t.applyStyle(it, true) }
+        fun color(attr: Int): Int {
+            val v = android.util.TypedValue()
+            t.resolveAttribute(attr, v, true)
+            return v.data
+        }
+        Tone(
+            color(com.google.android.material.R.attr.colorPrimary),
+            color(com.google.android.material.R.attr.colorOnPrimary),
+            color(com.google.android.material.R.attr.colorPrimaryContainer),
+            color(com.google.android.material.R.attr.colorOnPrimaryContainer),
+        )
+    }
+
     /** The theme overlay of an accent colour, or 0 for teal, which is the theme itself. */
     fun accentOverlay(accent: String): Int = when (accent) {
         RED -> R.style.ThemeOverlay_Merks_Accent_Red
@@ -35,7 +75,7 @@ object Appearance {
 
     /** The chosen accent colour and, when [dark], OLED black, on top of the app's theme: in this order. */
     fun style(theme: Resources.Theme, ctx: Context, dark: Boolean) {
-        val overlay = accentOverlay(Prefs.accent(ctx))
+        val overlay = accentOverlay(base(ctx))
         if (overlay != 0) theme.applyStyle(overlay, true)
         if (dark && Prefs.oled(ctx)) theme.applyStyle(R.style.ThemeOverlay_Merks_Oled, true)
     }
@@ -77,7 +117,7 @@ open class MerksApp : Application() {
  */
 abstract class MerksActivity : AppCompatActivity() {
     private var oledShown = false
-    private var accentShown = ""
+    private var colourShown = ""
 
     /** Rebuild when OLED or the colour was changed on another screen meanwhile. Never for a running recording. */
     protected open val followsOledChanges = true
@@ -88,13 +128,13 @@ abstract class MerksActivity : AppCompatActivity() {
         // The language may have been changed in Android's settings meanwhile (Android 13+).
         if (Build.VERSION.SDK_INT >= 33) Lang.sync(this)
         oledShown = wantsOled()
-        accentShown = Prefs.accent(this)
+        colourShown = Appearance.colourKey(this)
         Appearance.style(theme, this, Appearance.isDark(this))
         super.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
         super.onResume()
-        if (followsOledChanges && (wantsOled() != oledShown || Prefs.accent(this) != accentShown)) recreate()
+        if (followsOledChanges && (wantsOled() != oledShown || Appearance.colourKey(this) != colourShown)) recreate()
     }
 }
