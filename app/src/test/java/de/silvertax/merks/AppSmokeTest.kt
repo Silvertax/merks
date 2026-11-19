@@ -1130,15 +1130,22 @@ class AppSmokeTest {
 
     // ---------- Main list ----------
 
-    /** Every mascot is 16 x 16 pixels in each face, with a colour for every letter used. */
+    /** Every mascot is a whole picture in each face: 32 x 32 pixels, a colour for every letter used. */
     @Test fun mascotsAreWholePictures() {
+        for (a in MascotArt.entries) for (rows in listOf(a.idle, a.blink, a.happy)) {
+            assertEquals(Mascot.SIZE, rows.size)
+            for (row in rows) {
+                assertEquals(Mascot.SIZE, row.length)
+                assertTrue(row.all { it == '.' || it in a.palette })
+            }
+        }
         for (m in Mascot.entries) for (f in Mascot.Face.entries) {
             val b = m.bitmap(f)
-            assertEquals(16, b.width)
-            assertEquals(16, b.height)
-            // Something is drawn, and the corners are clear.
-            assertTrue((0 until 16).any { x -> (0 until 16).any { y -> b.getPixel(x, y) != 0 } })
+            assertEquals(Mascot.SIZE, b.width)
+            // Something is drawn, and the top corners are clear.
+            assertTrue((0 until Mascot.SIZE).any { x -> (0 until Mascot.SIZE).any { y -> b.getPixel(x, y) != 0 } })
             assertEquals(0, b.getPixel(0, 0))
+            assertEquals(0, b.getPixel(Mascot.SIZE - 1, 0))
         }
     }
 

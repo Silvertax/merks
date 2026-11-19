@@ -14,275 +14,40 @@ import kotlin.random.Random
 
 /**
  * Little pixel friends who keep you company in the app, chosen in the settings: in the list, while
- * listening, and they cheer when something is saved. Drawn here as 16 x 16 pixels, one letter a pixel
- * ("." is clear), and shown big with sharp pixels.
+ * listening, and they cheer when something is saved. Their pictures are in [MascotArt] (drawn by
+ * tools/mascots/draw_mascots.py) and are shown big with sharp pixels.
  */
-enum class Mascot(
-    val key: String,
-    val label: Int,
-    private val palette: Map<Char, Int>,
-    private val idle: List<String>,
-    private val blink: List<String>,
-    private val happy: List<String>,
-) {
-    CAT(
-        "cat",
-        R.string.mascot_cat,
-        mapOf('o' to 0xFF3A2E2A.toInt(), 'f' to 0xFFF2A23A.toInt(), 'd' to 0xFFD27A1E.toInt(), 'w' to 0xFFFFF3DE.toInt(), 'p' to 0xFFF4899B.toInt(), 'e' to 0xFF3A2E2A.toInt()),
-        idle = listOf(
-            "................",
-            "..o..........o..",
-            ".ofo........ofo.",
-            ".opfo......ofpo.",
-            ".offfoooooofffo.",
-            ".offdffffffdffo.",
-            ".offffffffffffo.",
-            ".offeeffffeeffo.",
-            ".offeeffffeeffo.",
-            ".ofwwffppffwwfo.",
-            ".offwwwwwwwwffo.",
-            "..offwwwwwwffo..",
-            "...oooffffooo...",
-            "..offfwwwwfffo..",
-            "..offwwffwwffo..",
-            "..oooooooooooo..",
-        ),
-        blink = listOf(
-            "................",
-            "..o..........o..",
-            ".ofo........ofo.",
-            ".opfo......ofpo.",
-            ".offfoooooofffo.",
-            ".offdffffffdffo.",
-            ".offffffffffffo.",
-            ".offffffffffffo.",
-            ".offeeffffeeffo.",
-            ".ofwwffppffwwfo.",
-            ".offwwwwwwwwffo.",
-            "..offwwwwwwffo..",
-            "...oooffffooo...",
-            "..offfwwwwfffo..",
-            "..offwwffwwffo..",
-            "..oooooooooooo..",
-        ),
-        happy = listOf(
-            "................",
-            "..o..........o..",
-            ".ofo........ofo.",
-            ".opfo......ofpo.",
-            ".offfoooooofffo.",
-            ".offdffffffdffo.",
-            ".offffffffffffo.",
-            ".offfeffffefffo.",
-            ".offefeffefeffo.",
-            ".ofwwffppffwwfo.",
-            ".offwwwoowwwffo.",
-            "..offwwppwwffo..",
-            "...oooffffooo...",
-            "..offfwwwwfffo..",
-            "..offwwffwwffo..",
-            "..oooooooooooo..",
-        ),
-    ),
-    OWL(
-        "owl",
-        R.string.mascot_owl,
-        mapOf('o' to 0xFF3B2618.toInt(), 'b' to 0xFF8B5E3C.toInt(), 'l' to 0xFFE8C9A0.toInt(), 'w' to 0xFFFFFFFF.toInt(), 'e' to 0xFF2B2B2B.toInt(), 'y' to 0xFFF2B33D.toInt()),
-        idle = listOf(
-            "................",
-            "..oo........oo..",
-            "..obo......obo..",
-            "..obboooooobbo..",
-            ".obbbbbbbbbbbbo.",
-            ".obwwwwbbwwwwbo.",
-            ".obweewbbweewbo.",
-            ".obweewbbweewbo.",
-            ".obwwwwyywwwwbo.",
-            ".obbbbbyybbbbbo.",
-            ".obblllllllbbbo.",
-            ".obllblllblllbo.",
-            ".obllllllllllbo.",
-            ".obbllllllllbbo.",
-            "..obbyobboybbo..",
-            "...oooo..oooo...",
-        ),
-        blink = listOf(
-            "................",
-            "..oo........oo..",
-            "..obo......obo..",
-            "..obboooooobbo..",
-            ".obbbbbbbbbbbbo.",
-            ".obbbbbbbbbbbbo.",
-            ".obbbbbbbbbbbbo.",
-            ".oboooobboooobo.",
-            ".obbbbbyybbbbbo.",
-            ".obbbbbyybbbbbo.",
-            ".obblllllllbbbo.",
-            ".obllblllblllbo.",
-            ".obllllllllllbo.",
-            ".obbllllllllbbo.",
-            "..obbyobboybbo..",
-            "...oooo..oooo...",
-        ),
-        happy = listOf(
-            "................",
-            "..oo........oo..",
-            "..obo......obo..",
-            "..obboooooobbo..",
-            ".obbbbbbbbbbbbo.",
-            ".obwwwwbbwwwwbo.",
-            ".obweewbbweewbo.",
-            ".obewwebbewwebo.",
-            ".obwwwwyywwwwbo.",
-            ".obbbbyyyybbbbo.",
-            ".obblllllllbbbo.",
-            ".obllblllblllbo.",
-            ".obllllllllllbo.",
-            ".obbllllllllbbo.",
-            "..obbyobboybbo..",
-            "...oooo..oooo...",
-        ),
-    ),
-    FOX(
-        "fox",
-        R.string.mascot_fox,
-        mapOf('o' to 0xFF3A2418.toInt(), 'f' to 0xFFEE7A2B.toInt(), 'w' to 0xFFFFF6EA.toInt(), 'e' to 0xFF2B1A10.toInt(), 'n' to 0xFF2B1A10.toInt(), 'd' to 0xFF9A3E12.toInt()),
-        idle = listOf(
-            "................",
-            ".o............o.",
-            ".oo..........oo.",
-            ".ofo........ofo.",
-            ".odfo......ofdo.",
-            ".offfoooooofffo.",
-            ".offffffffffffo.",
-            ".offeeffffeeffo.",
-            ".ofweeffffeewfo.",
-            ".owwwffffffwwwo.",
-            "..owwwwnnwwwwo..",
-            "...owwwwwwwwo...",
-            "....oowwwwoo....",
-            "...offwwwwffo...",
-            "..offfwwwwfffo..",
-            "..oooooooooooo..",
-        ),
-        blink = listOf(
-            "................",
-            ".o............o.",
-            ".oo..........oo.",
-            ".ofo........ofo.",
-            ".odfo......ofdo.",
-            ".offfoooooofffo.",
-            ".offffffffffffo.",
-            ".offffffffffffo.",
-            ".ofweeffffeewfo.",
-            ".owwwffffffwwwo.",
-            "..owwwwnnwwwwo..",
-            "...owwwwwwwwo...",
-            "....oowwwwoo....",
-            "...offwwwwffo...",
-            "..offfwwwwfffo..",
-            "..oooooooooooo..",
-        ),
-        happy = listOf(
-            "................",
-            ".o............o.",
-            ".oo..........oo.",
-            ".ofo........ofo.",
-            ".odfo......ofdo.",
-            ".offfoooooofffo.",
-            ".offffffffffffo.",
-            ".offfeffffefffo.",
-            ".ofwefeffefewfo.",
-            ".owwwffffffwwwo.",
-            "..owwwwnnwwwwo..",
-            "...owwwoowwwo...",
-            "....oowwwwoo....",
-            "...offwwwwffo...",
-            "..offfwwwwfffo..",
-            "..oooooooooooo..",
-        ),
-    ),
-    HEDGEHOG(
-        "hedgehog",
-        R.string.mascot_hedgehog,
-        mapOf('o' to 0xFF3B2A20.toInt(), 's' to 0xFF7A5236.toInt(), 't' to 0xFFA57B55.toInt(), 'f' to 0xFFF2D3A8.toInt(), 'e' to 0xFF2B1A10.toInt(), 'n' to 0xFF2B1A10.toInt(), 'p' to 0xFFF4A0A0.toInt()),
-        idle = listOf(
-            "................",
-            "....oo.oo.oo....",
-            "...ossosssosso..",
-            "..osstsssstssso.",
-            ".ossssstsssssso.",
-            ".osstssfffsstso.",
-            "osssssffffffssso",
-            "ossssffeffeffsso",
-            "ossssffeffeffsso",
-            "osssfpffnnffpfso",
-            "osssffffffffffso",
-            ".osssffffffffso.",
-            ".ossssffffffsso.",
-            "..osssssssssso..",
-            "..offo....offo..",
-            "..ooo......ooo..",
-        ),
-        blink = listOf(
-            "................",
-            "....oo.oo.oo....",
-            "...ossosssosso..",
-            "..osstsssstssso.",
-            ".ossssstsssssso.",
-            ".osstssfffsstso.",
-            "osssssffffffssso",
-            "ossssffffffffsso",
-            "ossssffeffeffsso",
-            "osssfpffnnffpfso",
-            "osssffffffffffso",
-            ".osssffffffffso.",
-            ".ossssffffffsso.",
-            "..osssssssssso..",
-            "..offo....offo..",
-            "..ooo......ooo..",
-        ),
-        happy = listOf(
-            "................",
-            "....oo.oo.oo....",
-            "...ossosssosso..",
-            "..osstsssstssso.",
-            ".ossssstsssssso.",
-            ".osstssfffsstso.",
-            "osssssffffffssso",
-            "ossssffeffeffsso",
-            "ossssfefeefefsso",
-            "osssfpffnnffpfso",
-            "osssffffnnffffso",
-            ".osssffffffffso.",
-            ".ossssffffffsso.",
-            "..osssssssssso..",
-            "..offo....offo..",
-            "..ooo......ooo..",
-        ),
-    ),
+enum class Mascot(private val art: MascotArt) {
+    CAT(MascotArt.CAT),
+    OWL(MascotArt.OWL),
+    FOX(MascotArt.FOX),
+    HEDGEHOG(MascotArt.HEDGEHOG),
+    SEAL(MascotArt.SEAL),
     ;
+
+    val key: String get() = art.key
+    val label: Int get() = art.label
 
     enum class Face { IDLE, BLINK, HAPPY }
 
     private val bitmaps = HashMap<Face, Bitmap>()
 
-    /** One face as a 16 x 16 picture, made once. */
+    /** One face as a picture of [SIZE] x [SIZE] pixels, made once. */
     fun bitmap(face: Face): Bitmap = bitmaps.getOrPut(face) {
         val rows = when (face) {
-            Face.IDLE -> idle
-            Face.BLINK -> blink
-            Face.HAPPY -> happy
+            Face.IDLE -> art.idle
+            Face.BLINK -> art.blink
+            Face.HAPPY -> art.happy
         }
         Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888).apply {
             for ((y, row) in rows.withIndex()) {
-                for ((x, c) in row.withIndex()) palette[c]?.let { setPixel(x, y, it) }
+                for ((x, c) in row.withIndex()) art.palette[c]?.let { setPixel(x, y, it) }
             }
         }
     }
 
     companion object {
-        const val SIZE = 16
+        const val SIZE = 32
 
         fun of(key: String?): Mascot? = entries.firstOrNull { it.key == key }
     }
@@ -379,7 +144,7 @@ class MascotView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         setFace(Mascot.Face.HAPPY)
         scaleX = 1f
         scaleY = 1f
-        val up = -pixel * 4
+        val up = -pixel * 6
         animate().translationY(up).setDuration(160).withEndAction {
             animate().translationY(0f).setDuration(160).withEndAction {
                 animate().translationY(up * 0.6f).setDuration(140).withEndAction {

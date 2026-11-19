@@ -76,7 +76,7 @@ The list shows only what is current: what is going on or still to come at the to
 
 Settings → Backup puts all entries and settings into one file, and restores them from it, e.g. on a new phone. The AI key is left out of that file.
 
-The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, red, pink, purple, blue or green, or mixed: then each day has its own colour on the date tiles and each button another one. The widgets take the colours too. A little pixel mascot (cat, owl, fox or hedgehog) can keep you company: it listens along while you speak and cheers when something is saved.
+The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, red, pink, purple, blue or green, or mixed: then each day has its own colour on the date tiles and each button another one. The widgets take the colours too. A little pixel mascot (cat, owl, fox, hedgehog or seal) can keep you company: it listens along while you speak and cheers when something is saved.
 
 ## Language
 

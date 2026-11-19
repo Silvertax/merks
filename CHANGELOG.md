@@ -6,7 +6,7 @@ What changed for users, per version. When a GitHub release is created with an em
 
 ### What's new
 
-- **Mascots:** a little pixel friend for the app, to choose in the settings under "Mascot": cat, owl, fox or hedgehog (or none, as before). It sits in the header of the list, or big in place of the logo when the list is empty; it breathes and blinks, listens along while you speak and jumps for joy when something is saved. A tap makes it cheer too. The choice goes into a backup as well.
+- **Mascots:** a little pixel friend for the app, to choose in the settings under "Mascot": cat, owl, fox, hedgehog or seal (or none, as before), drawn in 32 x 32 pixels so each is easy to tell. It sits in the header of the list, or big in place of the logo when the list is empty; it breathes and blinks, listens along while you speak and jumps for joy when something is saved. A tap makes it cheer too. The choice goes into a backup as well.
 
 ## 0.13.0
 

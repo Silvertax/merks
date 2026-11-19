@@ -212,7 +212,7 @@ class ScreenshotRender {
     }
 
     @Test fun mascotEmpty() {
-        Prefs.setMascot(app, Mascot.OWL)
+        Prefs.setMascot(app, Mascot.SEAL)
         main(true, false, "21_mascot_empty_dark")
     }
 
