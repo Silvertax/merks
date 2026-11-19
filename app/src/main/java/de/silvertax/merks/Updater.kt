@@ -52,8 +52,8 @@ object Updater {
     fun currentVersion(ctx: Context): String =
         ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0"
 
-    /** In the F-Droid version, F-Droid brings the updates; a download from GitHub would not install over it. */
-    val available: Boolean get() = !BuildConfig.FDROID
+    /** In the versions from F-Droid and Google Play the store brings the updates, and they may not install their own. */
+    val available: Boolean get() = !BuildConfig.STORE
 
     /** Tests put their own answer here, so that nothing goes to the network. */
     internal var source: (() -> Info?)? = null

@@ -31,7 +31,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 
-/** "Merk's als Kalender" and the chosen reminder times, in a simulated Android. */
+/** "Merks als Kalender" and the chosen reminder times, in a simulated Android. */
 @RunWith(RobolectricTestRunner::class)
 class OwnCalendarTest {
     private val app: Application get() = RuntimeEnvironment.getApplication()
@@ -77,7 +77,7 @@ class OwnCalendarTest {
         assertNull(e.calendarEventId)
         // Not in the calendar on purpose, so nothing that sounds like a problem.
         assertEquals("Termin gemerkt", app.getString(Format.savedLabel(app, e)))
-        // Merk's reminds by itself: the evening before and an hour ahead, as before.
+        // Merks reminds by itself: the evening before and an hour ahead, as before.
         assertEquals(millis(start.toLocalDate().minusDays(1).atTime(18, 0)), alarms.peekNextScheduledAlarm()!!.triggerAtMs)
 
         // A change does not reach the calendar either.
@@ -105,8 +105,8 @@ class OwnCalendarTest {
         assertTrue(Prefs.ownCalendar(app))
         val dialog = latestDialog()
         assertEquals(
-            "Merk's hat 2 Termine in den Kalender des Handys eingetragen. Sollen sie dort raus? " +
-                "Sonst kann der Kalender noch zusätzlich erinnern. In Merk's bleiben sie.",
+            "Merks hat 2 Termine in den Kalender des Handys eingetragen. Sollen sie dort raus? " +
+                "Sonst kann der Kalender noch zusätzlich erinnern. In Merks bleiben sie.",
             message(dialog),
         )
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
@@ -140,7 +140,7 @@ class OwnCalendarTest {
         screen.findViewById<View>(R.id.row_own_calendar).performClick()
         assertFalse(Prefs.ownCalendar(app))
         val dialog = latestDialog()
-        assertEquals("2 Termine stehen nur in Merk's. Sollen sie jetzt auch in den Kalender des Handys?", message(dialog))
+        assertEquals("2 Termine stehen nur in Merks. Sollen sie jetzt auch in den Kalender des Handys?", message(dialog))
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
         waitFor { ShadowToast.getTextOfLatestToast() == "2 Termine in den Kalender eingetragen" }
         assertEquals(setOf("Zahnarzt", "Friseur"), calendar.inserted.map { it.getAsString(CalendarContract.Events.TITLE) }.toSet())
@@ -157,7 +157,7 @@ class OwnCalendarTest {
         val asked = shadowOf(screen).lastRequestedPermission
         assertEquals(listOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR), asked.requestedPermissions.toList())
 
-        // Allowed: then the offer to add what is only in Merk's.
+        // Allowed: then the offer to add what is only in Merks.
         val calendar = fakeCalendar()
         screen.onRequestPermissionsResult(asked.requestCode, asked.requestedPermissions, intArrayOf(0, 0))
         latestDialog().getButton(DialogInterface.BUTTON_POSITIVE).performClick()
@@ -170,7 +170,7 @@ class OwnCalendarTest {
         screen.findViewById<View>(R.id.row_own_calendar).performClick()
         val asked = shadowOf(screen).lastRequestedPermission
         screen.onRequestPermissionsResult(asked.requestCode, asked.requestedPermissions, intArrayOf(-1, -1))
-        assertEquals("Ohne Zugriff auf den Kalender bleiben die Termine nur in Merk's.", ShadowToast.getTextOfLatestToast())
+        assertEquals("Ohne Zugriff auf den Kalender bleiben die Termine nur in Merks.", ShadowToast.getTextOfLatestToast())
     }
 
     @Test fun reminderTimesCanBeChosen() {

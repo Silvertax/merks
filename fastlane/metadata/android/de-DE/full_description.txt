@@ -1,8 +1,8 @@
-Ein einfacher Kalender, mit dem du sprichst. Einmal tippen, sagen, fertig: Merk's ist für alle, die keine App öffnen, nichts tippen und nicht überlegen wollen, wo etwas hingehört.
+Ein einfacher Kalender, mit dem du sprichst. Einmal tippen, sagen, fertig: Merks ist für alle, die keine App öffnen, nichts tippen und nicht überlegen wollen, wo etwas hingehört.
 
-Ein Widget auf dem Startbildschirm hört sofort zu. Was du sagst, wird zu einem Termin, einer Erinnerung oder einer Notiz, und Merk's erinnert dich rechtzeitig. Ein Brief oder eine Terminkarte? Einfach fotografieren, und Merk's liest die Termine heraus.
+Ein Widget auf dem Startbildschirm hört sofort zu. Was du sagst, wird zu einem Termin, einer Erinnerung oder einer Notiz, und Merks erinnert dich rechtzeitig. Ein Brief oder eine Terminkarte? Einfach fotografieren, und Merks liest die Termine heraus.
 
-Merk's trägt Termine in den Kalender deines Handys ein oder ist selbst dein Kalender: Dann stehen deine Termine nur in Merk's, und Merk's erinnert dich daran, wann du willst, zum Beispiel einen Tag, eine Stunde oder 15 Minuten vorher.
+Merks trägt Termine in den Kalender deines Handys ein oder ist selbst dein Kalender: Dann stehen deine Termine nur in Merks, und Merks erinnert dich daran, wann du willst, zum Beispiel einen Tag, eine Stunde oder 15 Minuten vorher.
 
 Was du zum Beispiel sagen kannst:
 • „Morgen um 10 Zahnarzt bei Neupert“
@@ -12,9 +12,9 @@ Was du zum Beispiel sagen kannst:
 
 Funktionen:
 • Widgets für den Startbildschirm: „Alles in einem“ mit dem, was als Nächstes ansteht, und den Knöpfen zum Sprechen und Fotografieren, oder alles einzeln; große runde Knöpfe, bis 1x1
-• Termine vom Foto: Merk's liest Datum, Uhrzeit und worum es geht, und du prüfst alles, bevor es gespeichert wird. Das Foto wird gleich danach gelöscht
-• Bilder, PDFs und Nachrichten aus anderen Apps: „Teilen“ antippen und Merk's wählen. Kalenderdateien (.ics) werden genau übernommen, Wochenpläne mit jedem Termin
-• Termine kommen in deinen Kalender, wiederkehrende als Serie, oder bleiben in Merk's, wenn Merk's dein Kalender ist
+• Termine vom Foto: Merks liest Datum, Uhrzeit und worum es geht, und du prüfst alles, bevor es gespeichert wird. Das Foto wird gleich danach gelöscht
+• Bilder, PDFs und Nachrichten aus anderen Apps: „Teilen“ antippen und Merks wählen. Kalenderdateien (.ics) werden genau übernommen, Wochenpläne mit jedem Termin
+• Termine kommen in deinen Kalender, wiederkehrende als Serie, oder bleiben in Merks, wenn Merks dein Kalender ist
 • Du wählst, wann Termine erinnern: eine Woche, einen Tag oder zwei Stunden vorher, am Vorabend, eine Stunde, 30 oder 15 Minuten vorher oder zu Beginn
 • Jede Erinnerung hat die Knöpfe „In 15 Min.“ und „In 1 Std.“
 • Termin per Sprache verschieben: einfach den neuen Tag oder die neue Uhrzeit sagen
@@ -24,11 +24,11 @@ Funktionen:
 • Große, klare Knöpfe, auch für ältere Menschen gedacht
 
 Wie die App dich versteht:
-Übliche Angaben zu Datum, Uhrzeit und Wiederholung versteht Merk's auf Deutsch und Englisch ohne Internet und ohne Konto, und Fotos liest das Handy selbst. Mit einem eigenen Anthropic-API-Schlüssel versteht die App auf Wunsch auch frei Gesprochenes und liest Fotos besser, auch Handschrift. Ohne Internet übernehmen wieder die eingebauten Regeln und das Lesen auf dem Handy.
+Übliche Angaben zu Datum, Uhrzeit und Wiederholung versteht Merks auf Deutsch und Englisch ohne Internet und ohne Konto, und Fotos liest das Handy selbst. Mit einem eigenen Anthropic-API-Schlüssel versteht die App auf Wunsch auch frei Gesprochenes und liest Fotos besser, auch Handschrift. Ohne Internet übernehmen wieder die eingebauten Regeln und das Lesen auf dem Handy.
 
 Datenschutz:
 Keine Werbung, kein Tracking, kein Konto. Deine Einträge bleiben auf deinem Handy und in deinem Kalender. Fotos werden gelöscht, sobald sie gelesen sind.
 
 Gut zu wissen:
-• Merk's nutzt die Spracherkennung, die auf deinem Handy installiert ist. Ohne sie kann die App nicht zuhören.
+• Merks nutzt die Spracherkennung, die auf deinem Handy installiert ist. Ohne sie kann die App nicht zuhören.
 • Unfreier Netzwerkdienst: Die optionale KI schickt den gesprochenen Text und die Fotos an Anthropic, einen proprietären Dienst. Sie bleibt aus, solange du keinen eigenen Schlüssel einträgst.

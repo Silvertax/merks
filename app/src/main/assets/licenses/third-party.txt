@@ -1,4 +1,4 @@
-Merk's reads the text on photos with these open-source components:
+Merks reads the text on photos with these open-source components:
 
 - Tesseract OCR, https://github.com/tesseract-ocr/tesseract
   Apache License 2.0 (see apache-2.0.txt)

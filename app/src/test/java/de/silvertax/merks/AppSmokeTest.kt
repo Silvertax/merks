@@ -540,7 +540,7 @@ class AppSmokeTest {
         assertTrue(shown.getItem(4).toString().startsWith("„Als Nächstes“"))
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
-        assertTrue(text, text.endsWith("„Merk's“ suchen und „Als Nächstes“ hinzufügen."))
+        assertTrue(text, text.endsWith("„Merks“ suchen und „Als Nächstes“ hinzufügen."))
     }
 
     @Test fun widgetButtonOffersThePhotoButton() {
@@ -550,7 +550,7 @@ class AppSmokeTest {
         pickWidget(main, 2)
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
-        assertTrue(text, text.endsWith("„Merk's“ suchen und „Foto“ hinzufügen."))
+        assertTrue(text, text.endsWith("„Merks“ suchen und „Foto“ hinzufügen."))
     }
 
     /** Xiaomi's home screen takes the request and drops it silently: then the app explains the way by hand. */
@@ -566,7 +566,7 @@ class AppSmokeTest {
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.startsWith("Das Handy hat es nicht von selbst hinzugefügt. Bei Xiaomi"))
-        assertTrue(text, text.endsWith("„Widgets“ wählen, „Merk's“ suchen und „Alles in einem“ hinzufügen."))
+        assertTrue(text, text.endsWith("„Widgets“ wählen, „Merks“ suchen und „Alles in einem“ hinzufügen."))
         assertEquals("App-Einstellungen", dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).text.toString())
     }
 
@@ -1739,7 +1739,7 @@ class AppSmokeTest {
         waitFor { get.isEnabled }
 
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
-        assertTrue(dialog.findViewById<TextView>(android.R.id.message)!!.text.toString().startsWith("Damit Merk's das Update selbst installieren kann"))
+        assertTrue(dialog.findViewById<TextView>(android.R.id.message)!!.text.toString().startsWith("Damit Merks das Update selbst installieren kann"))
         dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).performClick()
         idleMain()
         val page = shadowOf(app).nextStartedActivity
@@ -1914,14 +1914,6 @@ class AppSmokeTest {
         assertTrue(Prefs.oled(app))
         // Black no longer makes the app dark by itself; that is what the design choice is for.
         assertEquals(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, AppCompatDelegate.getDefaultNightMode())
-    }
-
-    /** Only the F-Droid build (gradle -Pfdroid) leaves the update check out; F-Droid brings its updates. */
-    @Test fun updateCheckInTheGithubBuild() {
-        assertFalse(BuildConfig.FDROID)
-        assertTrue(Updater.available)
-        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        assertEquals(View.VISIBLE, settings.findViewById<View>(R.id.card_app).visibility)
     }
 
     @Test fun oledSwitchRestsInTheLightDesign() {

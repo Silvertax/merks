@@ -469,7 +469,7 @@ class SettingsActivity : MerksActivity() {
     }
 
     /**
-     * Merk's as the calendar: new appointments stay in the app. What is already in the phone's calendar
+     * Merks as the calendar: new appointments stay in the app. What is already in the phone's calendar
      * can go, or the calendar app may remind as well. Switched off again, the appointments that are
      * only in the app can go into the calendar.
      */

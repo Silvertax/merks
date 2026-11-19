@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- English is the default; German is in values-de. -->
 <resources>
-    <string name="app_name" translatable="false">Merk\'s</string>
+    <string name="app_name" translatable="false">Merks</string>
     <string name="speak">Speak</string>
     <string name="settings">Settings</string>
     <string name="add_widget">Put on the home screen</string>
@@ -10,7 +10,7 @@
     <string name="widget_refused">The phone did not add it by itself.</string>
     <string name="widget_xiaomi">On Xiaomi phones, “Home screen shortcuts” must be allowed for this in the app settings under “Other permissions”.</string>
     <string name="widget_app_settings">App settings</string>
-    <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets”, look for “Merk\'s” and add “%1$s”.</string>
+    <string name="widget_manual">Long-press an empty spot on the home screen, choose “Widgets”, look for “Merks” and add “%1$s”.</string>
     <string name="empty_title">Nothing noted yet</string>
     <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”. Or take a photo of an appointment card or a letter.</string>
 
@@ -33,7 +33,7 @@
     <string name="channel_next_up">Up next</string>
     <string name="settings_next_up">Always show what\'s next</string>
     <string name="settings_next_up_hint">A quiet notification shows what comes next, also on the lock screen.</string>
-    <string name="notifications_off">Notifications are off for Merk\'s. Please allow them in the Android settings.</string>
+    <string name="notifications_off">Notifications are off for Merks. Please allow them in the Android settings.</string>
     <string name="undone">Removed again</string>
 
     <string name="saved_appointment">Added to your calendar</string>
@@ -94,13 +94,13 @@
     <string name="update_get">Update now</string>
     <string name="update_downloading">Downloading version %1$s …</string>
     <string name="update_downloading_percent">Downloading version %1$s … %2$d %%</string>
-    <string name="update_installing">The phone now asks whether to update Merk\'s. Tap “Update” there.</string>
+    <string name="update_installing">The phone now asks whether to update Merks. Tap “Update” there.</string>
     <string name="update_download_failed">The download did not work. Check your internet connection, or get the file with the browser.</string>
     <string name="update_get_browser">Download with the browser</string>
     <string name="update_allow_title">Allow once</string>
-    <string name="update_allow_text">To install the update itself, Merk\'s needs your permission once. On the next page, turn the switch on and then go back.</string>
+    <string name="update_allow_text">To install the update itself, Merks needs your permission once. On the next page, turn the switch on and then go back.</string>
     <string name="update_allow_go">Continue</string>
-    <string name="update_not_allowed">Without that permission, Merk\'s cannot install the update itself.</string>
+    <string name="update_not_allowed">Without that permission, Merks cannot install the update itself.</string>
     <string name="update_installed">Installed: version %1$s</string>
     <string name="update_checking">Checking …</string>
     <string name="update_none">You have the latest version (%1$s).</string>
@@ -108,7 +108,7 @@
 
     <string name="settings_compact">Small display while speaking</string>
     <string name="settings_pause">Pauses while speaking</string>
-    <string name="settings_pause_hint">How long Merk\'s waits for you to go on after a pause, before it saves.</string>
+    <string name="settings_pause_hint">How long Merks waits for you to go on after a pause, before it saves.</string>
     <string name="pause_short">Short (1.5 seconds)</string>
     <string name="pause_normal">Normal (3 seconds)</string>
     <string name="pause_long">Long (6 seconds)</string>
@@ -264,10 +264,10 @@
         <item quantity="other">%d appointments added</item>
     </plurals>
 
-    <!-- Merk's as the calendar, and when appointments remind -->
+    <!-- Merks as the calendar, and when appointments remind -->
     <string name="section_calendar">Calendar</string>
-    <string name="settings_own_calendar">Merk\'s as the calendar</string>
-    <string name="settings_own_calendar_hint">Appointments don\'t go into the phone\'s calendar. They stay in Merk\'s only, and Merk\'s reminds you of them.</string>
+    <string name="settings_own_calendar">Merks as the calendar</string>
+    <string name="settings_own_calendar_hint">Appointments don\'t go into the phone\'s calendar. They stay in Merks only, and Merks reminds you of them.</string>
     <string name="settings_leads">Remind me of appointments</string>
     <string name="settings_leads_hint">All-day appointments notify you at 8 in the morning.</string>
     <string name="lead_week">1 week before</string>
@@ -285,20 +285,20 @@
     <string name="own_calendar_join_title">Add them to the calendar?</string>
     <string name="own_calendar_join_yes">Add</string>
     <string name="not_now">Not now</string>
-    <string name="calendar_permission_needed">Without access to the calendar, appointments stay in Merk\'s only.</string>
+    <string name="calendar_permission_needed">Without access to the calendar, appointments stay in Merks only.</string>
     <string name="saved_appointment_own">Appointment saved</string>
     <string name="photo_save_own">Save</string>
     <plurals name="own_calendar_leave_text">
-        <item quantity="one">Merk\'s has put %d appointment into the phone\'s calendar. Take it out there? Otherwise the calendar may remind you as well. It stays in Merk\'s.</item>
-        <item quantity="other">Merk\'s has put %d appointments into the phone\'s calendar. Take them out there? Otherwise the calendar may remind you as well. They stay in Merk\'s.</item>
+        <item quantity="one">Merks has put %d appointment into the phone\'s calendar. Take it out there? Otherwise the calendar may remind you as well. It stays in Merks.</item>
+        <item quantity="other">Merks has put %d appointments into the phone\'s calendar. Take them out there? Otherwise the calendar may remind you as well. They stay in Merks.</item>
     </plurals>
     <plurals name="own_calendar_left">
         <item quantity="one">%d appointment taken out of the calendar</item>
         <item quantity="other">%d appointments taken out of the calendar</item>
     </plurals>
     <plurals name="own_calendar_join_text">
-        <item quantity="one">%d appointment is only in Merk\'s. Add it to the phone\'s calendar now?</item>
-        <item quantity="other">%d appointments are only in Merk\'s. Add them to the phone\'s calendar now?</item>
+        <item quantity="one">%d appointment is only in Merks. Add it to the phone\'s calendar now?</item>
+        <item quantity="other">%d appointments are only in Merks. Add them to the phone\'s calendar now?</item>
     </plurals>
     <plurals name="own_calendar_joined">
         <item quantity="one">%d appointment added to the calendar</item>

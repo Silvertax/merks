@@ -49,7 +49,7 @@ import java.time.temporal.ChronoUnit
  * words a date was read from stay with the entry.
  *
  * The same for what comes from elsewhere: a picture, a PDF, a calendar file or a text passed on from
- * another app ("Share" → Merk's), or picked with "From a picture or file". Copies are read and
+ * another app ("Share" → Merks), or picked with "From a picture or file". Copies are read and
  * deleted; the original stays as it is.
  */
 class PhotoActivity : MerksActivity() {
@@ -122,7 +122,7 @@ class PhotoActivity : MerksActivity() {
         findViewById<View>(R.id.review_show_text).setOnClickListener { showRead() }
         undo.setOnClickListener { undoAll() }
         findViewById<Button>(R.id.save).apply {
-            // With Merk's as the calendar, nothing goes into the phone's calendar.
+            // With Merks as the calendar, nothing goes into the phone's calendar.
             if (Prefs.ownCalendar(this@PhotoActivity)) setText(R.string.photo_save_own)
             setOnClickListener { saveAll() }
         }

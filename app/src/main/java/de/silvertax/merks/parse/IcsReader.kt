@@ -200,7 +200,7 @@ object IcsReader {
         val days = rule["BYDAY"]?.split(',')?.mapNotNull { weekday(it) }?.distinct()?.sorted().orEmpty()
         val finite = rule.containsKey("COUNT") || rule.containsKey("UNTIL")
         if (!finite) {
-            // As a series in Merk's, when Merk's can repeat it that way: from the next date on.
+            // As a series in Merks, when Merks can repeat it that way: from the next date on.
             val repeat = when {
                 unit == RepeatUnit.WEEK && every == 1 && days == WORKDAYS -> Repeat(RepeatUnit.WORKDAY, 1)
                 unit == RepeatUnit.WEEK && (days.isEmpty() || days == listOf(e.start.dayOfWeek)) -> Repeat(RepeatUnit.WEEK, every)

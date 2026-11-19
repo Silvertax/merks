@@ -2,6 +2,17 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.13.0
+
+### Changed
+
+- **The app is now called "Merks"**, without the apostrophe: easier to find on the phone and in the stores, where searching for "merks" did not always find "Merk's". Nothing else changes; entries and settings stay.
+- **Made for Android 16** (target API 36), as Google Play asks of new apps.
+
+### Behind the scenes
+
+- **A version for Google Play:** each release now also carries `merks-play.aab`, the bundle for Google Play. It is signed with the same key, so it installs over the APK from GitHub and the entries stay. Play brings its updates, so that version neither looks for nor installs any. For phones, `merks.apk` stays the file to download.
+
 ## 0.12.0
 
 ### What's new

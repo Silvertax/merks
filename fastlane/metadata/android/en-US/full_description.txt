@@ -1,8 +1,8 @@
-A simple calendar you talk to. Tap once, say it, done: Merk's is for everyone who does not want to open an app, type, or think about where something belongs.
+A simple calendar you talk to. Tap once, say it, done: Merks is for everyone who does not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merk's reminds you in time. Got a letter or an appointment card? Take a photo of it, and Merk's reads the appointments from it.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merks reminds you in time. Got a letter or an appointment card? Take a photo of it, and Merks reads the appointments from it.
 
-Merk's fills your phone's calendar, or it is your calendar itself: then your appointments stay in Merk's only, and Merk's reminds you of them when you like, for example a day, an hour or 15 minutes ahead.
+Merks fills your phone's calendar, or it is your calendar itself: then your appointments stay in Merks only, and Merks reminds you of them when you like, for example a day, an hour or 15 minutes ahead.
 
 What you can say, for example:
 • "Tomorrow at 10 dentist, Dr. Miller"
@@ -12,9 +12,9 @@ What you can say, for example:
 
 Features:
 • Home screen widgets: "All in one" with what comes next and the buttons to speak and to photograph, or each on its own; big round buttons, down to 1x1
-• Appointments from a photo: Merk's reads the date, the time and what it is about, and you check it before it is saved. The photo is deleted right after
-• Pictures, PDFs and messages from other apps: tap "Share" and pick Merk's. Calendar files (.ics) are taken over exactly, weekly plans with every appointment
-• Appointments go into your calendar, repeating ones as a series, or stay in Merk's if it is your calendar
+• Appointments from a photo: Merks reads the date, the time and what it is about, and you check it before it is saved. The photo is deleted right after
+• Pictures, PDFs and messages from other apps: tap "Share" and pick Merks. Calendar files (.ics) are taken over exactly, weekly plans with every appointment
+• Appointments go into your calendar, repeating ones as a series, or stay in Merks if it is your calendar
 • You choose when appointments remind you: a week, a day or two hours ahead, the evening before, an hour, 30 or 15 minutes ahead, or when it starts
 • Every reminder has "In 15 min" and "In 1 hr" buttons
 • Move an appointment by voice: just say the new day or time
@@ -24,11 +24,11 @@ Features:
 • Large, clear buttons, made with older people in mind
 
 Understanding what you say and photograph:
-Common date, time and repeat phrases in English and German are understood offline, without any account, and photos are read on the phone. Optionally, with your own Anthropic API key, Merk's also understands free-form speech and reads photos better, handwriting included. Without internet, the built-in rules and the reading on the phone take over.
+Common date, time and repeat phrases in English and German are understood offline, without any account, and photos are read on the phone. Optionally, with your own Anthropic API key, Merks also understands free-form speech and reads photos better, handwriting included. Without internet, the built-in rules and the reading on the phone take over.
 
 Privacy:
 No ads, no tracking, no account. Your entries stay on your phone and in your calendar. Photos are deleted as soon as they have been read.
 
 Good to know:
-• Merk's uses the speech recognition installed on your phone. Without one, it cannot listen.
+• Merks uses the speech recognition installed on your phone. Without one, it cannot listen.
 • Non-free network service: the optional AI sends the spoken text and the photos to Anthropic, a proprietary service. It stays off unless you enter your own key.

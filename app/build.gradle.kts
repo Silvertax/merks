@@ -13,27 +13,61 @@ val localKeys = Properties().apply {
 fun secret(env: String, key: String): String? = System.getenv(env) ?: localKeys.getProperty(key)
 val ksPath: String? = secret("MERKS_KEYSTORE", "storeFile")
 
-// F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. It also brings
-// the updates, so that build leaves out the update check against GitHub releases. Before the app goes
-// to F-Droid or Google Play, REQUEST_INSTALL_PACKAGES and the "update" path of the FileProvider must
-// leave that build too: neither store accepts an app that installs its own updates. (The provider
-// itself stays; the camera writes the photo through it.) F-Droid may also want the text recognition
-// (tesseract4android) built from its sources instead of taken from JitPack.
+// F-Droid builds the app itself with `gradle -Pfdroid` and signs it with its own key. F-Droid may also
+// want the text recognition (tesseract4android) built from its sources instead of taken from JitPack.
 val fdroid = project.hasProperty("fdroid")
+
+// Two versions of the app (flavors): "github", the APK on GitHub that updates itself, and "play", the
+// bundle for Google Play (`gradle bundlePlayRelease`), which will get what only works there. Both have
+// the same package name and are signed with the same key, so one installs over the other and the
+// entries stay. A store brings the updates itself and accepts no app that installs its own: the play
+// build (and the F-Droid one) leave out the update check against GitHub releases,
+// REQUEST_INSTALL_PACKAGES and the "update" folder of the FileProvider (src/store). The provider itself
+// stays: the camera writes the photo through it.
 
 android {
     namespace = "de.silvertax.merks"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "de.silvertax.merks"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 30
-        versionName = "0.12.0"
-        buildConfigField("boolean", "FDROID", fdroid.toString())
+        targetSdk = 36
+        versionCode = 31
+        versionName = "0.13.0"
         // Reading photos is native code. Phones need only these two; x86 devices run them translated.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    }
+
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("boolean", "STORE", fdroid.toString())
+        }
+        create("play") {
+            dimension = "store"
+            buildConfigField("boolean", "STORE", "true")
+        }
+    }
+
+    sourceSets {
+        getByName("play") {
+            manifest.srcFile("src/store/AndroidManifest.xml")
+            res.srcDir("src/store/res")
+        }
+        if (fdroid) {
+            maybeCreate("githubRelease").apply {
+                manifest.srcFile("src/store/AndroidManifest.xml")
+                res.srcDir("src/store/res")
+            }
+        }
+    }
+
+    // The app can switch its language itself (settings). Play would otherwise install only the
+    // phone's language from the bundle, and the other one would be missing.
+    bundle {
+        language { enableSplit = false }
     }
 
     packaging {
@@ -93,8 +127,8 @@ android {
 
 // An APK signed with the debug key does not install over the real app. Say so loudly.
 gradle.taskGraph.whenReady {
-    if (ksPath == null && !fdroid && allTasks.any { it.path == ":app:assembleRelease" }) {
-        logger.warn("WARNING: no release key found; app-release.apk is signed with the DEBUG key and will not update an installed Merk's.")
+    if (ksPath == null && !fdroid && allTasks.any { it.path == ":app:assembleGithubRelease" || it.path == ":app:bundlePlayRelease" }) {
+        logger.warn("WARNING: no release key found; app-release.apk is signed with the DEBUG key and will not update an installed Merks.")
     }
 }
 

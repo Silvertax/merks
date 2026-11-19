@@ -51,7 +51,7 @@
              behind it, and gone from the recent apps once the appointment is in. -->
         <!--
             Also where other apps pass things on: "Share" a photo, a PDF, a calendar file or a text
-            to Merk's, or open a calendar file with it.
+            to Merks, or open a calendar file with it.
         -->
         <activity
             android:name=".PhotoActivity"

@@ -171,7 +171,7 @@ class ScreenshotRender {
         shotActivity(listeningNow(), name)
     }
 
-    /** Merk's listening, with the first words heard. */
+    /** Merks listening, with the first words heard. */
     private fun listeningNow(): RecordActivity {
         shadowOf(app).grantPermissions(Manifest.permission.RECORD_AUDIO)
         val service = ComponentName("com.example.speech", "com.example.speech.Recognizer")
@@ -389,7 +389,7 @@ class ScreenshotRender {
 
     /**
      * The home screen for the store and the README: "All in one" on top, below it "Speak", "Photo"
-     * and "Up next" on their own, and Merk's listening at the bottom after a tap on "Speak".
+     * and "Up next" on their own, and Merks listening at the bottom after a tap on "Speak".
      */
     private fun homeScreen(name: String) {
         night(true)
@@ -536,7 +536,7 @@ class ScreenshotRender {
         drawSheet(drawn, false, "19_widgets_colours")
     }
 
-    /** What makes Merk's a calendar of its own: the switch, and when appointments remind. */
+    /** What makes Merks a calendar of its own: the switch, and when appointments remind. */
     @Test fun calendarSettings() {
         night(true)
         Prefs.setOwnCalendar(app, true)

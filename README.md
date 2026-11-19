@@ -1,19 +1,19 @@
-# Merk's
+# Merks
 
-A simple calendar you talk to. Tap once, say it, done: Merk's is an Android app for people who do not want to open an app, type, or think about where something belongs.
+A simple calendar you talk to. Tap once, say it, done: Merks is an Android app for people who do not want to open an app, type, or think about where something belongs.
 
-A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merk's reminds you in time. A letter or an appointment card can simply be photographed. Merk's fills your phone's calendar, or it is your calendar itself: then appointments stay in Merk's only, and you choose when it reminds you of them. Merk's speaks English and German.
+A home screen widget starts listening right away. What you say becomes an appointment, a reminder or a note, and Merks reminds you in time. A letter or an appointment card can simply be photographed. Merks fills your phone's calendar, or it is your calendar itself: then appointments stay in Merks only, and you choose when it reminds you of them. Merks speaks English and German.
 
 <p>
   <img src="docs/screenshots/en-main-dark.png" width="200" alt="List of entries: what is coming up, soonest first, then the notes">
   <img src="docs/screenshots/en-speaking.png" width="200" alt="Home screen with the All in one widget and the Speak, Photo and Up next widgets, speaking via the widget">
   <img src="docs/screenshots/en-photo.png" width="200" alt="A weekly plan read from a photo: each appointment with its own title and room, the marked ones ticked, to check before they are saved">
-  <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings: Merk's as the calendar, and when it reminds you">
+  <img src="docs/screenshots/en-settings-dark.png" width="200" alt="Settings: Merks as the calendar, and when it reminds you">
 </p>
 
 ## Install
 
-Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. Whenever you open the app, it looks for a new version and says so above the list; “Update now” then downloads it and opens the phone's installer. Nothing is downloaded before that tap. The first time, the phone asks you to allow Merk's to do that. Looking on opening can be switched off in the settings; “Check for updates now” asks at any time.
+Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. Whenever you open the app, it looks for a new version and says so above the list; “Update now” then downloads it and opens the phone's installer. Nothing is downloaded before that tap. The first time, the phone asks you to allow Merks to do that. Looking on opening can be switched off in the settings; “Check for updates now” asks at any time.
 
 ## How it works
 
@@ -21,7 +21,7 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 2. Say what you want to remember, for example "Tomorrow at 10 dentist" or "Remind me in 20 minutes to take the laundry out".
 3. A notification shows what was saved. "Undo" removes it again.
 
-Take your time: a pause to think does not end the recording, and nothing on the screen changes during it. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking". If you need longer, choose a long pause in the settings (Pauses while speaking), or "Until I tap Done speaking": then only the button ends the recording.
+Take your time: a pause to think does not end the recording, and nothing on the screen changes during it. Merks keeps listening and saves after about three seconds of silence, or when you tap "Done speaking". If you need longer, choose a long pause in the settings (Pauses while speaking), or "Until I tap Done speaking": then only the button ends the recording.
 
 Something goes with an appointment, like what to bring? Tap "Add note" on the confirmation, or tap the entry and then "Add a note by voice", and say it. The note shows below the appointment, in the calendar and in the reminder. A note you already spoke on its own can join an appointment too: tap it and choose "Add to an appointment".
 
@@ -31,26 +31,26 @@ Prefer typing, or a word was understood wrongly? Tap the entry and then "Edit by
 
 ## Appointments from a photo
 
-Got a letter or an appointment card? Tap "Snap an appointment" in the app or the "Photo" widget, and take a photo of it. Merk's reads the date, the time and what it is about, and shows it to check: change the title, the day or the time, and add a note, then "Add to calendar" ("Save" when Merk's is the calendar). A card with several treatments gives several appointments; untick the ones you don't want. The letter's own date, birthdays and dates that are over are left out. If no date was found, you can pick it yourself.
+Got a letter or an appointment card? Tap "Snap an appointment" in the app or the "Photo" widget, and take a photo of it. Merks reads the date, the time and what it is about, and shows it to check: change the title, the day or the time, and add a note, then "Add to calendar" ("Save" when Merks is the calendar). A card with several treatments gives several appointments; untick the ones you don't want. The letter's own date, birthdays and dates that are over are left out. If no date was found, you can pick it yourself.
 
-The photo is not kept: it is deleted as soon as it has been read, and it never lands in your gallery from Merk's. Only the line the date came from stays with the entry, so you can see later where it was read.
+The photo is not kept: it is deleted as soon as it has been read, and it never lands in your gallery from Merks. Only the line the date came from stays with the entry, so you can see later where it was read.
 
 Without an AI key, the phone reads the photo itself (Tesseract, built in). That works well for printed text; handwriting it can hardly read. With an AI key, the AI reads the photo, handwriting included; without internet, the phone reads it itself.
 
 ## Appointments from a picture, a file or a message
 
-Someone sent you the appointment as a picture, a PDF or a message? In that app tap "Share" and pick Merk's: it is read like a photo and shown to check the same way. The other way round works too: "From a picture or file" in Merk's opens a picture, a PDF or a calendar file from the phone.
+Someone sent you the appointment as a picture, a PDF or a message? In that app tap "Share" and pick Merks: it is read like a photo and shown to check the same way. The other way round works too: "From a picture or file" in Merks opens a picture, a PDF or a calendar file from the phone.
 
 - **Pictures and PDFs** are read like photos; of a PDF, the first three pages, together.
-- **Calendar files** (.ics), as booking pages and invitations send them, are taken over exactly: title, place, start and end, a series as a series. Tapping such a file in a mail can open it in Merk's too.
+- **Calendar files** (.ics), as booking pages and invitations send them, are taken over exactly: title, place, start and end, a series as a series. Tapping such a file in a mail can open it in Merks too.
 - **Messages** are searched for dates like a letter; a short one like "tomorrow at 10 dentist" is understood like something said.
 - **Weekly plans** with a column for each day, as for courses, groups or treatments, become all their appointments, each with its own title and the room in its note. What is marked with a highlighter is ticked. The phone reads the columns itself; with an AI key the AI reads the plan, also one written by hand.
 
-Merk's reads a copy and deletes it afterwards; the original stays where it is. The entry notes that it was taken from a file or message.
+Merks reads a copy and deletes it afterwards; the original stays where it is. The entry notes that it was taken from a file or message.
 
 ## Calendar and reminders
 
-Appointments go into your phone's calendar, so you see them there too. For anyone who keeps their appointments in Merk's and never opens the phone's calendar: switch on Settings → Merk's as the calendar. Appointments then stay in Merk's only, and Merk's reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merk's can go into the calendar.
+Appointments go into your phone's calendar, so you see them there too. For anyone who keeps their appointments in Merks and never opens the phone's calendar: switch on Settings → Merks as the calendar. Appointments then stay in Merks only, and Merks reminds you of them. The appointments already in the phone's calendar can be taken out of it in the same step, so the calendar app does not remind you as well. Switched off again, the appointments that are only in Merks can go into the calendar.
 
 Reminders come on time. For appointments you choose when (Settings → Remind me of appointments): a week, a day or two hours ahead, the evening before at 6 pm, an hour, 30 or 15 minutes ahead, when it starts, or several of these. Out of the box it is the evening before and an hour ahead; all-day appointments remind at 8 in the morning. Each reminder has "In 15 min" and "In 1 hr" buttons, and "Done" for a reminder or "OK" for an appointment: "OK" puts away only this notification, so the reminders still to come for the appointment come all the same.
 
@@ -72,7 +72,7 @@ Repeating things work too: "Every Monday take out the trash", "Every weekday at 
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
-The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes, with headings such as "Tomorrow" and "Next week" where each part begins. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes, with headings such as "Tomorrow" and "Next week" where each part begins. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merks is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, red, pink, purple, blue or green, or mixed: then each day has its own colour on the date tiles and each button another one. The widgets take the colours too.
 
@@ -83,7 +83,7 @@ German phones get German, all others English. You can also choose the language i
 ## Understanding what you say and photograph
 
 - **Built in:** common date, time and repeat phrases in English and German are understood offline, without any account. Photos are read on the phone.
-- **With AI (optional):** with your own Anthropic API key, Merk's also understands free-form speech and reads photos better, handwriting included. You can choose the model; the settings show whether key and model work. Without internet, the built-in rules and the reading on the phone take over.
+- **With AI (optional):** with your own Anthropic API key, Merks also understands free-form speech and reads photos better, handwriting included. You can choose the model; the settings show whether key and model work. Without internet, the built-in rules and the reading on the phone take over.
 
 ## Privacy
 
@@ -91,11 +91,11 @@ No ads, no tracking, no account. Your entries stay on your phone and in your cal
 
 - Speech recognition is done by the recognizer installed on your phone.
 - When you open the app (unless switched off in the settings) or tap "Check for updates now", it asks GitHub for the latest version; only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
-- Photos, and copies of pictures, files and messages passed on to Merk's, are read on the phone and deleted right after. Only if you enter an AI key, the spoken text, the photo or what was passed on is sent to Anthropic to be sorted and read; calendar files never are.
+- Photos, and copies of pictures, files and messages passed on to Merks, are read on the phone and deleted right after. Only if you enter an AI key, the spoken text, the photo or what was passed on is sent to Anthropic to be sorted and read; calendar files never are.
 
 ## Status
 
-Merk's is young and still growing. Ideas and problems are welcome as an [issue](https://github.com/Silvertax/merks/issues).
+Merks is young and still growing. Ideas and problems are welcome as an [issue](https://github.com/Silvertax/merks/issues).
 
 ## License
 

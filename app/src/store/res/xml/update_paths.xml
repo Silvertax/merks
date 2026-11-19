@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The store builds hand out one folder only: the photo, for the camera to write. It is deleted
+     right after use. (No downloaded update: the store brings those.) -->
+<paths>
+    <cache-path
+        name="photo"
+        path="photo/" />
+</paths>

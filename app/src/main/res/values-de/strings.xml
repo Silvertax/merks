@@ -8,7 +8,7 @@
     <string name="widget_refused">Das Handy hat es nicht von selbst hinzugefügt.</string>
     <string name="widget_xiaomi">Bei Xiaomi muss dafür in den App-Einstellungen unter „Weitere Berechtigungen“ die Erlaubnis für Startbildschirm-Verknüpfungen eingeschaltet sein.</string>
     <string name="widget_app_settings">App-Einstellungen</string>
-    <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen, „Merk\'s“ suchen und „%1$s“ hinzufügen.</string>
+    <string name="widget_manual">Lange auf eine freie Stelle des Startbildschirms drücken, „Widgets“ wählen, „Merks“ suchen und „%1$s“ hinzufügen.</string>
     <string name="empty_title">Noch nichts gemerkt</string>
     <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“. Oder fotografiere eine Terminkarte oder einen Brief.</string>
 
@@ -32,7 +32,7 @@
     <string name="channel_next_up">Als Nächstes</string>
     <string name="settings_next_up">Nächsten Termin immer anzeigen</string>
     <string name="settings_next_up_hint">Eine stille Benachrichtigung zeigt, was als Nächstes ansteht, auch auf dem Sperrbildschirm.</string>
-    <string name="notifications_off">Benachrichtigungen sind für Merk\'s ausgeschaltet. Bitte in den Android-Einstellungen erlauben.</string>
+    <string name="notifications_off">Benachrichtigungen sind für Merks ausgeschaltet. Bitte in den Android-Einstellungen erlauben.</string>
 
     <string name="saved_appointment">Termin im Kalender eingetragen</string>
     <string name="saved_appointment_local">Termin gemerkt (nicht im Kalender)</string>
@@ -92,13 +92,13 @@
     <string name="update_get">Jetzt aktualisieren</string>
     <string name="update_downloading">Lade Version %1$s herunter …</string>
     <string name="update_downloading_percent">Lade Version %1$s herunter … %2$d %%</string>
-    <string name="update_installing">Das Handy fragt jetzt, ob es Merk\'s aktualisieren soll. Dort auf „Aktualisieren“ tippen.</string>
+    <string name="update_installing">Das Handy fragt jetzt, ob es Merks aktualisieren soll. Dort auf „Aktualisieren“ tippen.</string>
     <string name="update_download_failed">Das Herunterladen hat nicht geklappt. Prüfe die Internetverbindung oder hol die Datei mit dem Browser.</string>
     <string name="update_get_browser">Mit dem Browser herunterladen</string>
     <string name="update_allow_title">Einmal erlauben</string>
-    <string name="update_allow_text">Damit Merk\'s das Update selbst installieren kann, braucht es einmal deine Erlaubnis. Auf der nächsten Seite den Schalter einschalten und dann zurückgehen.</string>
+    <string name="update_allow_text">Damit Merks das Update selbst installieren kann, braucht es einmal deine Erlaubnis. Auf der nächsten Seite den Schalter einschalten und dann zurückgehen.</string>
     <string name="update_allow_go">Weiter</string>
-    <string name="update_not_allowed">Ohne diese Erlaubnis kann Merk\'s das Update nicht selbst installieren.</string>
+    <string name="update_not_allowed">Ohne diese Erlaubnis kann Merks das Update nicht selbst installieren.</string>
     <string name="update_installed">Installiert: Version %1$s</string>
     <string name="update_checking">Suche …</string>
     <string name="update_none">Du hast die neueste Version (%1$s).</string>
@@ -106,7 +106,7 @@
 
     <string name="settings_compact">Kleine Anzeige beim Aufnehmen</string>
     <string name="settings_pause">Pausen beim Sprechen</string>
-    <string name="settings_pause_hint">So lange wartet Merk\'s nach einer Pause, ob du weitersprichst, bevor es speichert.</string>
+    <string name="settings_pause_hint">So lange wartet Merks nach einer Pause, ob du weitersprichst, bevor es speichert.</string>
     <string name="pause_short">Kurz (1,5 Sekunden)</string>
     <string name="pause_normal">Normal (3 Sekunden)</string>
     <string name="pause_long">Lang (6 Sekunden)</string>
@@ -259,10 +259,10 @@
         <item quantity="other">%d Termine eingetragen</item>
     </plurals>
 
-    <!-- Merk's as the calendar, and when appointments remind -->
+    <!-- Merks as the calendar, and when appointments remind -->
     <string name="section_calendar">Kalender</string>
-    <string name="settings_own_calendar">Merk\'s als Kalender</string>
-    <string name="settings_own_calendar_hint">Termine kommen nicht in den Kalender des Handys. Sie stehen nur in Merk\'s, und Merk\'s erinnert daran.</string>
+    <string name="settings_own_calendar">Merks als Kalender</string>
+    <string name="settings_own_calendar_hint">Termine kommen nicht in den Kalender des Handys. Sie stehen nur in Merks, und Merks erinnert daran.</string>
     <string name="settings_leads">Erinnern an Termine</string>
     <string name="settings_leads_hint">Ganztägige Termine melden sich um 8 Uhr morgens.</string>
     <string name="lead_week">1 Woche vorher</string>
@@ -280,20 +280,20 @@
     <string name="own_calendar_join_title">In den Kalender eintragen?</string>
     <string name="own_calendar_join_yes">Eintragen</string>
     <string name="not_now">Nicht jetzt</string>
-    <string name="calendar_permission_needed">Ohne Zugriff auf den Kalender bleiben die Termine nur in Merk\'s.</string>
+    <string name="calendar_permission_needed">Ohne Zugriff auf den Kalender bleiben die Termine nur in Merks.</string>
     <string name="saved_appointment_own">Termin gemerkt</string>
     <string name="photo_save_own">Eintragen</string>
     <plurals name="own_calendar_leave_text">
-        <item quantity="one">Merk\'s hat %d Termin in den Kalender des Handys eingetragen. Soll er dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merk\'s bleibt er.</item>
-        <item quantity="other">Merk\'s hat %d Termine in den Kalender des Handys eingetragen. Sollen sie dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merk\'s bleiben sie.</item>
+        <item quantity="one">Merks hat %d Termin in den Kalender des Handys eingetragen. Soll er dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merks bleibt er.</item>
+        <item quantity="other">Merks hat %d Termine in den Kalender des Handys eingetragen. Sollen sie dort raus? Sonst kann der Kalender noch zusätzlich erinnern. In Merks bleiben sie.</item>
     </plurals>
     <plurals name="own_calendar_left">
         <item quantity="one">%d Termin aus dem Kalender genommen</item>
         <item quantity="other">%d Termine aus dem Kalender genommen</item>
     </plurals>
     <plurals name="own_calendar_join_text">
-        <item quantity="one">%d Termin steht nur in Merk\'s. Soll er jetzt auch in den Kalender des Handys?</item>
-        <item quantity="other">%d Termine stehen nur in Merk\'s. Sollen sie jetzt auch in den Kalender des Handys?</item>
+        <item quantity="one">%d Termin steht nur in Merks. Soll er jetzt auch in den Kalender des Handys?</item>
+        <item quantity="other">%d Termine stehen nur in Merks. Sollen sie jetzt auch in den Kalender des Handys?</item>
     </plurals>
     <plurals name="own_calendar_joined">
         <item quantity="one">%d Termin in den Kalender eingetragen</item>

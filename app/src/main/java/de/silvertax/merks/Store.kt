@@ -204,7 +204,7 @@ object Prefs {
 
     fun setLeads(ctx: Context, leads: Set<Lead>) = p(ctx).edit().putString("leads", Lead.write(leads)).apply()
 
-    /** "Merk's als Kalender": appointments stay in the app, the phone's calendar gets none. */
+    /** "Merks als Kalender": appointments stay in the app, the phone's calendar gets none. */
     fun ownCalendar(ctx: Context): Boolean = p(ctx).getBoolean("own_calendar", false)
     fun setOwnCalendar(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("own_calendar", on).apply()
 
@@ -501,14 +501,14 @@ object Store {
         return Parsed(e.kind, e.title, local(e.start), local(e.end), e.allDay, e.repeat)
     }
 
-    /** How many entries Merk's has put into the phone's calendar. */
+    /** How many entries Merks has put into the phone's calendar. */
     fun inCalendar(ctx: Context): Int = Db(ctx).all().count { it.calendarEventId != null }
 
-    /** How many appointments are only in the app, e.g. from the time Merk's was the calendar. */
+    /** How many appointments are only in the app, e.g. from the time Merks was the calendar. */
     fun onlyInApp(ctx: Context): Int = Db(ctx).all().count { it.kind == Kind.APPOINTMENT && it.start != null && it.calendarEventId == null }
 
     /**
-     * Takes what Merk's put into the phone's calendar out of it again, when Merk's becomes the calendar:
+     * Takes what Merks put into the phone's calendar out of it again, when Merks becomes the calendar:
      * otherwise the calendar app would remind as well. In the app everything stays as it was.
      */
     fun leaveCalendar(ctx: Context): Int {

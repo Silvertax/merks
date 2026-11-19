@@ -38,8 +38,11 @@ jobs:
             echo "::warning::CHANGELOG.md has no section for $version; the release notes list the commit messages instead."
           fi
 
+      # The whole suite on the GitHub version; for the Play version what differs.
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: |
+          ./gradlew testGithubDebugUnitTest
+          ./gradlew testPlayDebugUnitTest --tests '*PlayBuildTest'
 
       # Without the signing secrets the APK is built with a throwaway debug key.
       - name: Decode keystore
@@ -50,14 +53,17 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/merks.jks"
           echo "MERKS_KEYSTORE=$RUNNER_TEMP/merks.jks" >> "$GITHUB_ENV"
 
-      - name: Build APK
+      # merks.apk: the version on GitHub. merks-play.aab: the bundle to upload to Google Play, signed with
+      # the same key (Play's upload key), without the updater.
+      - name: Build APK and Play bundle
         env:
           MERKS_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           MERKS_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           MERKS_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk merks.apk
+          ./gradlew assembleGithubRelease bundlePlayRelease
+          cp app/build/outputs/apk/github/release/app-github-release.apk merks.apk
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab merks-play.aab
 
       # A release must carry the real key, otherwise it does not install over the app people have.
       - name: Check release signature
@@ -70,11 +76,21 @@ jobs:
             echo "::error::merks.apk is signed with $cert, not with the release key $expected. Check the signing secrets."
             exit 1
           fi
+          bundle=$(keytool -printcert -jarfile merks-play.aab | sed -n 's/.*SHA256: //p' | head -1 | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$bundle" != "$expected" ]; then
+            echo "::error::merks-play.aab is signed with $bundle, not with the release key $expected. Check the signing secrets."
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: merks-apk
           path: merks.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: merks-play
+          path: merks-play.aab
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/')
@@ -84,16 +100,16 @@ jobs:
         run: |
           bash .github/release-notes.sh "$GITHUB_REF_NAME" > notes.md
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" merks.apk --clobber
+            gh release upload "$GITHUB_REF_NAME" merks.apk merks-play.aab --clobber
             # Fill in title and description when they were left empty in the GitHub UI.
             name=$(gh release view "$GITHUB_REF_NAME" --json name --jq .name)
             if [ -z "$name" ] || [ "$name" = "$GITHUB_REF_NAME" ]; then
-              gh release edit "$GITHUB_REF_NAME" --title "Merk's ${GITHUB_REF_NAME#v}"
+              gh release edit "$GITHUB_REF_NAME" --title "Merks ${GITHUB_REF_NAME#v}"
             fi
             body=$(gh release view "$GITHUB_REF_NAME" --json body --jq .body)
             if [ -z "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
               gh release edit "$GITHUB_REF_NAME" --notes-file notes.md
             fi
           else
-            gh release create "$GITHUB_REF_NAME" merks.apk --title "Merk's ${GITHUB_REF_NAME#v}" --notes-file notes.md
+            gh release create "$GITHUB_REF_NAME" merks.apk merks-play.aab --title "Merks ${GITHUB_REF_NAME#v}" --notes-file notes.md
           fi

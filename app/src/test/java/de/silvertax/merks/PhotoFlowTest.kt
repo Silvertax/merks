@@ -700,7 +700,7 @@ class PhotoFlowTest {
         assertTrue(activity.isFinishing)
     }
 
-    /** Another app cannot make Merk's read its own files, nor plain paths on the phone. */
+    /** Another app cannot make Merks read its own files, nor plain paths on the phone. */
     @Test fun theAppsOwnFilesAreNotRead() {
         for (uri in listOf(Uri.parse("content://de.silvertax.merks.files/photo/shot.jpg"), Uri.parse("file:///sdcard/Download/brief.jpg"))) {
             val activity = passOn(Intent(Intent.ACTION_SEND).setType("image/jpeg").putExtra(Intent.EXTRA_STREAM, uri), Parts(first = card))
