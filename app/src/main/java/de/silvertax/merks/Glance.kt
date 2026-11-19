@@ -188,6 +188,7 @@ class NextWidget : AppWidgetProvider() {
             RemoteViews(ctx.packageName, R.layout.widget_next).apply {
                 setOnClickPendingIntent(android.R.id.background, UpNextViews.openApp(ctx))
                 UpNextViews.fill(this, ctx, next, now, look)
+                WidgetTheme.paint(ctx, this) { card() }
                 val dp = ctx.resources.displayMetrics.density
                 val side = ((if (look.compact) 12 else 14) * dp).toInt()
                 val vertical = ((if (look.oneLine) 5 else if (look.low) 8 else 12) * dp).toInt()

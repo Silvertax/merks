@@ -11,9 +11,11 @@ import android.view.View
 import android.widget.RemoteViews
 
 /**
- * Home screen widget "All in one": what comes next, and the buttons to speak and to photograph, on
- * one card. Two rows or taller, long buttons with their words sit below what comes next; in a single
- * row, two round buttons sit beside it. A tap anywhere else opens the list with everything.
+ * Home screen widget "All in one": what comes next, and the buttons to speak, to photograph and to
+ * read a file, on one card. Two rows or taller, the buttons sit below what comes next: a long one to
+ * speak with its word, and two short ones; narrow, there is only room for speaking and photographing.
+ * In a single row, the round buttons to speak and to photograph sit beside it. A tap anywhere else
+ * opens the list with everything.
  */
 class AllInOneWidget : AppWidgetProvider() {
     override fun onUpdate(ctx: Context, manager: AppWidgetManager, ids: IntArray) = Glance.refresh(ctx)
@@ -28,11 +30,11 @@ class AllInOneWidget : AppWidgetProvider() {
             AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, AllInOneWidget::class.java))
 
         /**
-         * How the widget is drawn. [tall]: long buttons below what comes next, otherwise one row with
-         * round buttons. [head]: what comes next, or null when only the buttons fit. [words]: the long
-         * buttons have room for their words.
+         * How the widget is drawn. [tall]: buttons below what comes next, otherwise one row with
+         * round buttons. [head]: what comes next, or null when only the buttons fit. [words]: the
+         * button to speak has room for its word. [file]: there is room for the button to read a file.
          */
-        data class Look(val tall: Boolean, val head: UpNextViews.Look?, val words: Boolean = false)
+        data class Look(val tall: Boolean, val head: UpNextViews.Look?, val words: Boolean = false, val file: Boolean = false)
 
         private const val MIN = 40f
 
@@ -69,7 +71,7 @@ class AllInOneWidget : AppWidgetProvider() {
         /** [w] and [h] in dp; an unknown size (0) gets the look of the preview. */
         fun lookFor(w: Float, h: Float, fontScale: Float = 1f): Look {
             val fs = fontScale
-            if (w <= 0f || h <= 0f) return Look(tall = true, head = UpNextViews.Look(tile = true, label = true), words = true)
+            if (w <= 0f || h <= 0f) return Look(tall = true, head = UpNextViews.Look(tile = true, label = true), words = true, file = true)
             if (h >= tallMinH(fs)) {
                 // Narrow, the buttons below leave no room for the entries after the next one.
                 val tile = w >= HEAD_MIN_W
@@ -80,7 +82,7 @@ class AllInOneWidget : AppWidgetProvider() {
                     else -> 0
                 }
                 val head = UpNextViews.Look(tile = tile, label = tile, rows = rows, compact = !tile)
-                return Look(tall = true, head = head, words = w >= WIDE_W)
+                return Look(tall = true, head = head, words = w >= WIDE_W, file = tile)
             }
             if (w < HEAD_MIN_W || h < rowLowMinH(fs)) return Look(tall = false, head = null)
             val narrow = w < WIDE_W
@@ -95,7 +97,11 @@ class AllInOneWidget : AppWidgetProvider() {
 
         fun views(ctx: Context, next: List<Plan.Upcoming>, now: Long, look: Look): RemoteViews {
             val texts = Lang.context(ctx)
-            val layout = if (look.tall) R.layout.widget_all else R.layout.widget_all_row
+            val layout = when {
+                !look.tall -> R.layout.widget_all_row
+                look.file -> R.layout.widget_all
+                else -> R.layout.widget_all_narrow
+            }
             return RemoteViews(ctx.packageName, layout).apply {
                 setOnClickPendingIntent(android.R.id.background, UpNextViews.openApp(ctx))
                 setOnClickPendingIntent(R.id.all_speak, ButtonWidget.open(ctx, Intent(ctx, RecordActivity::class.java)))
@@ -103,15 +109,39 @@ class AllInOneWidget : AppWidgetProvider() {
                 setContentDescription(R.id.all_speak, texts.getString(R.string.speak))
                 setContentDescription(R.id.all_photo, texts.getString(R.string.photo))
                 if (look.tall) {
-                    setTextViewText(R.id.all_speak_label, texts.getString(R.string.speak))
-                    setTextViewText(R.id.all_photo_label, texts.getString(R.string.photo))
                     val words = if (look.words) View.VISIBLE else View.GONE
+                    setTextViewText(R.id.all_speak_label, texts.getString(R.string.speak))
                     setViewVisibility(R.id.all_speak_label, words)
-                    setViewVisibility(R.id.all_photo_label, words)
+                    if (look.file) {
+                        setOnClickPendingIntent(R.id.all_file, ButtonWidget.open(ctx, PhotoActivity.pickIntent(ctx)))
+                        setContentDescription(R.id.all_file, texts.getString(R.string.file_widget))
+                    } else {
+                        setTextViewText(R.id.all_photo_label, texts.getString(R.string.photo))
+                        setViewVisibility(R.id.all_photo_label, words)
+                    }
                 }
                 val head = look.head
                 setViewVisibility(R.id.next_head, if (head == null) View.GONE else View.VISIBLE)
                 if (head != null) UpNextViews.fill(this, ctx, next, now, head)
+                WidgetTheme.paint(ctx, this) {
+                    card()
+                    background(R.id.all_speak) { primary }
+                    background(R.id.all_photo) { tonal }
+                    if (look.tall) {
+                        image(R.id.all_speak_icon) { onPrimary }
+                        text(R.id.all_speak_label) { onPrimary }
+                        image(R.id.all_photo_icon) { onTonal }
+                        if (look.file) {
+                            background(R.id.all_file) { tonal }
+                            image(R.id.all_file_icon) { onTonal }
+                        } else {
+                            text(R.id.all_photo_label) { onTonal }
+                        }
+                    } else {
+                        image(R.id.all_speak) { onPrimary }
+                        image(R.id.all_photo) { onTonal }
+                    }
+                }
             }
         }
 

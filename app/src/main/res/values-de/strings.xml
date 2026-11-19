@@ -13,8 +13,6 @@
     <string name="empty_text">Tippe auf „Sprechen“ und sag einfach, was du dir merken willst – zum Beispiel „Morgen um 10 Zahnarzt“. Oder fotografiere eine Terminkarte oder einen Brief.</string>
 
     <string name="listening">Ich höre zu …</string>
-    <string name="listening_on">Ich höre weiter zu …</string>
-    <string name="listening_on_hint">Noch etwas? Sprich einfach weiter.</string>
     <string name="stop">Fertig gesprochen</string>
     <string name="working">Einen Moment …</string>
     <string name="retry">Nochmal sprechen</string>
@@ -112,9 +110,13 @@
     <string name="pause_short">Kurz (1,5 Sekunden)</string>
     <string name="pause_normal">Normal (3 Sekunden)</string>
     <string name="pause_long">Lang (6 Sekunden)</string>
+    <string name="pause_manual">Bis ich auf „Fertig gesprochen“ tippe</string>
     <string name="settings_compact_hint">Beim Sprechen erscheint nur eine kleine Karte unten, danach zeigt eine Benachrichtigung, was eingetragen wurde. Aus: Aufnahme und Bestätigung füllen den ganzen Bildschirm.</string>
     <string name="settings_updates">Jetzt nach Updates suchen</string>
-    <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version, nur wenn du auf den Knopf tippst. Gibt es eine neuere, lädt „Jetzt aktualisieren“ sie herunter und installiert sie. Dabei werden keine persönlichen Daten gesendet.</string>
+    <string name="settings_updates_hint">Fragt bei GitHub nach der neuesten Version: bei jedem Öffnen der App (wenn unten eingeschaltet) oder wenn du auf den Knopf tippst. Installiert wird erst, wenn du auf „Jetzt aktualisieren“ tippst. Dabei werden keine persönlichen Daten gesendet.</string>
+    <string name="update_later">Später</string>
+    <string name="update_banner">Version %1$s ist da.</string>
+    <string name="settings_auto_updates">Beim Öffnen nach Updates suchen</string>
 
 
     <string name="action_done">Erledigt</string>
@@ -153,6 +155,13 @@
     <string name="theme_auto">Automatisch (wie das Handy)</string>
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
+    <string name="settings_accent">Farbe</string>
+    <string name="settings_accent_hint">Für die App und ihre Widgets.</string>
+    <string name="accent_teal">Türkis</string>
+    <string name="accent_rose">Rosa</string>
+    <string name="accent_lilac">Lila</string>
+    <string name="accent_blue">Blau</string>
+    <string name="accent_green">Grün</string>
     <string name="section_reminders">Erinnerungen</string>
     <string name="section_app">App</string>
     <string name="back">Zurück</string>
@@ -199,6 +208,10 @@
     <string name="photo_title">Termin vom Foto</string>
     <string name="photo_widget_description">Ein Tipp, dann Brief oder Terminkarte fotografieren</string>
     <string name="widget_pick_photo">Knopf „Foto“: ein Tipp, dann Brief oder Terminkarte fotografieren</string>
+    <string name="file_widget">Datei lesen</string>
+    <string name="file_short">Datei</string>
+    <string name="file_widget_description">Ein Tipp, dann ein Bild, PDF oder eine Kalenderdatei auswählen und lesen lassen</string>
+    <string name="widget_pick_file">Knopf „Datei lesen“: ein Tipp, dann ein Bild oder eine Datei auswählen</string>
     <string name="photo_reading">Ich lese das Foto …</string>
     <string name="photo_reading_ai">Die KI liest es gerade.</string>
     <string name="photo_what">Was</string>
@@ -285,8 +298,8 @@
     </plurals>
 
     <string name="widget_all">Alles in einem</string>
-    <string name="widget_all_description">Was als Nächstes ansteht, mit den Knöpfen zum Sprechen und Fotografieren</string>
-    <string name="widget_pick_all">„Alles in einem“: was als Nächstes ansteht, dazu die Knöpfe zum Sprechen und Fotografieren</string>
+    <string name="widget_all_description">Was als Nächstes ansteht, mit den Knöpfen zum Sprechen, Fotografieren und Datei lesen</string>
+    <string name="widget_pick_all">„Alles in einem“: was als Nächstes ansteht, dazu die Knöpfe zum Sprechen, Fotografieren und Datei lesen</string>
     <string name="widget_all_day">Ganztägig</string>
     <string name="widget_sample_weekday">Mo</string>
     <string name="widget_sample_month">Nov</string>

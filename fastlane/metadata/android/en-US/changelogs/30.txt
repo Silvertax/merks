@@ -1,0 +1,5 @@
+• Colours: Merk's and its widgets in teal, pink, purple, blue or green (settings, "Colour").
+• Widgets follow the app's design, OLED black too; new "Read file" widget, the note in the widgets.
+• All-day appointments make way in the widgets two hours before an appointment.
+• Speaking: no question during pauses, words no longer vanish; new "Until I tap Done speaking".
+• New versions are found on opening and installed only on a tap.

@@ -15,10 +15,11 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:adjustViewBounds="true"
+        android:background="@drawable/w_circle_primary"
         android:importantForAccessibility="no"
         android:maxHeight="72dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/w_speak_button" />
+        android:src="@drawable/w_speak_glyph" />
 
     <!-- Shrinks on narrow widgets instead of cutting the word off. -->
     <TextView

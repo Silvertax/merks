@@ -2,6 +2,27 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.12.0
+
+### What's new
+
+- **Colours:** in the settings, under "Colour", the app and its widgets can be teal, pink, purple, blue or green. The background takes on a hint of the colour too.
+- **Widgets follow the app's design:** light, dark or OLED black as chosen in the settings, no longer only as the phone is set (Android 12 and newer).
+- **"Read file" widget:** a button for the home screen that opens a picture, a PDF or a calendar file right away. The "All in one" widget has this button too, from three cells wide; "Photo" beside it now shows its symbol only.
+- **The note in the widgets:** what goes with the next appointment, e.g. what to bring, is shown in "Up next" and "All in one" where "Up next" or a following entry would be.
+- **New versions are found by themselves:** whenever the app is opened, it asks GitHub for a new version and says so above the list. Nothing is downloaded until "Update now" is tapped. This can be switched off in the settings.
+- **Speaking without a time limit:** under "Pauses while speaking" there is "Until I tap Done speaking": the recording then only ends with the button, however long the pauses.
+
+### Changed
+
+- **Speaking:** a pause no longer changes anything on the screen. "Still listening ... More to add?" is gone; the screen keeps saying "Listening" until it is over.
+- **All-day appointments in the widgets:** they no longer hide what happens at a time on the same day. Two hours before an appointment, and while it lasts, the widgets show that one; afterwards the all-day one is back on top.
+- **The list** sorts a series by its next date once its time today is over, and a reminder that was put off by its new time.
+
+### Fixed
+
+- **Speaking:** words could vanish from the screen and come back, or be missing in the entry, when the phone's speech recognition started over after a short breath. What was said stays on the screen and in the entry.
+
 ## 0.11.2
 
 ### Changed

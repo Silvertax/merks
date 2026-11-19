@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Colours of the home screen widgets, taken from the app's theme so they follow its look:
+        light or dark as chosen in the settings, OLED and the accent colour. See WidgetTheme.
+    -->
+    <attr name="merksWidgetSurface" format="color" />
+    <attr name="merksWidgetOnSurface" format="color" />
+    <attr name="merksWidgetOnSurfaceVariant" format="color" />
+    <attr name="merksWidgetOutline" format="color" />
+    <attr name="merksWidgetPrimary" format="color" />
+    <attr name="merksWidgetOnPrimary" format="color" />
+    <attr name="merksWidgetTonal" format="color" />
+    <attr name="merksWidgetOnTonal" format="color" />
+    <attr name="merksWidgetAccent" format="color" />
+</resources>

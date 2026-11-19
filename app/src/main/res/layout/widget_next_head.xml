@@ -130,5 +130,18 @@
             android:textColor="@color/w_accent"
             android:textSize="14sp"
             android:visibility="gone" />
+
+        <!-- The entry's note, e.g. what to bring; where "Up next" or a following entry would be. -->
+        <TextView
+            android:id="@+id/next_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:textColor="@color/w_on_surface_variant"
+            android:textSize="13sp"
+            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>

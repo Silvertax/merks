@@ -28,6 +28,17 @@
         <item name="colorOnSurfaceInverse">@color/m_inverse_on_surface</item>
         <item name="colorPrimaryInverse">@color/m_inverse_primary</item>
 
+        <!-- The widgets: a calm card with teal buttons (see attrs.xml). -->
+        <item name="merksWidgetSurface">@color/w_surface</item>
+        <item name="merksWidgetOnSurface">@color/w_on_surface</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/w_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/w_outline</item>
+        <item name="merksWidgetPrimary">@color/w_primary</item>
+        <item name="merksWidgetOnPrimary">@color/w_on_primary</item>
+        <item name="merksWidgetTonal">@color/w_tonal</item>
+        <item name="merksWidgetOnTonal">@color/w_on_tonal</item>
+        <item name="merksWidgetAccent">@color/w_accent</item>
+
         <!-- Taken from the theme, so the OLED overlay turns them black as well. -->
         <item name="android:windowBackground">?android:attr/colorBackground</item>
         <item name="android:statusBarColor">?android:attr/colorBackground</item>
@@ -60,6 +71,137 @@
         <item name="colorSurfaceContainerHigh">@color/oled_container_high</item>
         <item name="colorSurfaceContainerHighest">@color/oled_container_highest</item>
         <item name="colorOutlineVariant">@color/oled_outline_variant</item>
+        <item name="merksWidgetSurface">@color/oled_background</item>
+        <item name="merksWidgetOutline">@color/oled_outline_variant</item>
+    </style>
+
+    <!-- Accent colours to choose in the settings, applied on top of the theme (before OLED). -->
+    <style name="ThemeOverlay.Merks.Accent.Rose" parent="">
+        <item name="colorPrimary">@color/rose_primary</item>
+        <item name="colorOnPrimary">@color/rose_on_primary</item>
+        <item name="colorPrimaryContainer">@color/rose_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/rose_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/rose_inverse_primary</item>
+        <item name="android:colorBackground">@color/rose_background</item>
+        <item name="colorOnBackground">@color/rose_on_background</item>
+        <item name="colorSurface">@color/rose_background</item>
+        <item name="colorOnSurface">@color/rose_on_background</item>
+        <item name="colorSurfaceVariant">@color/rose_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/rose_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/rose_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/rose_container_low</item>
+        <item name="colorSurfaceContainer">@color/rose_container</item>
+        <item name="colorSurfaceContainerHigh">@color/rose_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/rose_container_highest</item>
+        <item name="colorOutline">@color/rose_outline</item>
+        <item name="colorOutlineVariant">@color/rose_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/rose_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/rose_inverse_on_surface</item>
+        <item name="merksWidgetSurface">@color/rose_w_surface</item>
+        <item name="merksWidgetOnSurface">@color/rose_on_background</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/rose_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/rose_w_outline</item>
+        <item name="merksWidgetPrimary">@color/rose_primary</item>
+        <item name="merksWidgetOnPrimary">@color/rose_on_primary</item>
+        <item name="merksWidgetTonal">@color/rose_primary_container</item>
+        <item name="merksWidgetOnTonal">@color/rose_on_primary_container</item>
+        <item name="merksWidgetAccent">@color/rose_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.Merks.Accent.Lilac" parent="">
+        <item name="colorPrimary">@color/lilac_primary</item>
+        <item name="colorOnPrimary">@color/lilac_on_primary</item>
+        <item name="colorPrimaryContainer">@color/lilac_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/lilac_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/lilac_inverse_primary</item>
+        <item name="android:colorBackground">@color/lilac_background</item>
+        <item name="colorOnBackground">@color/lilac_on_background</item>
+        <item name="colorSurface">@color/lilac_background</item>
+        <item name="colorOnSurface">@color/lilac_on_background</item>
+        <item name="colorSurfaceVariant">@color/lilac_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/lilac_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/lilac_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/lilac_container_low</item>
+        <item name="colorSurfaceContainer">@color/lilac_container</item>
+        <item name="colorSurfaceContainerHigh">@color/lilac_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/lilac_container_highest</item>
+        <item name="colorOutline">@color/lilac_outline</item>
+        <item name="colorOutlineVariant">@color/lilac_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/lilac_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/lilac_inverse_on_surface</item>
+        <item name="merksWidgetSurface">@color/lilac_w_surface</item>
+        <item name="merksWidgetOnSurface">@color/lilac_on_background</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/lilac_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/lilac_w_outline</item>
+        <item name="merksWidgetPrimary">@color/lilac_primary</item>
+        <item name="merksWidgetOnPrimary">@color/lilac_on_primary</item>
+        <item name="merksWidgetTonal">@color/lilac_primary_container</item>
+        <item name="merksWidgetOnTonal">@color/lilac_on_primary_container</item>
+        <item name="merksWidgetAccent">@color/lilac_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.Merks.Accent.Blue" parent="">
+        <item name="colorPrimary">@color/blue_primary</item>
+        <item name="colorOnPrimary">@color/blue_on_primary</item>
+        <item name="colorPrimaryContainer">@color/blue_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/blue_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/blue_inverse_primary</item>
+        <item name="android:colorBackground">@color/blue_background</item>
+        <item name="colorOnBackground">@color/blue_on_background</item>
+        <item name="colorSurface">@color/blue_background</item>
+        <item name="colorOnSurface">@color/blue_on_background</item>
+        <item name="colorSurfaceVariant">@color/blue_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/blue_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/blue_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/blue_container_low</item>
+        <item name="colorSurfaceContainer">@color/blue_container</item>
+        <item name="colorSurfaceContainerHigh">@color/blue_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/blue_container_highest</item>
+        <item name="colorOutline">@color/blue_outline</item>
+        <item name="colorOutlineVariant">@color/blue_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/blue_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/blue_inverse_on_surface</item>
+        <item name="merksWidgetSurface">@color/blue_w_surface</item>
+        <item name="merksWidgetOnSurface">@color/blue_on_background</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/blue_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/blue_w_outline</item>
+        <item name="merksWidgetPrimary">@color/blue_primary</item>
+        <item name="merksWidgetOnPrimary">@color/blue_on_primary</item>
+        <item name="merksWidgetTonal">@color/blue_primary_container</item>
+        <item name="merksWidgetOnTonal">@color/blue_on_primary_container</item>
+        <item name="merksWidgetAccent">@color/blue_primary</item>
+    </style>
+
+    <style name="ThemeOverlay.Merks.Accent.Green" parent="">
+        <item name="colorPrimary">@color/green_primary</item>
+        <item name="colorOnPrimary">@color/green_on_primary</item>
+        <item name="colorPrimaryContainer">@color/green_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/green_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/green_inverse_primary</item>
+        <item name="android:colorBackground">@color/green_background</item>
+        <item name="colorOnBackground">@color/green_on_background</item>
+        <item name="colorSurface">@color/green_background</item>
+        <item name="colorOnSurface">@color/green_on_background</item>
+        <item name="colorSurfaceVariant">@color/green_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/green_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/green_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/green_container_low</item>
+        <item name="colorSurfaceContainer">@color/green_container</item>
+        <item name="colorSurfaceContainerHigh">@color/green_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/green_container_highest</item>
+        <item name="colorOutline">@color/green_outline</item>
+        <item name="colorOutlineVariant">@color/green_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/green_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/green_inverse_on_surface</item>
+        <item name="merksWidgetSurface">@color/green_w_surface</item>
+        <item name="merksWidgetOnSurface">@color/green_on_background</item>
+        <item name="merksWidgetOnSurfaceVariant">@color/green_on_surface_variant</item>
+        <item name="merksWidgetOutline">@color/green_w_outline</item>
+        <item name="merksWidgetPrimary">@color/green_primary</item>
+        <item name="merksWidgetOnPrimary">@color/green_on_primary</item>
+        <item name="merksWidgetTonal">@color/green_primary_container</item>
+        <item name="merksWidgetOnTonal">@color/green_on_primary_container</item>
+        <item name="merksWidgetAccent">@color/green_primary</item>
     </style>
 
     <!-- Small sheet at the bottom of the screen while listening. -->

@@ -29,8 +29,9 @@ object Versions {
 }
 
 /**
- * Asks GitHub for the latest release, only when "Check for updates now" is tapped, and on "Update now"
- * downloads its APK and hands it to the phone's installer. No personal data is sent.
+ * Asks GitHub for the latest release when the app is opened (unless switched off) and when "Check for
+ * updates now" is tapped. Only on "Update now" it downloads the APK and hands it to the phone's
+ * installer. No personal data is sent.
  */
 object Updater {
     private const val REPO_URL = "https://github.com/Silvertax/merks"
@@ -57,13 +58,44 @@ object Updater {
     /** Tests put their own answer here, so that nothing goes to the network. */
     internal var source: (() -> Info?)? = null
 
+    /** Set for tests: without an answer of their own, GitHub is never asked. */
+    internal var offline = false
+
+    /** How often opening the app asks at most; coming back from another screen does not ask again. */
+    const val AUTO_EVERY = 10 * 60 * 1000L
+
+    /**
+     * On opening the app: asks GitHub, if switched on and not just done, and keeps what it found for
+     * the notice in the list. [onDone] is called from a background thread, only when something was asked.
+     */
+    fun checkNow(ctx: Context, onDone: () -> Unit) {
+        val app = ctx.applicationContext
+        if (!available || !Prefs.autoUpdates(app)) return
+        val now = System.currentTimeMillis()
+        if (now - Prefs.lastUpdateCheck(app) in 0 until AUTO_EVERY) return
+        Prefs.setLastUpdateCheck(app, now)
+        check(app) { result ->
+            when (result) {
+                is Result.Newer -> Prefs.setFoundUpdate(app, result.info)
+                Result.UpToDate -> Prefs.setFoundUpdate(app, null)
+                Result.Failed -> {}
+            }
+            onDone()
+        }
+    }
+
+    /** The newer version to point out in the list, unless it is installed by now or put off for later. */
+    fun pending(ctx: Context): Info? = Prefs.foundUpdate(ctx)?.takeIf {
+        available && Prefs.autoUpdates(ctx) && Versions.newer(it.tag, currentVersion(ctx)) && !Prefs.updateLater(ctx, it.tag)
+    }
+
     /** Tests put their own download here: it writes the file at the address into [File] and reports per cent. */
     internal var download: ((String, File, (Int) -> Unit) -> Boolean)? = null
 
     /** Asks in the background; [onDone] is called from that background thread. */
     fun check(ctx: Context, onDone: (Result) -> Unit) {
         val current = currentVersion(ctx)
-        val ask = source ?: ::fetch
+        val ask = source ?: if (offline) ({ null }) else ::fetch
         Thread {
             val info = ask()
             onDone(

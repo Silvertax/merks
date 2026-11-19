@@ -525,6 +525,15 @@ class PhotoActivity : MerksActivity() {
 
         /** Opens the screen for picking a picture or a file instead of the camera. */
         const val EXTRA_PICK = "pick"
+
+        /**
+         * Opens the file picker right away. Its own action keeps it apart from the camera when both
+         * sit on the home screen: Android would otherwise take the two for the same tap.
+         */
+        fun pickIntent(ctx: Context): Intent =
+            Intent(ctx, PhotoActivity::class.java).setAction(ACTION_PICK).putExtra(EXTRA_PICK, true)
+
+        private const val ACTION_PICK = "de.silvertax.merks.action.PICK_FILE"
         private const val DAY = "photo_day"
         private const val TIME = "photo_time"
         private const val CLOSE_AFTER_MS = 10_000L

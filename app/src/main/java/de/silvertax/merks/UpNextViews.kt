@@ -71,9 +71,17 @@ object UpNextViews {
         rv.setViewVisibility(R.id.next_day, visible(dayOnTop))
         if (dayOnTop) rv.setTextViewText(R.id.next_day, Format.compactDay(ctx, first!!.entry, first.start, now))
         // With nothing planned and no tile, the heading says what this is.
-        val label = !dayOnTop && !look.low && !look.oneLine && (look.label || (first == null && !look.tile))
+        var label = !dayOnTop && !look.low && !look.oneLine && (look.label || (first == null && !look.tile))
+        // The note to the entry takes the line of "Up next" (the tile says it anyway), or that of the
+        // first following entry: so it needs no more room than the look without it.
+        val note = first?.entry?.let { noteLine(it) }
+        val noteShown = note != null && !look.low && !look.oneLine && (label || look.rows > 0)
+        var rows = look.rows
+        if (noteShown) if (label) label = false else rows--
         rv.setViewVisibility(R.id.next_label, visible(label))
         rv.setTextViewText(R.id.next_label, texts.getString(R.string.next_up_label))
+        rv.setViewVisibility(R.id.next_note, visible(noteShown))
+        rv.setTextViewText(R.id.next_note, note.orEmpty())
 
         val whenText = when {
             first == null -> null
@@ -88,7 +96,7 @@ object UpNextViews {
         rv.setTextViewText(R.id.next_when, whenText.orEmpty())
         rv.setViewVisibility(R.id.next_when, visible(whenText != null && !look.oneLine))
 
-        val rest = next.drop(1).take(look.rows)
+        val rest = next.drop(1).take(rows)
         rv.setViewVisibility(R.id.next_more, visible(rest.isNotEmpty()))
         // The day column as wide as the widest day shown ("Tomorrow"), at least as wide as the date
         // tile above, so the titles of the following entries line up.
@@ -119,7 +127,30 @@ object UpNextViews {
         val sp = TypedValue.COMPLEX_UNIT_SP
         rv.setTextViewTextSize(R.id.next_title, sp, if (look.oneLine) 14f else if (look.low) 15f else if (look.compact) 16f else 17f)
         rv.setTextViewTextSize(R.id.next_when, sp, if (look.low || look.compact) 13f else 14f)
+
+        WidgetTheme.paint(ctx, rv) {
+            badge(R.id.next_badge)
+            for (id in listOf(R.id.next_badge_weekday, R.id.next_badge_day, R.id.next_badge_month)) badgeText(id)
+            image(R.id.next_badge_icon) { onTonal }
+            text(R.id.next_label) { onSurfaceVariant }
+            text(R.id.next_day) { accent }
+            text(R.id.next_title) { onSurface }
+            text(R.id.next_when) { accent }
+            text(R.id.next_note) { onSurfaceVariant }
+            background(R.id.next_divider) { outline }
+            for (row in rowViews) {
+                text(row.day) { accent }
+                text(row.title) { onSurface }
+                text(row.time) { onSurfaceVariant }
+                text(row.stackDay) { accent }
+                text(row.stackTitle) { onSurface }
+            }
+        }
     }
+
+    /** The note to an entry in one line, or null without one. */
+    internal fun noteLine(e: Entry): String? =
+        e.note?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.joinToString(" · ")?.takeIf { it.isNotEmpty() }
 
     private fun visible(yes: Boolean) = if (yes) View.VISIBLE else View.GONE
 

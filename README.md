@@ -13,7 +13,7 @@ A home screen widget starts listening right away. What you say becomes an appoin
 
 ## Install
 
-Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. To look for a new version, tap “Check for updates now” in the settings; “Update now” then downloads it and opens the phone's installer. The first time, the phone asks you to allow Merk's to do that.
+Download `merks.apk` from the [latest release](https://github.com/Silvertax/merks/releases/latest) and open it. Updates install over older versions; your entries are kept. Whenever you open the app, it looks for a new version and says so above the list; “Update now” then downloads it and opens the phone's installer. Nothing is downloaded before that tap. The first time, the phone asks you to allow Merk's to do that. Looking on opening can be switched off in the settings; “Check for updates now” asks at any time.
 
 ## How it works
 
@@ -21,7 +21,7 @@ Download `merks.apk` from the [latest release](https://github.com/Silvertax/merk
 2. Say what you want to remember, for example "Tomorrow at 10 dentist" or "Remind me in 20 minutes to take the laundry out".
 3. A notification shows what was saved. "Undo" removes it again.
 
-Take your time: a pause to think does not end the recording. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking". If you need longer, choose a long pause in the settings (Pauses while speaking).
+Take your time: a pause to think does not end the recording, and nothing on the screen changes during it. Merk's keeps listening and saves after about three seconds of silence, or when you tap "Done speaking". If you need longer, choose a long pause in the settings (Pauses while speaking), or "Until I tap Done speaking": then only the button ends the recording.
 
 Something goes with an appointment, like what to bring? Tap "Add note" on the confirmation, or tap the entry and then "Add a note by voice", and say it. The note shows below the appointment, in the calendar and in the reminder. A note you already spoke on its own can join an appointment too: tap it and choose "Add to an appointment".
 
@@ -56,13 +56,15 @@ Reminders come on time. For appointments you choose when (Settings → Remind me
 
 ## Widgets
 
-Four widgets for the home screen; "Put on the home screen" in the app offers them all.
+Five widgets for the home screen; "Put on the home screen" in the app offers them all.
 
-- **All in one:** what comes next, with its date tile as in the list, and below it the buttons "Speak" and "Photo". It starts four cells wide and two high; made taller it also lists the entries after it, and one row high the buttons turn round and sit beside it.
-- **Speak** and **Photo:** one big round button each, from 2x2 down to 1x1.
+- **All in one:** what comes next, with its date tile as in the list, and below it the buttons "Speak", "Photo" and "Read file" (two cells wide only the first two). It starts four cells wide and two high; made taller it also lists the entries after it, and one row high the buttons to speak and to photograph turn round and sit beside it.
+- **Speak**, **Photo** and **Read file:** one big round button each, from 2x2 down to 1x1. "Read file" opens a picture, a PDF or a calendar file right away.
 - **Up next:** what comes next, with the date tile when there is room for it; made taller it also lists the two entries after it. A tap on it opens the list with everything.
 
-The widgets follow the phone's light or dark mode, and they adapt to their size and to larger print, so nothing is cut off. A tap anywhere else on "All in one" opens the list too.
+The note to the next appointment, e.g. what to bring, shows where "Up next" or a following entry would be. An all-day appointment stays on top, but makes way for an appointment from two hours before it until it is over.
+
+The widgets take the app's design: light, dark or OLED black as set in the app, and its colour (on Android 11 and older they follow the phone's light or dark mode and stay teal). They adapt to their size and to larger print, so nothing is cut off. A tap anywhere else on "All in one" opens the list too.
 
 ## More
 
@@ -70,9 +72,9 @@ Repeating things work too: "Every Monday take out the trash", "Every weekday at 
 
 Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "December 20 to 23 grandma visits".
 
-The list shows only what is current: what is still to come at the top, soonest first, then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
+The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merk's is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
-The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black.
+The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, pink, purple, blue or green; the widgets take it too.
 
 ## Language
 
@@ -88,7 +90,7 @@ German phones get German, all others English. You can also choose the language i
 No ads, no tracking, no account. Your entries stay on your phone and in your calendar, unless you share them yourself.
 
 - Speech recognition is done by the recognizer installed on your phone.
-- Only when you tap "Check for updates now" in the settings, the app asks GitHub for the latest version, and only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
+- When you open the app (unless switched off in the settings) or tap "Check for updates now", it asks GitHub for the latest version; only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
 - Photos, and copies of pictures, files and messages passed on to Merk's, are read on the phone and deleted right after. Only if you enter an AI key, the spoken text, the photo or what was passed on is sent to Anthropic to be sorted and read; calendar files never are.
 
 ## Status

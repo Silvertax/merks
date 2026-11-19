@@ -15,8 +15,6 @@
     <string name="empty_text">Tap “Speak” and just say what you want to remember – for example “Tomorrow at 10 dentist”. Or take a photo of an appointment card or a letter.</string>
 
     <string name="listening">Listening …</string>
-    <string name="listening_on">Still listening …</string>
-    <string name="listening_on_hint">More to add? Just keep talking.</string>
     <string name="stop">Done speaking</string>
     <string name="working">One moment …</string>
     <string name="retry">Speak again</string>
@@ -114,9 +112,13 @@
     <string name="pause_short">Short (1.5 seconds)</string>
     <string name="pause_normal">Normal (3 seconds)</string>
     <string name="pause_long">Long (6 seconds)</string>
+    <string name="pause_manual">Until I tap “Done speaking”</string>
     <string name="settings_compact_hint">While you speak, only a small card appears at the bottom; afterwards a notification shows what was added. Off: listening and confirmation fill the whole screen.</string>
     <string name="settings_updates">Check for updates now</string>
-    <string name="settings_updates_hint">Asks GitHub for the latest version, only when you tap the button. If there is a newer one, “Update now” downloads and installs it. No personal data is sent.</string>
+    <string name="settings_updates_hint">Asks GitHub for the latest version: whenever you open the app (if switched on below) or when you tap the button. Nothing is installed until you tap “Update now”. No personal data is sent.</string>
+    <string name="update_later">Later</string>
+    <string name="update_banner">Version %1$s is out.</string>
+    <string name="settings_auto_updates">Look for updates when opening</string>
 
 
     <string name="action_done">Done</string>
@@ -156,6 +158,13 @@
     <string name="theme_auto">Automatic (like the phone)</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="settings_accent">Colour</string>
+    <string name="settings_accent_hint">For the app and its widgets.</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_rose">Pink</string>
+    <string name="accent_lilac">Purple</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_green">Green</string>
     <string name="section_reminders">Reminders</string>
     <string name="section_app">App</string>
     <string name="back">Back</string>
@@ -204,6 +213,10 @@
     <string name="photo_title">From a photo</string>
     <string name="photo_widget_description">One tap, then photograph a letter or appointment card</string>
     <string name="widget_pick_photo">“Photo” button: one tap, then photograph a letter or appointment card</string>
+    <string name="file_widget">Read file</string>
+    <string name="file_short">File</string>
+    <string name="file_widget_description">One tap, then pick a picture, PDF or calendar file to read</string>
+    <string name="widget_pick_file">“Read file” button: one tap, then pick a picture or a file</string>
     <string name="photo_reading">Reading the photo …</string>
     <string name="photo_reading_ai">The AI is reading it.</string>
     <string name="photo_what">What</string>
@@ -291,8 +304,8 @@
 
     <!-- The all-in-one widget, and the samples its preview in the widget list shows. -->
     <string name="widget_all">All in one</string>
-    <string name="widget_all_description">What comes next, with buttons to speak and to photograph</string>
-    <string name="widget_pick_all">“All in one”: what comes next, with the buttons to speak and to photograph</string>
+    <string name="widget_all_description">What comes next, with buttons to speak, to photograph and to read a file</string>
+    <string name="widget_pick_all">“All in one”: what comes next, with the buttons to speak, to photograph and to read a file</string>
     <string name="widget_all_day">All day</string>
     <string name="widget_sample_weekday">Mon</string>
     <string name="widget_sample_day" translatable="false">16</string>

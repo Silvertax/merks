@@ -4,13 +4,16 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Button
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
@@ -58,8 +61,13 @@ class SettingsActivity : MerksActivity() {
         findViewById<TextView>(R.id.theme_value).text = themeName(Prefs.theme(this))
         findViewById<View>(R.id.row_theme).setOnClickListener { chooseTheme() }
 
+        findViewById<TextView>(R.id.accent_value).text = accentName(Prefs.accent(this))
+        findViewById<View>(R.id.row_accent).setOnClickListener { chooseAccent() }
+
         switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
             Prefs.setOled(this, on)
+            // The widgets follow; in the light design they stay as they are.
+            ButtonWidget.updateAll(this)
             // Black only shows in the dark design; then the screen is redrawn to show it.
             if (Appearance.isDark(this)) recreate()
         }
@@ -124,13 +132,30 @@ class SettingsActivity : MerksActivity() {
         },
     )
 
-    /** No check runs by itself any more; this button asks GitHub once and says what it found. */
+    /**
+     * Opening the app asks GitHub by itself (switch "Look for updates on opening"); this button asks
+     * at once and says what it found. A version found before is offered right away.
+     */
     private fun setUpUpdateCheck() {
         val check = findViewById<Button>(R.id.check_updates)
         val state = findViewById<TextView>(R.id.update_state)
         val get = findViewById<Button>(R.id.update_get)
         val installed = Updater.currentVersion(this)
         state.text = getString(R.string.update_installed, installed)
+        switchRow(R.id.row_auto_updates, R.id.auto_updates, Prefs.autoUpdates(this)) { on -> Prefs.setAutoUpdates(this, on) }
+        fun offer(info: Updater.Info) {
+            state.text = getString(R.string.update_text, info.tag.removePrefix("v"))
+            get.setText(R.string.update_get)
+            get.isEnabled = true
+            get.visibility = View.VISIBLE
+            get.setOnClickListener { update(info) }
+        }
+        Prefs.foundUpdate(this)?.takeIf { Versions.newer(it.tag, installed) }?.let { offer(it) }
+        // "Update now" in the list: straight on with the download.
+        updateFromIntent()?.let {
+            offer(it)
+            update(it)
+        }
         check.setOnClickListener {
             check.isEnabled = false
             get.visibility = View.GONE
@@ -141,13 +166,13 @@ class SettingsActivity : MerksActivity() {
                     check.isEnabled = true
                     when (result) {
                         is Updater.Result.Newer -> {
-                            state.text = getString(R.string.update_text, result.info.tag.removePrefix("v"))
-                            get.setText(R.string.update_get)
-                            get.isEnabled = true
-                            get.visibility = View.VISIBLE
-                            get.setOnClickListener { update(result.info) }
+                            Prefs.setFoundUpdate(this, result.info)
+                            offer(result.info)
                         }
-                        Updater.Result.UpToDate -> state.text = getString(R.string.update_none, installed)
+                        Updater.Result.UpToDate -> {
+                            Prefs.setFoundUpdate(this, null)
+                            state.text = getString(R.string.update_none, installed)
+                        }
                         Updater.Result.Failed -> state.setText(R.string.update_failed)
                     }
                 }
@@ -228,6 +253,28 @@ class SettingsActivity : MerksActivity() {
 
     private var allowDialog: android.app.Dialog? = null
 
+    /** The update to install at once, when this screen was opened by "Update now" in the list; only once. */
+    private fun updateFromIntent(): Updater.Info? {
+        val tag = intent.getStringExtra(EXTRA_UPDATE_TAG) ?: return null
+        intent.removeExtra(EXTRA_UPDATE_TAG)
+        // A screen rebuilt (turned, or after the permission) does not start the download again.
+        if (startedFromIntent) return null
+        startedFromIntent = true
+        val found = Prefs.foundUpdate(this)?.takeIf { it.tag == tag } ?: return null
+        return found.takeIf { Versions.newer(it.tag, Updater.currentVersion(this)) }
+    }
+
+    private var startedFromIntent = false
+
+    companion object {
+        private const val CALENDAR_REQUEST = 7
+        private const val EXTRA_UPDATE_TAG = "update_tag"
+
+        /** Opens the settings and installs [info] right away: "Update now" in the list. */
+        fun updateIntent(ctx: Context, info: Updater.Info): Intent =
+            Intent(ctx, SettingsActivity::class.java).putExtra(EXTRA_UPDATE_TAG, info.tag)
+    }
+
     /** Back from the page with the permission, or restarted because of it: carry on with the installation. */
     override fun onResume() {
         super.onResume()
@@ -241,13 +288,14 @@ class SettingsActivity : MerksActivity() {
         when (choice) {
             Prefs.PAUSE_SHORT -> R.string.pause_short
             Prefs.PAUSE_LONG -> R.string.pause_long
+            Prefs.PAUSE_MANUAL -> R.string.pause_manual
             else -> R.string.pause_normal
         },
     )
 
     /** How long the recording waits for more after a pause: longer for people who like to think it over. */
     private fun choosePause() {
-        val choices = arrayOf(Prefs.PAUSE_SHORT, Prefs.PAUSE_NORMAL, Prefs.PAUSE_LONG)
+        val choices = arrayOf(Prefs.PAUSE_SHORT, Prefs.PAUSE_NORMAL, Prefs.PAUSE_LONG, Prefs.PAUSE_MANUAL)
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.settings_pause)
             .setSingleChoiceItems(choices.map { pauseName(it) }.toTypedArray(), choices.indexOf(Prefs.speechPauseChoice(this))) { dialog, which ->
@@ -266,6 +314,49 @@ class SettingsActivity : MerksActivity() {
         },
     )
 
+    /** The accent's name with a dot in its colour, as it looks in the current design. */
+    private fun accentName(accent: String): CharSequence {
+        val name = getString(
+            when (accent) {
+                Appearance.ROSE -> R.string.accent_rose
+                Appearance.LILAC -> R.string.accent_lilac
+                Appearance.BLUE -> R.string.accent_blue
+                Appearance.GREEN -> R.string.accent_green
+                else -> R.string.accent_teal
+            },
+        )
+        val color = getColor(
+            when (accent) {
+                Appearance.ROSE -> R.color.rose_primary
+                Appearance.LILAC -> R.color.lilac_primary
+                Appearance.BLUE -> R.color.blue_primary
+                Appearance.GREEN -> R.color.green_primary
+                else -> R.color.m_primary
+            },
+        )
+        return SpannableStringBuilder().apply {
+            append("●", ForegroundColorSpan(color), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            append("  ")
+            append(name)
+        }
+    }
+
+    /** Teal, pink, purple, blue or green, for the app and the widgets alike. */
+    private fun chooseAccent() {
+        val choices = Appearance.ACCENTS
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_accent)
+            .setSingleChoiceItems(choices.map { accentName(it) }.toTypedArray(), choices.indexOf(Prefs.accent(this))) { dialog, which ->
+                dialog.dismiss()
+                val choice = choices[which]
+                if (choice == Prefs.accent(this)) return@setSingleChoiceItems
+                Prefs.setAccent(this, choice)
+                ButtonWidget.updateAll(this)
+                recreate()
+            }
+            .show()
+    }
+
     /** Like the phone, light or dark. AppCompat redraws the screens itself when that changes their look. */
     private fun chooseTheme() {
         val choices = arrayOf(Appearance.AUTO, Appearance.LIGHT, Appearance.DARK)
@@ -277,6 +368,7 @@ class SettingsActivity : MerksActivity() {
                 if (choice == Prefs.theme(this)) return@setSingleChoiceItems
                 Prefs.setTheme(this, choice)
                 findViewById<TextView>(R.id.theme_value).text = themeName(choice)
+                ButtonWidget.updateAll(this)
                 Appearance.applyNightMode(this)
             }
             .show()
@@ -579,7 +671,4 @@ class SettingsActivity : MerksActivity() {
         return Format.whenText(this, entry)
     }
 
-    private companion object {
-        const val CALENDAR_REQUEST = 7
-    }
 }

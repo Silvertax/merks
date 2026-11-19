@@ -42,7 +42,7 @@ class MainActivity : MerksActivity() {
         }
         // A picture someone sent, a PDF, a calendar file: read like a photo.
         findViewById<View>(R.id.from_file).setOnClickListener {
-            startActivity(Intent(this, PhotoActivity::class.java).putExtra(PhotoActivity.EXTRA_PICK, true))
+            startActivity(PhotoActivity.pickIntent(this))
         }
         findViewById<View>(R.id.settings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -65,6 +65,27 @@ class MainActivity : MerksActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Opening the app looks for a new version; the notice shows what was found, even offline.
+        showUpdate()
+        Updater.checkNow(this) { runOnUiThread { if (!isDestroyed) showUpdate() } }
+    }
+
+    /** "Version … is out": "Update now" goes on in the settings, where the download is shown; "Later" waits a day. */
+    private fun showUpdate() {
+        val banner = findViewById<View>(R.id.update_banner)
+        val info = Updater.pending(this)
+        banner.visibility = if (info == null) View.GONE else View.VISIBLE
+        if (info == null) return
+        findViewById<TextView>(R.id.update_banner_text).text = getString(R.string.update_banner, info.tag.removePrefix("v"))
+        findViewById<View>(R.id.update_now).setOnClickListener { startActivity(SettingsActivity.updateIntent(this, info)) }
+        findViewById<View>(R.id.update_later).setOnClickListener {
+            Prefs.setUpdateLater(this, info.tag)
+            banner.visibility = View.GONE
+        }
+    }
+
     // Set when another screen comes to the front, e.g. the home screen's "add widget?" question.
     private var paused = false
 
@@ -75,13 +96,14 @@ class MainActivity : MerksActivity() {
 
     /**
      * What there is for the home screen: everything on one card, or each on its own: the buttons to
-     * speak and to photograph, and what comes next.
+     * speak, to photograph and to read a file, and what comes next.
      */
     private fun addWidget() {
         val choices = arrayOf(
             getString(R.string.widget_pick_all),
             getString(R.string.widget_pick_speak),
             getString(R.string.widget_pick_photo),
+            getString(R.string.widget_pick_file),
             getString(R.string.widget_pick_next),
         )
         MaterialAlertDialogBuilder(this)
@@ -91,6 +113,7 @@ class MainActivity : MerksActivity() {
                     0 -> pinWidget(AllInOneWidget::class.java, getString(R.string.widget_all))
                     1 -> pinWidget(SpeakWidget::class.java, getString(R.string.speak))
                     2 -> pinWidget(PhotoWidget::class.java, getString(R.string.photo))
+                    3 -> pinWidget(FileWidget::class.java, getString(R.string.file_widget))
                     else -> pinWidget(NextWidget::class.java, getString(R.string.next_up_label))
                 }
             }
@@ -151,10 +174,12 @@ class MainActivity : MerksActivity() {
         Store.clearPast(this, now)
         val all = Db(this).all()
         val zone = ZoneId.systemDefault()
-        // For a series the date that counts is its next one.
-        starts = all.associate { it.id to Plan.currentStart(it, now, zone) }
-        // What is still to come first (soonest on top), then notes, then what is ticked off but not over yet.
-        upcoming = all.filter { e -> !e.done && e.start != null }.sortedBy { starts[it.id] }
+        // The date that counts is the one still going on or coming next: for a series whose time today
+        // is over, its next one; for a reminder put off, its new time. Ticked off: the date it had.
+        starts = all.associate { it.id to (Plan.upcoming(it, now, zone)?.start ?: Plan.currentStart(it, now, zone)) }
+        // What is still to come first (soonest on top, so what is now or next is always at the top),
+        // then notes, then what is ticked off but not over yet.
+        upcoming = all.filter { e -> !e.done && e.start != null }.sortedWith(compareBy({ starts[it.id] }, { it.title.lowercase() }))
         entries = upcoming + (all - upcoming.toSet()).sortedBy { it.done }
         adapter.notifyDataSetChanged()
         findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE

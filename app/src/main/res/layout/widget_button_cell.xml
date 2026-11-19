@@ -24,9 +24,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:adjustViewBounds="true"
+            android:background="@drawable/w_circle_primary"
             android:importantForAccessibility="no"
             android:scaleType="fitCenter"
-            android:src="@drawable/w_speak_button" />
+            android:src="@drawable/w_speak_glyph" />
     </FrameLayout>
 
     <!-- In larger print it shrinks to fit rather than cut the word off. -->

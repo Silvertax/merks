@@ -90,7 +90,7 @@ class WidgetSizeTest {
             val d = c.resources.displayMetrics.density
             for (w in listOf(40f, ButtonWidget.CELL_MIN_W, ButtonWidget.TALL_MIN_W, ButtonWidget.WIDE_MIN_W)) {
                 for (h in listOf(40f, ButtonWidget.TALL_MIN_H)) {
-                    for (widget in listOf(SpeakWidget(), PhotoWidget())) {
+                    for (widget in listOf(SpeakWidget(), PhotoWidget(), FileWidget())) {
                         val shape = ButtonWidget.shapeFor(w, h)
                         val v = widget.views(c, shape).apply(c, null)
                         v.measure(View.MeasureSpec.makeMeasureSpec((w * d).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((h * d).toInt(), View.MeasureSpec.EXACTLY))
@@ -98,6 +98,8 @@ class WidgetSizeTest {
                         val what = "${widget.javaClass.simpleName} $shape ${w}x$h dp in print $fs"
                         val button = v.findViewById<ImageView>(R.id.widget_icon)
                         assertTrue("$what: button ${button.width / d} dp", minOf(button.width, button.height) / d >= 24f)
+                        // The circle behind the picture stays round.
+                        assertTrue("$what: button ${button.width}x${button.height} px", kotlin.math.abs(button.width - button.height) <= 1)
                         val label = v.findViewById<TextView>(R.id.widget_label) ?: continue
                         val room = label.width - label.totalPaddingLeft - label.totalPaddingRight
                         assertTrue("$what: word cut short", label.paint.measureText(label.text.toString()) <= room + 1)

@@ -147,6 +147,33 @@ class PlanTest {
         assertEquals(at("2026-11-13T10:00"), Plan.nextChange(listOf(item(3, Kind.APPOINTMENT, "2026-11-13T09:00")), now, zone))
     }
 
+    /** An all-day entry stays on top, but makes way for an appointment from two hours before until it is over. */
+    @Test fun allDayMakesWayForWhatIsNear() {
+        val entries = listOf(
+            item(1, Kind.APPOINTMENT, "2026-11-13T00:00", allDay = true),
+            item(2, Kind.APPOINTMENT, "2026-11-13T14:00"),
+            item(3, Kind.REMINDER, "2026-11-13T18:00"),
+            item(4, Kind.APPOINTMENT, "2026-11-14T09:00"),
+        )
+        fun first(now: String) = Plan.nextUp(entries, at(now), zone).first().entry.title
+        assertEquals("e1", first("2026-11-13T08:00"))
+        assertEquals(listOf("e1", "e2", "e3"), titles(Plan.nextUp(entries, at("2026-11-13T08:00"), zone)))
+        assertEquals("e1", first("2026-11-13T11:59"))
+        assertEquals(listOf("e2", "e1", "e3"), titles(Plan.nextUp(entries, at("2026-11-13T12:00"), zone)))
+        // Going on (until 15:00), then the all-day entry is back on top.
+        assertEquals("e2", first("2026-11-13T14:30"))
+        assertEquals("e1", first("2026-11-13T15:00"))
+        assertEquals("e3", first("2026-11-13T16:00"))
+        assertEquals("e1", first("2026-11-13T18:00"))
+        // Without an all-day entry nothing changes: soonest first.
+        assertEquals(listOf("e2", "e3", "e4"), titles(Plan.nextUp(entries.drop(1), at("2026-11-13T08:00"), zone)))
+        // The widget is drawn again when the appointment comes near, and when it is over.
+        assertEquals(at("2026-11-13T12:00"), Plan.nextChange(entries, at("2026-11-13T08:00"), zone))
+        assertEquals(at("2026-11-13T14:00"), Plan.nextChange(entries, at("2026-11-13T12:00"), zone))
+        assertEquals(at("2026-11-13T15:00"), Plan.nextChange(entries, at("2026-11-13T14:00"), zone))
+        assertEquals(at("2026-11-13T16:00"), Plan.nextChange(entries, at("2026-11-13T15:00"), zone))
+    }
+
     @Test fun workdaySeriesSkipsTheWeekend() {
         val e = entry(Kind.REMINDER, "2026-11-12T07:00", "2026-11-11T20:00", repeat = Repeat(RepeatUnit.WORKDAY, 1))
         assertEquals(at("2026-11-12T07:00"), next(e, "2026-11-11T20:00"))

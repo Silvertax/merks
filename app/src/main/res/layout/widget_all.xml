@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- All in one, two rows or taller: what comes next on top, the buttons to speak and to photograph below. -->
+<!-- All in one, two rows or taller: what comes next on top, the buttons to speak, to photograph and to read a file below. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@android:id/background"
@@ -41,6 +41,7 @@
             android:paddingHorizontal="12dp">
 
             <ImageView
+                android:id="@+id/all_speak_icon"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
                 android:importantForAccessibility="no"
@@ -62,38 +63,41 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
+        <!-- Photo and file: round-ended buttons with the picture only, so "Speak" keeps room for its word. -->
+        <FrameLayout
             android:id="@+id/all_photo"
-            android:layout_width="0dp"
+            android:layout_width="48dp"
             android:layout_height="match_parent"
             android:layout_marginStart="10dp"
-            android:layout_weight="1"
             android:background="@drawable/w_pill_tonal"
-            android:contentDescription="@string/photo"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="12dp">
+            android:contentDescription="@string/photo">
 
             <ImageView
+                android:id="@+id/all_photo_icon"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
+                android:layout_gravity="center"
                 android:importantForAccessibility="no"
                 android:src="@drawable/w_ic_camera"
                 android:tint="@color/w_on_tonal" />
+        </FrameLayout>
 
-            <TextView
-                android:id="@+id/all_photo_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif"
+        <FrameLayout
+            android:id="@+id/all_file"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/w_pill_tonal"
+            android:contentDescription="@string/file_widget">
+
+            <ImageView
+                android:id="@+id/all_file_icon"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:maxLines="1"
-                android:text="@string/photo"
-                android:textColor="@color/w_on_tonal"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:src="@drawable/w_ic_file"
+                android:tint="@color/w_on_tonal" />
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

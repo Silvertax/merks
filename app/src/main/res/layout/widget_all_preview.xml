@@ -60,38 +60,34 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/all_photo"
-            android:layout_width="0dp"
+        <FrameLayout
+            android:layout_width="48dp"
             android:layout_height="match_parent"
             android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@drawable/w_pill_tonal"
-            android:contentDescription="@string/photo"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="12dp">
+            android:background="@drawable/w_pill_tonal">
 
             <ImageView
                 android:layout_width="26dp"
                 android:layout_height="26dp"
+                android:layout_gravity="center"
                 android:importantForAccessibility="no"
                 android:src="@drawable/w_ic_camera"
                 android:tint="@color/w_on_tonal" />
+        </FrameLayout>
 
-            <TextView
-                android:id="@+id/all_photo_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif"
+        <FrameLayout
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/w_pill_tonal">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:maxLines="1"
-                android:text="@string/photo"
-                android:textColor="@color/w_on_tonal"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:src="@drawable/w_ic_file"
+                android:tint="@color/w_on_tonal" />
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

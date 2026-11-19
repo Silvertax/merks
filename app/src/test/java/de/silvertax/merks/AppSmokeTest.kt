@@ -256,9 +256,10 @@ class AppSmokeTest {
         val first = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
 
         sayPart("Morgen um 10")
-        assertEquals("Ich höre weiter zu …", status(activity))
+        // Nothing on the screen changes in a pause: no question, the words stay.
+        assertEquals("Ich höre zu …", status(activity))
         assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
-        assertTrue(activity.findViewById<TextView>(R.id.detail).text.toString().startsWith("Noch etwas?"))
+        assertEquals("", activity.findViewById<TextView>(R.id.detail).text.toString())
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.stop).visibility)
         assertTrue(Db(app).all().isEmpty())
         // A fresh recogniser listens on; the first one is let go.
@@ -298,14 +299,15 @@ class AppSmokeTest {
         val second = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
         shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_CLIENT)
         idleFor(400)
-        assertEquals("Ich höre weiter zu …", status(activity))
+        assertEquals("Ich höre zu …", status(activity))
+        assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
         val third = ShadowSpeechRecognizer.getLatestSpeechRecognizer()
         assertTrue(third !== second)
 
         // A late call of the one before changes nothing.
         shadowOf(second).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
         shadowOf(second).triggerOnResults(words("Unsinn"))
-        assertEquals("Ich höre weiter zu …", status(activity))
+        assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
 
         shadowOf(third).triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
         idleFor(400)
@@ -323,7 +325,8 @@ class AppSmokeTest {
         val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
         latest().triggerOnPartialResults(words("Milch kaufen"))
         latest().triggerOnError(SpeechRecognizer.ERROR_NO_MATCH)
-        assertEquals("Ich höre weiter zu …", status(activity))
+        assertEquals("Ich höre zu …", status(activity))
+        assertEquals("Milch kaufen", activity.findViewById<TextView>(R.id.spoken).text.toString())
         idleFor(RecordActivity.PAUSE_MS + 2000)
         waitFor { activity.isFinishing }
         assertEquals("Milch kaufen", Db(app).all().single().title)
@@ -391,14 +394,14 @@ class AppSmokeTest {
         sayPart("Morgen um 10 Zahnarzt")
         latest().triggerOnReadyForSpeech(Bundle())
         idleFor(5000)
-        assertEquals("Ich höre weiter zu …", status(activity))
+        assertFalse(activity.isFinishing)
         assertTrue(Db(app).all().isEmpty())
         idleFor(1500)
         waitFor { activity.isFinishing }
         assertEquals(1, Db(app).all().size)
     }
 
-    /** The settings offer the pause in three lengths. */
+    /** The settings offer the pause in three lengths, or none: until "Done speaking" is tapped. */
     @Test fun pauseLengthInTheSettings() {
         val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
         val value = settings.findViewById<TextView>(R.id.pause_value)
@@ -406,10 +409,71 @@ class AppSmokeTest {
         settings.findViewById<View>(R.id.row_pause).performClick()
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val list = dialog.listView
-        assertEquals(3, list.adapter.count)
+        assertEquals(4, list.adapter.count)
         list.performItemClick(list.adapter.getView(2, null, list), 2, list.adapter.getItemId(2))
         assertEquals("Lang (6 Sekunden)", value.text.toString())
         assertEquals(6000L, Prefs.speechPause(app))
+        assertFalse(Prefs.waitsForTap(app))
+
+        settings.findViewById<View>(R.id.row_pause).performClick()
+        val again = (ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog).listView
+        again.performItemClick(again.adapter.getView(3, null, again), 3, again.adapter.getItemId(3))
+        assertEquals("Bis ich auf „Fertig gesprochen“ tippe", value.text.toString())
+        assertTrue(Prefs.waitsForTap(app))
+    }
+
+    /**
+     * "Until I tap Done": pauses of any length and silence that makes the recogniser give up
+     * do not end the recording; only the button does.
+     */
+    @Test fun untilTapListensOnThroughLongPauses() {
+        speechAvailable()
+        Prefs.setSpeechPause(app, Prefs.PAUSE_MANUAL)
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        sayPart("Morgen um 10")
+        latest().triggerOnReadyForSpeech(Bundle())
+        idleFor(30_000)
+        assertFalse(activity.isFinishing)
+        // Silence again and again: a fresh recogniser every time, the words stay.
+        repeat(8) {
+            latest().triggerOnReadyForSpeech(Bundle())
+            latest().triggerOnError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+            idleFor(400)
+        }
+        assertFalse(activity.isFinishing)
+        assertTrue(Db(app).all().isEmpty())
+        assertEquals("Ich höre zu …", status(activity))
+        assertEquals("Morgen um 10", activity.findViewById<TextView>(R.id.spoken).text.toString())
+
+        sayPart("Zahnarzt")
+        idleFor(60_000)
+        assertTrue(Db(app).all().isEmpty())
+        activity.findViewById<View>(R.id.stop).performClick()
+        waitFor { activity.isFinishing }
+        assertEquals("Morgen um 10 Zahnarzt", Db(app).all().single().raw)
+    }
+
+    /**
+     * Some recognisers start their words over after a short breath, or end with only the last ones:
+     * the words before stay on the screen and in the entry.
+     */
+    @Test fun wordsDoNotVanishWhenTheRecogniserStartsOver() {
+        speechAvailable()
+        val activity = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        val spoken = activity.findViewById<TextView>(R.id.spoken)
+        latest().triggerOnPartialResults(words("Morgen um 10"))
+        latest().triggerOnPartialResults(words("Zahn"))
+        assertEquals("Morgen um 10 Zahn", spoken.text.toString())
+        latest().triggerOnPartialResults(words("Zahnarzt"))
+        assertEquals("Morgen um 10 Zahnarzt", spoken.text.toString())
+        // Unsure words sent apart are shown with the rest.
+        latest().triggerOnPartialResults(
+            words("Zahnarzt").apply { putStringArrayList("android.speech.extra.UNSTABLE_TEXT", arrayListOf("Dr. Weber")) },
+        )
+        assertEquals("Morgen um 10 Zahnarzt Dr. Weber", spoken.text.toString())
+        say("Zahnarzt Dr. Weber")
+        waitFor { activity.isFinishing }
+        assertEquals("Morgen um 10 Zahnarzt Dr. Weber", Db(app).all().single().raw)
     }
 
     @Test fun speakingInFullScreenModeConfirmsOnScreen() {
@@ -441,12 +505,12 @@ class AppSmokeTest {
         assertTrue(Db(app).all().isEmpty())
     }
 
-    /** Taps "Put on the home screen" and picks all in one (0), the button to speak (1), to photograph (2) or "Up next" (3). */
+    /** Taps "Put on the home screen" and picks all in one (0), the button to speak (1), to photograph (2), to read a file (3) or "Up next" (4). */
     private fun pickWidget(main: MainActivity, which: Int): android.app.Dialog {
         main.findViewById<View>(R.id.add_widget).performClick()
         val chooser = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val list = chooser.listView
-        assertEquals(4, list.adapter.count)
+        assertEquals(5, list.adapter.count)
         list.performItemClick(list.adapter.getView(which, null, list), which, list.adapter.getItemId(which))
         return chooser
     }
@@ -462,17 +526,18 @@ class AppSmokeTest {
         assertFalse(chooser.isShowing)
     }
 
-    /** All four widgets are on offer, all in one first, and the way by hand names the one that was picked. */
+    /** All five widgets are on offer, all in one first, and the way by hand names the one that was picked. */
     @Test fun widgetButtonOffersUpNextToo() {
         Prefs.setAskedPermissions(app)
         shadowOf(app.getSystemService(android.appwidget.AppWidgetManager::class.java)).setRequestPinAppWidgetSupported(false)
         val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val chooser = pickWidget(main, 3)
+        val chooser = pickWidget(main, 4)
         val shown = (chooser as androidx.appcompat.app.AlertDialog).listView.adapter
         assertTrue(shown.getItem(0).toString().startsWith("„Alles in einem“"))
         assertTrue(shown.getItem(1).toString().startsWith("Knopf „Sprechen“"))
         assertTrue(shown.getItem(2).toString().startsWith("Knopf „Foto“"))
-        assertTrue(shown.getItem(3).toString().startsWith("„Als Nächstes“"))
+        assertTrue(shown.getItem(3).toString().startsWith("Knopf „Datei lesen“"))
+        assertTrue(shown.getItem(4).toString().startsWith("„Als Nächstes“"))
         val dialog = ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog
         val text = dialog.findViewById<TextView>(android.R.id.message)!!.text.toString()
         assertTrue(text, text.endsWith("„Merk's“ suchen und „Als Nächstes“ hinzufügen."))
@@ -937,9 +1002,88 @@ class AppSmokeTest {
         view.findViewById<View>(R.id.all_speak).performClick()
         assertEquals(RecordActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
         view.findViewById<View>(R.id.all_photo).performClick()
-        assertEquals(PhotoActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+        val photo = shadowOf(app).nextStartedActivity
+        assertEquals(PhotoActivity::class.java.name, photo?.component?.className)
+        assertFalse(photo!!.getBooleanExtra(PhotoActivity.EXTRA_PICK, false))
+        // Wide enough, a third button reads a file: the picker, not the camera.
+        val wide = AllInOneWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
+        assertEquals("Datei lesen", wide.findViewById<View>(R.id.all_file).contentDescription?.toString())
+        wide.findViewById<View>(R.id.all_file).performClick()
+        val file = shadowOf(app).nextStartedActivity
+        assertEquals(PhotoActivity::class.java.name, file?.component?.className)
+        assertTrue(file!!.getBooleanExtra(PhotoActivity.EXTRA_PICK, false))
         view.findViewById<View>(android.R.id.background).performClick()
         assertEquals(MainActivity::class.java.name, shadowOf(app).nextStartedActivity?.component?.className)
+    }
+
+    /** The "Read file" widget opens the file picker; the camera widget beside it stays the camera. */
+    @Test fun theFileWidgetOpensThePicker() {
+        val widgets = shadowOf(AppWidgetManager.getInstance(app))
+        val photo = widgets.getViewFor(widgets.createWidget(PhotoWidget::class.java, R.layout.widget_photo))
+        val file = widgets.getViewFor(widgets.createWidget(FileWidget::class.java, R.layout.widget_file))
+        assertEquals("Datei lesen", file.findViewById<View>(android.R.id.background).contentDescription?.toString())
+        file.findViewById<View>(android.R.id.background).performClick()
+        assertTrue(shadowOf(app).nextStartedActivity!!.getBooleanExtra(PhotoActivity.EXTRA_PICK, false))
+        photo.findViewById<View>(android.R.id.background).performClick()
+        assertFalse(shadowOf(app).nextStartedActivity!!.getBooleanExtra(PhotoActivity.EXTRA_PICK, false))
+        file.findViewById<View>(android.R.id.background).performClick()
+        assertTrue(shadowOf(app).nextStartedActivity!!.getBooleanExtra(PhotoActivity.EXTRA_PICK, false))
+    }
+
+    /** The note to the next appointment shows where "Up next" or a following entry would be. */
+    @Test fun theWidgetsShowTheNote() {
+        val day = LocalDate.now().plusDays(1)
+        val e = Store.save(app, Parsed(Kind.APPOINTMENT, "Fußpflege", day.atTime(9, 0), null, false), "Fußpflege")
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Friseur", day.plusDays(1).atTime(9, 0), null, false), "Friseur")
+        Store.addNote(app, e, "Handtuch mitbringen")
+        val now = System.currentTimeMillis()
+        fun shown(v: View, id: Int) = v.findViewById<View>(id).visibility == View.VISIBLE
+        fun note(v: View) = v.findViewById<TextView>(R.id.next_note).let { if (it.visibility == View.VISIBLE) it.text.toString() else "" }
+
+        // Wide with "Up next" above: the note takes its line.
+        val wide = NextWidget.views(app, Glance.nextUp(app), now, NextWidget.lookFor(250f, 140f)).apply(app, null)
+        assertEquals("Handtuch mitbringen", note(wide))
+        assertFalse(shown(wide, R.id.next_label))
+        // Narrow with a following entry: the note takes its place.
+        val narrow = NextWidget.views(app, Glance.nextUp(app), now, NextWidget.lookFor(150f, 170f)).apply(app, null)
+        assertEquals("Handtuch mitbringen", note(narrow))
+        assertFalse(shown(narrow, R.id.next_more))
+        // No line to spare: no note.
+        assertEquals("", note(NextWidget.views(app, Glance.nextUp(app), now, NextWidget.lookFor(250f, 100f)).apply(app, null)))
+        // The all-in-one widget too.
+        val all = AllInOneWidget.views(app, Glance.nextUp(app), now, AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
+        assertEquals("Handtuch mitbringen", note(all))
+    }
+
+    /** The widgets take the app's look: dark when the app is, black with OLED, in the chosen colour. */
+    @Test fun theWidgetsFollowTheAppsLook() {
+        fun card(v: View) = v.findViewById<View>(android.R.id.background).backgroundTintList!!.defaultColor
+        fun speak(v: View) = v.findViewById<View>(R.id.all_speak).backgroundTintList!!.defaultColor
+        fun render(): View = AllInOneWidget.views(app, Glance.nextUp(app), System.currentTimeMillis(), AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
+        fun color(id: Int, dark: Boolean) = app.createConfigurationContext(
+            Configuration(app.resources.configuration).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+            },
+        ).getColor(id)
+
+        // Like the phone, which is light here: as before.
+        assertEquals(color(R.color.w_surface, false), card(render()))
+        assertEquals(color(R.color.w_primary, false), speak(render()))
+        // The app set to dark: dark on a light phone.
+        Prefs.setTheme(app, Appearance.DARK)
+        assertEquals(color(R.color.w_surface, true), card(render()))
+        Prefs.setOled(app, true)
+        assertEquals(0xFF000000.toInt(), card(render()))
+        // Pink.
+        Prefs.setAccent(app, Appearance.ROSE)
+        assertEquals(color(R.color.rose_primary, true), speak(render()))
+        Prefs.setTheme(app, Appearance.LIGHT)
+        assertEquals(color(R.color.rose_w_surface, false), card(render()))
+        assertEquals(color(R.color.rose_primary, false), speak(render()))
+        // The button widgets too, their circle and the card.
+        val button = SpeakWidget().views(app, ButtonWidget.Companion.Shape.TALL).apply(app, null)
+        assertEquals(color(R.color.rose_primary, false), button.findViewById<View>(R.id.widget_icon).backgroundTintList!!.defaultColor)
+        assertEquals(color(R.color.rose_w_surface, false), card(button))
     }
 
     /** Two rows high: what comes next and the one after it, the long buttons with their words below. */
@@ -954,10 +1098,17 @@ class AppSmokeTest {
             .map { id -> v.findViewById<TextView>(id)?.takeIf { visible(it) }?.text?.toString().orEmpty() }
 
         val tall = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(394f, 219f)).apply(app, null)
-        assertEquals(listOf(day.dayOfMonth.toString(), "Als Nächstes", "Fußpflege", "Morgen, 09:00 Uhr", "Blumen gießen", "18:00", "Sprechen", "Foto"), texts(tall))
+        assertEquals(listOf(day.dayOfMonth.toString(), "Als Nächstes", "Fußpflege", "Morgen, 09:00 Uhr", "Blumen gießen", "18:00", "Sprechen", ""), texts(tall))
+        // Beside "Speak", photo and file with their symbols only.
+        assertEquals(View.VISIBLE, tall.findViewById<View>(R.id.all_file).visibility)
         // Three cells wide the buttons keep their symbols only.
         val narrower = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(236f, 219f)).apply(app, null)
         assertEquals(listOf("", ""), texts(narrower).takeLast(2))
+        assertNotNull(narrower.findViewById<View>(R.id.all_file))
+        // Two cells: room for speaking and photographing only.
+        val twoCells = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(150f, 219f)).apply(app, null)
+        assertNull(twoCells.findViewById<View>(R.id.all_file))
+        assertNotNull(twoCells.findViewById<View>(R.id.all_photo))
         // One row: the round buttons beside it.
         val row = AllInOneWidget.views(app, next, now, AllInOneWidget.lookFor(394f, 107f)).apply(app, null)
         assertEquals(listOf(day.dayOfMonth.toString(), "", "Fußpflege", "Morgen, 09:00 Uhr", "", "", "", ""), texts(row))
@@ -1398,11 +1549,13 @@ class AppSmokeTest {
         assertEquals("Milch kaufen", shareRow(1))
     }
 
-    // ---------- Updates: only on request ----------
+    // ---------- Updates: on opening, and on request ----------
 
     @After fun realUpdateSource() { Updater.source = null }
 
     private fun checkForUpdates(answer: Updater.Info?): android.app.Activity {
+        // As on a first start: no version found before.
+        Prefs.setFoundUpdate(app, null)
         var asked = 0
         Updater.source = { asked++; answer }
         val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
@@ -1587,16 +1740,77 @@ class AppSmokeTest {
         assertEquals(View.GONE, settings.findViewById<View>(R.id.update_get).visibility)
     }
 
-    /** Opening the app asks nobody anything. */
-    @Test fun openingTheAppDoesNotCheckForUpdates() {
+    /**
+     * Opening the app asks GitHub for a new version and says so in the list; nothing is downloaded
+     * until "Update now" is tapped, which goes on in the settings.
+     */
+    @Test fun openingTheAppLooksForUpdates() {
         Prefs.setAskedPermissions(app)
         var asked = 0
-        Updater.source = { asked++; null }
+        Updater.source = { asked++; newer }
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val banner = main.findViewById<View>(R.id.update_banner)
+        waitFor { banner.visibility == View.VISIBLE }
+        assertEquals(1, asked)
+        assertEquals("Version 9.0.0 ist da.", main.findViewById<TextView>(R.id.update_banner_text).text.toString())
+        assertFalse(updateFile.exists())
+
+        // Back from another screen a moment later: not asked again.
         Robolectric.buildActivity(MainActivity::class.java).setup()
         idleMain()
         Thread.sleep(200)
         idleMain()
+        assertEquals(1, asked)
+
+        main.findViewById<View>(R.id.update_now).performClick()
+        val opened = shadowOf(app).nextStartedActivity
+        assertEquals(SettingsActivity::class.java.name, opened.component?.className)
+        // The settings offer it too, without asking again.
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals("Version 9.0.0 ist verfügbar.", settings.findViewById<TextView>(R.id.update_state).text.toString())
+        assertEquals(View.VISIBLE, settings.findViewById<View>(R.id.update_get).visibility)
+        assertEquals(1, asked)
+
+        // "Later": gone for now.
+        main.findViewById<View>(R.id.update_later).performClick()
+        assertEquals(View.GONE, banner.visibility)
+        val again = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertEquals(View.GONE, again.findViewById<View>(R.id.update_banner).visibility)
+    }
+
+    /** "Update now" in the list: the settings download the new version at once and hand it to the installer. */
+    @Test fun updateNowFromTheListDownloadsAtOnce() {
+        Prefs.setFoundUpdate(app, newer.copy(apk = apkAddress))
+        val asked = downloadGives()
+        shadowOf(app.packageManager).setCanRequestPackageInstalls(true)
+        val settings = Robolectric.buildActivity(
+            SettingsActivity::class.java,
+            SettingsActivity.updateIntent(app, newer),
+        ).setup().get()
+        val state = settings.findViewById<TextView>(R.id.update_state)
+        waitFor { state.text.toString().startsWith("Das Handy fragt jetzt") }
+        assertEquals(listOf(apkAddress), asked)
+        installerOpened(shadowOf(app).nextStartedActivity)
+    }
+
+    /** Switched off, opening the app asks nobody anything. */
+    @Test fun openingTheAppCanLeaveUpdatesAlone() {
+        Prefs.setAskedPermissions(app)
+        Prefs.setAutoUpdates(app, false)
+        var asked = 0
+        Updater.source = { asked++; newer }
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        idleMain()
+        Thread.sleep(200)
+        idleMain()
         assertEquals(0, asked)
+        assertEquals(View.GONE, main.findViewById<View>(R.id.update_banner).visibility)
+        // The switch in the settings.
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val switch = settings.findViewById<android.widget.CompoundButton>(R.id.auto_updates)
+        assertFalse(switch.isChecked)
+        settings.findViewById<View>(R.id.row_auto_updates).performClick()
+        assertTrue(Prefs.autoUpdates(app))
     }
 
     // ---------- OLED mode ----------

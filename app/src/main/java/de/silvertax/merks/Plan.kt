@@ -168,8 +168,19 @@ object Plan {
     }
 
     /** What comes next, soonest first. */
-    fun nextUp(entries: List<Entry>, now: Long, zone: ZoneId, limit: Int = 3): List<Upcoming> =
-        entries.mapNotNull { upcoming(it, now, zone) }.sortedBy { it.start }.take(limit)
+    fun nextUp(entries: List<Entry>, now: Long, zone: ZoneId, limit: Int = 3): List<Upcoming> {
+        val all = entries.mapNotNull { upcoming(it, now, zone) }.sortedBy { it.start }
+        // An all-day entry that has begun would stay on top all day and hide what happens at a time.
+        // So it is shown first only while nothing with a time is near or going on.
+        val (allDayNow, rest) = all.partition { it.entry.allDay && it.start <= now }
+        val (pressing, later) = rest.partition { pressing(it, now) }
+        return (pressing + allDayNow + later).take(limit)
+    }
+
+    /** How long before its time an appointment or reminder takes the place of an all-day entry in "Up next". */
+    const val SOON = 2 * 60 * 60 * 1000L
+
+    private fun pressing(u: Upcoming, now: Long) = !u.entry.allDay && u.start - now <= SOON
 
     /**
      * When the "next up" display has to be drawn again: when one of the shown things is over,
@@ -178,12 +189,20 @@ object Plan {
     fun nextChange(entries: List<Entry>, now: Long, zone: ZoneId): Long {
         val midnight = Instant.ofEpochMilli(now).atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         var next = midnight
-        for (e in entries) {
-            val u = upcoming(e, now, zone) ?: continue
+        val coming = entries.mapNotNull { upcoming(it, now, zone) }
+        for (u in coming) {
+            val e = u.entry
             val occ = Instant.ofEpochMilli(u.start).atZone(zone)
             val end = if (e.snooze != null && u.start == e.snooze) u.start else over(e, occ)
             if (end in (now + 1) until next) next = end
             if (u.start in (now + 1) until next) next = u.start
+        }
+        // And when something with a time comes near enough to take the place of an all-day entry.
+        val allDay = coming.filter { it.entry.allDay }.map { it.start to over(it.entry, Instant.ofEpochMilli(it.start).atZone(zone)) }
+        for (u in coming) {
+            if (u.entry.allDay) continue
+            val at = u.start - SOON
+            if (at in (now + 1) until next && allDay.any { (from, until) -> at in from until until }) next = at
         }
         return next
     }

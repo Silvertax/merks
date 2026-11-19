@@ -18,8 +18,14 @@ import android.widget.RemoteViews
 abstract class ButtonWidget : AppWidgetProvider() {
     protected abstract val label: Int
 
-    /** The round button as one picture, so it grows and shrinks with the widget. */
-    protected abstract val button: Int
+    /** What a screen reader says; the word shown, unless it needs to say more. */
+    protected open val description: Int get() = label
+
+    /** The picture on the round button; it grows and shrinks with the widget, its circle behind it. */
+    protected abstract val glyph: Int
+
+    /** The strong colour like "Speak", or the quieter one like "Photo", as in the app. */
+    protected abstract val strong: Boolean
 
     /** The shape with the word below; it is also the preview in the widget list. */
     protected abstract val tallLayout: Int
@@ -36,7 +42,8 @@ abstract class ButtonWidget : AppWidgetProvider() {
     }
 
     internal fun views(ctx: Context, shape: Shape): RemoteViews {
-        val text = Lang.context(ctx).getString(label)
+        val texts = Lang.context(ctx)
+        val text = texts.getString(label)
         val layout = when (shape) {
             Shape.TALL -> tallLayout
             Shape.CELL -> R.layout.widget_button_cell
@@ -45,9 +52,16 @@ abstract class ButtonWidget : AppWidgetProvider() {
         }
         return RemoteViews(ctx.packageName, layout).apply {
             setOnClickPendingIntent(android.R.id.background, open(ctx, target(ctx)))
-            setContentDescription(android.R.id.background, text)
-            setImageViewResource(R.id.widget_icon, button)
+            setContentDescription(android.R.id.background, texts.getString(description))
+            setImageViewResource(R.id.widget_icon, glyph)
+            setInt(R.id.widget_icon, "setBackgroundResource", if (strong) R.drawable.w_circle_primary else R.drawable.w_circle_tonal)
             if (shape != Shape.SMALL) setTextViewText(R.id.widget_label, text)
+            WidgetTheme.paint(ctx, this) {
+                card()
+                background(R.id.widget_icon) { if (strong) primary else tonal }
+                image(R.id.widget_icon) { if (strong) onPrimary else onTonal }
+                if (shape != Shape.SMALL) text(R.id.widget_label) { onSurface }
+            }
         }
     }
 
@@ -98,7 +112,7 @@ abstract class ButtonWidget : AppWidgetProvider() {
         /** Redraws all placed widgets, e.g. after the language was changed. */
         fun updateAll(ctx: Context) {
             val manager = AppWidgetManager.getInstance(ctx)
-            for (widget in listOf(SpeakWidget(), PhotoWidget())) {
+            for (widget in listOf(SpeakWidget(), PhotoWidget(), FileWidget())) {
                 val ids = manager.getAppWidgetIds(ComponentName(ctx, widget.javaClass))
                 if (ids.isNotEmpty()) widget.onUpdate(ctx, manager, ids)
             }
@@ -110,7 +124,8 @@ abstract class ButtonWidget : AppWidgetProvider() {
 /** One tap starts listening. */
 class SpeakWidget : ButtonWidget() {
     override val label = R.string.speak
-    override val button = R.drawable.w_speak_button
+    override val glyph = R.drawable.w_speak_glyph
+    override val strong = true
     override val tallLayout = R.layout.widget_speak
     override fun target(ctx: Context) = Intent(ctx, RecordActivity::class.java)
 }
@@ -118,7 +133,18 @@ class SpeakWidget : ButtonWidget() {
 /** One tap opens the camera, for a letter or an appointment card. */
 class PhotoWidget : ButtonWidget() {
     override val label = R.string.photo
-    override val button = R.drawable.w_photo_button
+    override val glyph = R.drawable.w_photo_glyph
+    override val strong = false
     override val tallLayout = R.layout.widget_photo
     override fun target(ctx: Context) = Intent(ctx, PhotoActivity::class.java)
+}
+
+/** One tap opens the file picker, for a picture someone sent, a PDF or a calendar file. */
+class FileWidget : ButtonWidget() {
+    override val label = R.string.file_short
+    override val description = R.string.file_widget
+    override val glyph = R.drawable.w_file_glyph
+    override val strong = false
+    override val tallLayout = R.layout.widget_file
+    override fun target(ctx: Context) = PhotoActivity.pickIntent(ctx)
 }

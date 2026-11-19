@@ -1,7 +1,6 @@
 package de.silvertax.merks
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -185,13 +184,14 @@ class RecordActivity : MerksActivity() {
     /*
      * Many recognisers end after half a second of silence, whatever they are asked for, and some
      * stumble when they are started again right away. So a pause to think does not end the recording:
-     * what was said so far is kept in [pieces], and a fresh recogniser listens on. Only when nothing
-     * more comes for the pause chosen in the settings, or "Done speaking" is tapped, it is saved.
+     * what was said so far is kept in [said], and a fresh recogniser listens on, without a word on the
+     * screen changing. Only when nothing more comes for the pause chosen in the settings, or
+     * "Done speaking" is tapped, it is saved. With "until I tap Done" only the button ends it.
      */
-    private val pieces = mutableListOf<String>()
+    private val said = Transcript()
 
-    /** The words of the current attempt so far. They count even when the recogniser cannot finish. */
-    private var partial = ""
+    // The recording ends only with "Done speaking" (or after a long time).
+    private var waitsForTap = false
 
     // Listening on after a pause, and whether speaking has begun again since.
     private var goingOn = false
@@ -202,7 +202,6 @@ class RecordActivity : MerksActivity() {
     private var pauseEnds = 0L
     private var restarts = 0
     private var pauses = 0
-    private var startedAt = 0L
 
     // "Done speaking" was tapped while words were still coming: save with the next result.
     private var stopAsked = false
@@ -212,11 +211,14 @@ class RecordActivity : MerksActivity() {
 
     private val pauseOver = Runnable { if (goingOn && !resumed && !ended) finishSpeaking() }
 
+    // Nobody speaks for minutes into one entry: what was said is saved.
+    private val timeUp = Runnable { if (!ended) stopSpeaking() }
+
     // Some recognisers never answer once stopped; then what was understood so far is used.
     private val stopWaited = Runnable {
         if (stopAsked && !ended) {
-            keepPartial()
-            if (pieces.isEmpty()) fail(getString(R.string.err_nothing)) else finishSpeaking()
+            said.keepPartial()
+            if (said.isEmpty) fail(getString(R.string.err_nothing)) else finishSpeaking()
         }
     }
 
@@ -233,15 +235,15 @@ class RecordActivity : MerksActivity() {
     private fun listen() {
         handler.removeCallbacksAndMessages(null)
         heard = false
-        pieces.clear()
-        partial = ""
+        said.clear()
         goingOn = false
         resumed = false
         stopAsked = false
         ended = false
         retriedOnce = false
         pauses = 0
-        startedAt = SystemClock.uptimeMillis()
+        restarts = 0
+        waitsForTap = Prefs.waitsForTap(this)
         micWasBusy = otherAppRecords()
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             fail(getString(R.string.err_no_recognizer))
@@ -254,44 +256,41 @@ class RecordActivity : MerksActivity() {
             ?: changing?.let { getString(R.string.edit_hint, it.title) }
             ?: ""
         show(stop)
+        handler.postDelayed(timeUp, if (waitsForTap) MAX_WAITING_MS else MAX_RECORDING_MS)
         startRecognizer()
     }
 
     /** A fresh recogniser for every attempt: some phones refuse to start the same one twice in a row. */
     private fun startRecognizer() {
         recognizer?.destroy()
-        partial = ""
         val r = SpeechRecognizer.createSpeechRecognizer(this)
         recognizer = r
         r.setRecognitionListener(Listener(r))
         r.startListening(speechIntent())
     }
 
-    private fun keepPartial() {
-        if (partial.isNotEmpty()) pieces += partial
-        partial = ""
-    }
-
     /** One stretch of speech is over: listen on after a pause, or save. */
     private fun afterSpeech() {
-        val tooLong = SystemClock.uptimeMillis() - startedAt > MAX_RECORDING_MS
+        val enough = !waitsForTap && (said.finished >= MAX_PIECES || pauses >= MAX_PAUSES)
         when {
-            pieces.isEmpty() -> fail(getString(R.string.err_nothing))
-            stopAsked || pieces.size >= MAX_PIECES || pauses >= MAX_PAUSES || tooLong -> finishSpeaking()
+            said.isEmpty -> fail(getString(R.string.err_nothing))
+            stopAsked || enough -> finishSpeaking()
             else -> beginPause()
         }
     }
 
-    /** After a pause: keeps what was said and listens for more, with a fresh recogniser. */
+    /**
+     * After a pause: keeps what was said and listens for more, with a fresh recogniser.
+     * Nothing on the screen changes, so a pause to think does not look like the end.
+     */
     private fun beginPause() {
         goingOn = true
         resumed = false
         micOpenInPause = false
         restarts = 0
         pauses++
-        status.setText(R.string.listening_on)
-        spoken.text = pieces.joinToString(" ")
-        detail.setText(R.string.listening_on_hint)
+        status.setText(R.string.listening)
+        spoken.text = said.text
         show(stop)
         ring(0f)
         // Counted again from when the microphone is open; this covers a recogniser that never says so.
@@ -300,6 +299,11 @@ class RecordActivity : MerksActivity() {
     }
 
     private fun endPauseIn(ms: Long) {
+        handler.removeCallbacks(pauseOver)
+        if (waitsForTap) {
+            pauseEnds = Long.MAX_VALUE
+            return
+        }
         pauseEnds = SystemClock.uptimeMillis() + ms
         handler.removeCallbacks(pauseOver)
         handler.postDelayed(pauseOver, ms)
@@ -329,8 +333,8 @@ class RecordActivity : MerksActivity() {
     /** The recogniser could not finish this attempt. */
     private fun failed(error: Int) {
         // What was understood so far counts, even without a final result.
-        if (partial.isNotEmpty()) {
-            keepPartial()
+        if (said.pending) {
+            said.keepPartial()
             afterSpeech()
             return
         }
@@ -339,7 +343,7 @@ class RecordActivity : MerksActivity() {
             when {
                 stopAsked -> finishSpeaking()
                 // Speaking began again but nothing came of it (a cough, a noise): another pause.
-                resumed && soft && pauses < MAX_PAUSES -> beginPause()
+                resumed && soft && (waitsForTap || pauses < MAX_PAUSES) -> beginPause()
                 // Silence came too early, or the recogniser was not ready yet: try again while the pause lasts.
                 !resumed && soft && restarts < MAX_RESTARTS && SystemClock.uptimeMillis() + RESTART_MS < pauseEnds -> {
                     restarts++
@@ -386,10 +390,12 @@ class RecordActivity : MerksActivity() {
         goingOn = false
         handler.removeCallbacks(pauseOver)
         handler.removeCallbacks(stopWaited)
+        handler.removeCallbacks(timeUp)
         // The microphone is free at once, and late calls of the recogniser go nowhere.
         recognizer?.destroy()
         recognizer = null
-        val text = pieces.joinToString(" ").trim()
+        said.keepPartial()
+        val text = said.text.trim()
         val target = noteFor
         val old = changing
         when {
@@ -404,23 +410,22 @@ class RecordActivity : MerksActivity() {
     private inner class Listener(private val owner: SpeechRecognizer) : RecognitionListener {
         private val stale get() = owner !== recognizer || ended
 
-        @SuppressLint("SetTextI18n") // only the spoken words put together, nothing to translate
         override fun onPartialResults(b: Bundle?) {
             if (stale) return
-            best(b)?.let {
-                partial = it.trim()
+            // Some recognisers send the words they are not sure of yet apart from the rest.
+            val unstable = b?.getStringArrayList(UNSTABLE_TEXT)?.firstOrNull()
+            if (said.partial(b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull(), unstable)) {
                 heard = true
                 speakingAgain()
-                spoken.text = (pieces + partial).joinToString(" ")
+                spoken.text = said.text
             }
         }
 
         override fun onResults(b: Bundle?) {
             if (stale) return
-            // Some recognisers end with nothing although words were shown while speaking.
-            val text = best(b)?.trim() ?: partial
-            partial = ""
-            if (text.isNotEmpty()) pieces += text
+            // Some recognisers end with nothing although words were shown while speaking,
+            // or with only the last words: the transcript keeps what was shown.
+            said.result(best(b))
             afterSpeech()
         }
 
@@ -435,6 +440,8 @@ class RecordActivity : MerksActivity() {
                 micOpenInPause = true
                 endPauseIn(Prefs.speechPause(this@RecordActivity))
             }
+            // It works again: trouble before does not count against the next attempts.
+            restarts = 0
         }
 
         override fun onBeginningOfSpeech() {
@@ -471,6 +478,7 @@ class RecordActivity : MerksActivity() {
         goingOn = false
         handler.removeCallbacks(pauseOver)
         handler.removeCallbacks(stopWaited)
+        handler.removeCallbacks(timeUp)
         recognizer?.destroy()
         recognizer = null
         ring(0f)
@@ -592,6 +600,12 @@ class RecordActivity : MerksActivity() {
         private const val MAX_PIECES = 8
         private const val MAX_PAUSES = 12
         private const val MAX_RECORDING_MS = 120_000L
+
+        /** With "until I tap Done": a recording forgotten in a pocket still ends some time. */
+        private const val MAX_WAITING_MS = 300_000L
+
+        // The words a recogniser is not sure of yet, sent apart by some (Google's among them); not public.
+        private const val UNSTABLE_TEXT = "android.speech.extra.UNSTABLE_TEXT"
 
         /** Errors after a pause that only mean "nothing (yet)": silence, or a recogniser not ready. */
         private val SOFT_ERRORS = setOf(

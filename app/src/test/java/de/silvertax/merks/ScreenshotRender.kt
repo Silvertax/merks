@@ -125,6 +125,22 @@ class ScreenshotRender {
     @Test fun mainDark() = main(true, true, "2_main_dark")
     @Test fun mainEmpty() = main(false, false, "3_main_empty")
 
+    /** The app in another accent colour, as chosen in the settings. */
+    @Test fun mainRose() {
+        Prefs.setAccent(app, Appearance.ROSE)
+        main(false, true, "20_main_rose")
+    }
+
+    @Test fun mainLilacDark() {
+        Prefs.setAccent(app, Appearance.LILAC)
+        main(true, true, "20_main_lilac_dark")
+    }
+
+    @Test fun settingsRose() {
+        Prefs.setAccent(app, Appearance.ROSE)
+        settings(false, "20_settings_rose")
+    }
+
     @Test fun mainOled() {
         Prefs.setOled(app, true)
         main(true, true, "2b_main_oled")
@@ -414,7 +430,7 @@ class ScreenshotRender {
         fun upNext(x: Int, y: Int) = WidgetShot("Up next ${x}x$y", x, y) { NextWidget.views(it, next, now, NextWidget.lookFor(x.toFloat(), y.toFloat())) }
         fun all(x: Int, y: Int) = WidgetShot("All in one ${x}x$y", x, y) { AllInOneWidget.views(it, next, now, AllInOneWidget.lookFor(x.toFloat(), y.toFloat())) }
         val rows = listOf(
-            listOf(button(SpeakWidget(), "Speak", 64, 64), button(SpeakWidget(), "Speak", 78, 107), button(PhotoWidget(), "Photo", 78, 107), button(SpeakWidget(), "Speak", 150, 70), button(SpeakWidget(), "Speak", 150, 150), button(PhotoWidget(), "Photo", 150, 150)),
+            listOf(button(SpeakWidget(), "Speak", 64, 64), button(SpeakWidget(), "Speak", 78, 107), button(PhotoWidget(), "Photo", 78, 107), button(FileWidget(), "File", 78, 107), button(SpeakWidget(), "Speak", 150, 70), button(SpeakWidget(), "Speak", 150, 150), button(FileWidget(), "File", 150, 150)),
             listOf(upNext(140, 50), upNext(140, 70), upNext(140, 100), upNext(150, 210), upNext(236, 107), upNext(315, 150), upNext(315, 220)),
             listOf(all(150, 80), all(236, 107), all(315, 90), all(315, 107), all(394, 107)),
             listOf(all(160, 220), all(236, 220), all(315, 214), all(394, 214), all(315, 330)),
@@ -425,20 +441,25 @@ class ScreenshotRender {
                 WidgetShot("All in one in the widget list", 315, 214) { android.widget.RemoteViews(app.packageName, R.layout.widget_all_preview) },
             ),
         )
+        drawSheet(rows.map { row -> row.map { draw(c, it) } }, dark, name)
+    }
+
+    private fun draw(c: android.content.Context, shot: WidgetShot): Pair<String, Bitmap> {
+        val d = c.resources.displayMetrics.density
+        val v = shot.make(c).apply(c, null)
+        val w = (shot.w * d).toInt()
+        val h = (shot.h * d).toInt()
+        v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
+        v.layout(0, 0, w, h)
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        v.draw(Canvas(bmp))
+        return shot.label to bmp
+    }
+
+    private fun drawSheet(drawn: List<List<Pair<String, Bitmap>>>, dark: Boolean, name: String) {
+        val d = app.resources.displayMetrics.density
         val gap = (18 * d).toInt()
         val labelH = (16 * d).toInt()
-        val drawn = rows.map { row ->
-            row.map { shot ->
-                val v = shot.make(c).apply(c, null)
-                val w = (shot.w * d).toInt()
-                val h = (shot.h * d).toInt()
-                v.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
-                v.layout(0, 0, w, h)
-                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                v.draw(Canvas(bmp))
-                shot.label to bmp
-            }
-        }
         val width = drawn.maxOf { r -> r.sumOf { it.second.width } + gap * (r.size + 1) }
         val height = drawn.sumOf { r -> r.maxOf { it.second.height } + labelH + gap } + gap
         val sheet = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -467,6 +488,31 @@ class ScreenshotRender {
 
     @Test fun widgetsDark() = widgetSheet(true, "17_widgets_dark")
     @Test fun widgetsLight() = widgetSheet(false, "17_widgets_light")
+
+    /** The widgets in the app's colours and designs, on a light home screen: they follow the app, not the phone. */
+    @Test fun widgetsInColour() {
+        sampleEntries()
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        val looks = listOf(
+            Triple(Appearance.ROSE, Appearance.LIGHT, false), Triple(Appearance.ROSE, Appearance.DARK, false),
+            Triple(Appearance.LILAC, Appearance.LIGHT, false), Triple(Appearance.BLUE, Appearance.DARK, true),
+            Triple(Appearance.GREEN, Appearance.LIGHT, false), Triple(Appearance.TEAL, Appearance.DARK, true),
+        )
+        val drawn = looks.map { (accent, theme, oled) ->
+            Prefs.setAccent(app, accent)
+            Prefs.setTheme(app, theme)
+            Prefs.setOled(app, oled)
+            val what = "$accent $theme" + if (oled) " OLED" else ""
+            listOf(
+                WidgetShot("All in one, $what", 315, 214) { AllInOneWidget.views(it, next, now, AllInOneWidget.lookFor(315f, 214f)) },
+                WidgetShot("Speak", 78, 107) { SpeakWidget().views(it, ButtonWidget.shapeFor(78f, 107f)) },
+                WidgetShot("File", 78, 107) { FileWidget().views(it, ButtonWidget.shapeFor(78f, 107f)) },
+                WidgetShot("Up next", 236, 107) { NextWidget.views(it, next, now, NextWidget.lookFor(236f, 107f)) },
+            ).map { draw(app, it) }
+        }
+        drawSheet(drawn, false, "19_widgets_colours")
+    }
 
     /** What makes Merk's a calendar of its own: the switch, and when appointments remind. */
     @Test fun calendarSettings() {

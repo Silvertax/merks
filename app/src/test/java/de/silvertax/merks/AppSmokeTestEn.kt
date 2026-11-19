@@ -62,8 +62,9 @@ class AppSmokeTestEn {
         recognizer.triggerOnResults(
             Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf("Tomorrow at 10 dentist")) },
         )
-        // It listens on for a while in case more comes; then it saves.
-        assertEquals("Still listening …", activity.findViewById<TextView>(R.id.status).text.toString())
+        // It listens on for a while in case more comes, without a word changing; then it saves.
+        assertEquals("Listening …", activity.findViewById<TextView>(R.id.status).text.toString())
+        assertEquals("Tomorrow at 10 dentist", activity.findViewById<TextView>(R.id.spoken).text.toString())
         shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(5))
         // Saving runs in the background; a busy build server can take seconds for it.
         val until = System.currentTimeMillis() + 30_000

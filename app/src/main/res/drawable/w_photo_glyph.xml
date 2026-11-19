@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The camera of a big round widget button, without the circle: the circle is the view's background,
+    so on Android 12 and newer both can take the app's colours (see WidgetTheme). The clear circle
+    gives it the button's size, so it grows and shrinks exactly like its background.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@android:color/transparent" />
+            <size
+                android:width="104dp"
+                android:height="104dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="28dp"
+        android:drawable="@drawable/w_ic_camera_on_tonal"
+        android:left="28dp"
+        android:right="28dp"
+        android:top="28dp" />
+</layer-list>

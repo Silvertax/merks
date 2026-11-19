@@ -184,6 +184,11 @@ object Prefs {
     fun setTheme(ctx: Context, theme: String) = p(ctx).edit().putString("theme", theme).apply()
     fun setOled(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("oled", on).apply()
 
+    /** The accent colour of the app and its widgets; teal until another is chosen. */
+    fun accent(ctx: Context): String =
+        p(ctx).getString("accent", null)?.takeIf { it in Appearance.ACCENTS } ?: Appearance.TEAL
+    fun setAccent(ctx: Context, accent: String) = p(ctx).edit().putString("accent", accent).apply()
+
     /** Extra notification at 18:00 on the day before an appointment. */
     /** When appointments remind. Until chosen, what the former "evening before" switch said. */
     fun leads(ctx: Context): Set<Lead> = Lead.parse(p(ctx).getString("leads", null))
@@ -233,6 +238,32 @@ object Prefs {
         return raw.substringBefore('|').takeIf { since in 0..10 * 60_000L }
     }
 
+    /** Whether the app asks GitHub for a new version whenever it is opened. */
+    fun autoUpdates(ctx: Context): Boolean = p(ctx).getBoolean("auto_updates", true)
+    fun setAutoUpdates(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("auto_updates", on).apply()
+
+    /** When GitHub was last asked by itself, so switching back and forth does not ask again and again. */
+    fun lastUpdateCheck(ctx: Context): Long = p(ctx).getLong("update_checked", 0L)
+    fun setLastUpdateCheck(ctx: Context, at: Long) = p(ctx).edit().putLong("update_checked", at).apply()
+
+    /** The newer version GitHub named last, or null. */
+    fun foundUpdate(ctx: Context): Updater.Info? {
+        val parts = p(ctx).getString("update_found", null)?.split('\n') ?: return null
+        return if (parts.size == 3) Updater.Info(parts[0], parts[1], parts[2]) else null
+    }
+    fun setFoundUpdate(ctx: Context, info: Updater.Info?) = p(ctx).edit()
+        .apply { if (info == null) remove("update_found") else putString("update_found", listOf(info.tag, info.url, info.apk).joinToString("\n")) }
+        .apply()
+
+    /** "Later" on the notice about [tag]: it stays away for a day. */
+    fun updateLater(ctx: Context, tag: String): Boolean {
+        val raw = p(ctx).getString("update_later", null) ?: return false
+        val at = raw.substringAfter('|', "").toLongOrNull() ?: return false
+        return raw.substringBefore('|') == tag && System.currentTimeMillis() - at < 24 * 60 * 60 * 1000L
+    }
+    fun setUpdateLater(ctx: Context, tag: String) =
+        p(ctx).edit().putString("update_later", tag + "|" + System.currentTimeMillis()).apply()
+
     fun setPendingUpdate(ctx: Context, tag: String?) = p(ctx).edit()
         .apply { if (tag == null) remove("pending_update") else putString("pending_update", tag + "|" + System.currentTimeMillis()) }
         .apply()
@@ -253,9 +284,12 @@ object Prefs {
 
     /** How long a pause to think may be while speaking: "short", "normal" or "long". */
     fun speechPauseChoice(ctx: Context): String = p(ctx).getString("pause", PAUSE_NORMAL)!!
-        .takeIf { it in listOf(PAUSE_SHORT, PAUSE_NORMAL, PAUSE_LONG) } ?: PAUSE_NORMAL
+        .takeIf { it in listOf(PAUSE_SHORT, PAUSE_NORMAL, PAUSE_LONG, PAUSE_MANUAL) } ?: PAUSE_NORMAL
     fun setSpeechPause(ctx: Context, choice: String) = p(ctx).edit().putString("pause", choice).apply()
     fun speechPause(ctx: Context): Long = pauseMillis(speechPauseChoice(ctx))
+
+    /** The recording ends only with "Done speaking", however long the pauses. */
+    fun waitsForTap(ctx: Context): Boolean = speechPauseChoice(ctx) == PAUSE_MANUAL
     fun pauseMillis(choice: String): Long = when (choice) {
         PAUSE_SHORT -> 1500L
         PAUSE_LONG -> 6000L
@@ -265,6 +299,7 @@ object Prefs {
     const val PAUSE_SHORT = "short"
     const val PAUSE_NORMAL = "normal"
     const val PAUSE_LONG = "long"
+    const val PAUSE_MANUAL = "manual"
 
     fun askedPermissions(ctx: Context): Boolean = p(ctx).getBoolean("asked", false)
     fun setAskedPermissions(ctx: Context) = p(ctx).edit().putBoolean("asked", true).apply()

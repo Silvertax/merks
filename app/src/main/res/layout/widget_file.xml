@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The "Read file" widget from about 2x2 up: shaped like "Speak" and "Photo", so they sit side by side. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/w_card"
+    android:contentDescription="@string/file_widget"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Takes whatever height the word leaves, so the word is never cut off; never larger than the button itself. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/widget_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:background="@drawable/w_circle_tonal"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/w_file_glyph" />
+    </FrameLayout>
+
+    <!-- Shrinks in a narrow cell instead of cutting the word off. -->
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:layout_marginTop="6dp"
+        android:autoSizeMaxTextSize="17sp"
+        android:autoSizeMinTextSize="10sp"
+        android:autoSizeTextType="uniform"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:text="@string/file_short"
+        android:textColor="@color/w_on_surface"
+        android:textStyle="bold" />
+</LinearLayout>
