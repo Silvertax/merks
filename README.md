@@ -95,6 +95,8 @@ No ads, no tracking, no account. Your entries stay on your phone and in your cal
 - When you open the app (unless switched off in the settings) or tap "Check for updates now", it asks GitHub for the latest version; only on "Update now" it downloads that version from the GitHub release. No personal data is sent.
 - Photos, and copies of pictures, files and messages passed on to Merks, are read on the phone and deleted right after. Only if you enter an AI key, the spoken text, the photo or what was passed on is sent to Anthropic to be sorted and read; calendar files never are.
 
+The full [privacy policy](PRIVACY.md), in English and German.
+
 ## Status
 
 Merks is young and still growing. Ideas and problems are welcome as an [issue](https://github.com/Silvertax/merks/issues).
