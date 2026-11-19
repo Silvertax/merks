@@ -4,6 +4,10 @@ What changed for users, per version. When a GitHub release is created with an em
 
 ## 0.13.0
 
+### What's new
+
+- **Backup:** in the settings, under "Backup", everything in Merks goes into one file and comes back from it: all entries and the settings, e.g. for a new phone or before trying another version of the app. The AI key is left out. Restoring replaces what is in Merks and says so first; links to the phone's calendar come back only where that appointment is still there.
+
 ### Changed
 
 - **The app is now called "Merks"**, without the apostrophe: easier to find on the phone and in the stores, where searching for "merks" did not always find "Merk's". Nothing else changes; entries and settings stay.

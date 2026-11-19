@@ -335,4 +335,22 @@
     <string name="section_later">Later</string>
     <string name="section_notes">Notes</string>
     <string name="section_done">Ticked off</string>
+    <string name="section_backup">Backup</string>
+    <string name="backup_text">All entries and settings in one file, e.g. for a new phone or before trying another version of the app. The AI key is left out.</string>
+    <string name="backup_save">Back up to a file</string>
+    <string name="backup_restore">Restore from a file</string>
+    <string name="backup_file_name">Merks-backup-%1$s.json</string>
+    <string name="backup_failed">The backup could not be saved.</string>
+    <string name="backup_not_one">This file is not a Merks backup.</string>
+    <string name="backup_restore_title">Restore the backup?</string>
+    <string name="backup_restore_go">Restore</string>
+    <string name="backup_restored">Restored.</string>
+    <plurals name="backup_saved">
+        <item quantity="one">%d entry backed up.</item>
+        <item quantity="other">%d entries backed up.</item>
+    </plurals>
+    <plurals name="backup_restore_text">
+        <item quantity="one">Backup from %1$s with %2$d entry. It replaces everything that is in Merks now.</item>
+        <item quantity="other">Backup from %1$s with %2$d entries. It replaces everything that is in Merks now.</item>
+    </plurals>
 </resources>

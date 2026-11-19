@@ -327,4 +327,22 @@
     <string name="section_later">Später</string>
     <string name="section_notes">Notizen</string>
     <string name="section_done">Erledigt</string>
+    <string name="section_backup">Sichern</string>
+    <string name="backup_text">Alle Einträge und Einstellungen in einer Datei, z. B. für ein neues Handy oder bevor du eine andere Version der App ausprobierst. Der KI-Schlüssel kommt nicht mit.</string>
+    <string name="backup_save">In eine Datei sichern</string>
+    <string name="backup_restore">Aus einer Datei wiederherstellen</string>
+    <string name="backup_file_name">Merks-Sicherung-%1$s.json</string>
+    <string name="backup_failed">Das Sichern hat nicht geklappt.</string>
+    <string name="backup_not_one">Diese Datei ist keine Merks-Sicherung.</string>
+    <string name="backup_restore_title">Sicherung wiederherstellen?</string>
+    <string name="backup_restore_go">Wiederherstellen</string>
+    <string name="backup_restored">Wiederhergestellt.</string>
+    <plurals name="backup_saved">
+        <item quantity="one">%d Eintrag gesichert.</item>
+        <item quantity="other">%d Einträge gesichert.</item>
+    </plurals>
+    <plurals name="backup_restore_text">
+        <item quantity="one">Sicherung vom %1$s mit %2$d Eintrag. Sie ersetzt alles, was jetzt in Merks steht.</item>
+        <item quantity="other">Sicherung vom %1$s mit %2$d Einträgen. Sie ersetzt alles, was jetzt in Merks steht.</item>
+    </plurals>
 </resources>

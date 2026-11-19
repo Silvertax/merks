@@ -74,6 +74,8 @@ Time spans and several days work as well: "Tomorrow from 10 to 12 handyman", "De
 
 The list shows only what is current: what is going on or still to come at the top, soonest first (a series by its next date), then your notes, with headings such as "Tomorrow" and "Next week" where each part begins. Appointments and reminders whose time is over leave the app by themselves; appointments stay in your calendar, unless Merks is the calendar. Everything with a date shows the weekday, day and month up front, so you find a date at a glance. The share button at the top passes on everything that is coming up as plain text, for example to a family chat; a single entry can be shared from its details. If you like, a quiet notification shows it on the lock screen too (Settings → Always show what's next).
 
+Settings → Backup puts all entries and settings into one file, and restores them from it, e.g. on a new phone. The AI key is left out of that file.
+
 The theme is light, dark or follows your phone, and an OLED mode makes the dark theme pure black. The colour can be teal, red, pink, purple, blue or green, or mixed: then each day has its own colour on the date tiles and each button another one. The widgets take the colours too.
 
 ## Language

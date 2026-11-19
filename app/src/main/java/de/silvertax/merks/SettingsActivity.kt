@@ -91,6 +91,11 @@ class SettingsActivity : MerksActivity() {
             }
         }
         setUpUpdateCheck()
+        findViewById<View>(R.id.backup_save).setOnClickListener { saveBackup.launch(Backup.fileName(this)) }
+        findViewById<View>(R.id.backup_restore).setOnClickListener {
+            // Some file managers call a .json file plain text or just "a file".
+            openBackup.launch(arrayOf("application/json", "text/*", "application/octet-stream"))
+        }
         if (!Updater.available) {
             findViewById<View>(R.id.section_app).visibility = View.GONE
             findViewById<View>(R.id.card_app).visibility = View.GONE
@@ -252,6 +257,44 @@ class SettingsActivity : MerksActivity() {
     }
 
     private var allowDialog: android.app.Dialog? = null
+
+    private val saveBackup = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri -> uri?.let { writeBackup(it) } }
+
+    private val openBackup = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri -> uri?.let { askRestore(it) } }
+
+    private fun writeBackup(uri: Uri) {
+        val count = runCatching { contentResolver.openOutputStream(uri, "wt")!!.use { Backup.write(this, it) } }.getOrNull()
+        val text = if (count == null) getString(R.string.backup_failed) else resources.getQuantityString(R.plurals.backup_saved, count, count)
+        Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+    }
+
+    /** Says what the file holds and that it replaces what is there now; restores only on "Restore". */
+    private fun askRestore(uri: Uri) {
+        val content = runCatching { contentResolver.openInputStream(uri)!!.use { Backup.read(it) } }.getOrNull()
+        if (content == null) {
+            MaterialAlertDialogBuilder(this).setMessage(R.string.backup_not_one).setPositiveButton(android.R.string.ok, null).show()
+            return
+        }
+        val day = java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+            .withLocale(Lang.locale(this))
+            .format(java.time.Instant.ofEpochMilli(content.saved).atZone(ZoneId.systemDefault()))
+        val n = content.entries.size
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.backup_restore_title)
+            .setMessage(resources.getQuantityString(R.plurals.backup_restore_text, n, day, n))
+            .setPositiveButton(R.string.backup_restore_go) { _, _ ->
+                Backup.restore(this, content)
+                Toast.makeText(this, R.string.backup_restored, Toast.LENGTH_SHORT).show()
+                // Design, colour or language may come back different.
+                recreate()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
 
     /** The update to install at once, when this screen was opened by "Update now" in the list; only once. */
     private fun updateFromIntent(): Updater.Info? {
