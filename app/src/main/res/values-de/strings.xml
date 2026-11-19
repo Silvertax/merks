@@ -345,4 +345,11 @@
         <item quantity="one">Sicherung vom %1$s mit %2$d Eintrag. Sie ersetzt alles, was jetzt in Merks steht.</item>
         <item quantity="other">Sicherung vom %1$s mit %2$d Einträgen. Sie ersetzt alles, was jetzt in Merks steht.</item>
     </plurals>
+    <string name="settings_mascot">Maskottchen</string>
+    <string name="settings_mascot_hint">Ein kleiner Freund in der App: Er hört mit zu und freut sich, wenn etwas gespeichert ist.</string>
+    <string name="mascot_none">Keins</string>
+    <string name="mascot_cat">Katze</string>
+    <string name="mascot_owl">Eule</string>
+    <string name="mascot_fox">Fuchs</string>
+    <string name="mascot_hedgehog">Igel</string>
 </resources>

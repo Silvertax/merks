@@ -205,6 +205,27 @@ class ScreenshotRender {
         shotActivity(activity, "5b_listening_on_dark")
     }
 
+    /** The mascots: in the list, empty and full, and listening along. */
+    @Test fun mascotMain() {
+        Prefs.setMascot(app, Mascot.FOX)
+        main(false, true, "21_mascot_main")
+    }
+
+    @Test fun mascotEmpty() {
+        Prefs.setMascot(app, Mascot.OWL)
+        main(true, false, "21_mascot_empty_dark")
+    }
+
+    @Test fun mascotListening() {
+        Prefs.setMascot(app, Mascot.CAT)
+        listening(false, "21_mascot_listening")
+    }
+
+    @Test fun mascotSettings() {
+        Prefs.setMascot(app, Mascot.HEDGEHOG)
+        settings(false, "21_mascot_settings")
+    }
+
     @Test fun listeningLight() = listening(false, "4_listening_light")
     @Test fun listeningDark() = listening(true, "5_listening_dark")
 

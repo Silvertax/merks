@@ -174,6 +174,18 @@ class MainActivity : MerksActivity() {
         Glance.refresh(this)
     }
 
+    /**
+     * The mascot chosen in the settings: in the header, or, when the list is empty, big in place of the
+     * logo (and only there, not twice).
+     */
+    private fun showMascot() {
+        val m = Prefs.mascot(this)
+        val nothing = entries.isEmpty()
+        findViewById<MascotView>(R.id.mascot).mascot = m.takeIf { !nothing }
+        findViewById<MascotView>(R.id.empty_mascot).mascot = m.takeIf { nothing }
+        findViewById<View>(R.id.empty_logo).visibility = if (m == null) View.VISIBLE else View.GONE
+    }
+
     private fun reload() {
         val now = System.currentTimeMillis()
         // What is over leaves first; the calendar keeps the appointments.
@@ -196,6 +208,7 @@ class MainActivity : MerksActivity() {
         adapter.notifyDataSetChanged()
         findViewById<View>(R.id.share).visibility = if (upcoming.isEmpty()) View.GONE else View.VISIBLE
         empty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
+        showMascot()
         list.visibility = if (entries.isEmpty()) View.GONE else View.VISIBLE
     }
 

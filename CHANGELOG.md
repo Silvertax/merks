@@ -2,6 +2,12 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.14.0
+
+### What's new
+
+- **Mascots:** a little pixel friend for the app, to choose in the settings under "Mascot": cat, owl, fox or hedgehog (or none, as before). It sits in the header of the list, or big in place of the logo when the list is empty; it breathes and blinks, listens along while you speak and jumps for joy when something is saved. A tap makes it cheer too. The choice goes into a backup as well.
+
 ## 0.13.0
 
 ### What's new

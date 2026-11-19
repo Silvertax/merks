@@ -73,6 +73,14 @@
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?attr/colorPrimary" />
         </LinearLayout>
+
+        <!-- The mascot listens along and cheers when something is saved. -->
+        <de.silvertax.merks.MascotView
+            android:id="@+id/mascot"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- Two rows, so that after saving "Undo", "Change" and "Add note" fit next to each other. -->

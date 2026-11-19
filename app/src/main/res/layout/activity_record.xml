@@ -37,6 +37,14 @@
             app:tint="?attr/colorOnPrimary" />
     </FrameLayout>
 
+    <!-- The mascot listens along and cheers when something is saved. -->
+    <de.silvertax.merks.MascotView
+        android:id="@+id/mascot"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/status"
         android:layout_width="match_parent"

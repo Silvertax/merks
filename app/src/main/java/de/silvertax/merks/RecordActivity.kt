@@ -52,6 +52,7 @@ class RecordActivity : MerksActivity() {
     private lateinit var change: Button
     private lateinit var note: Button
     private lateinit var pulse: View
+    private lateinit var mascot: MascotView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The manifest theme is the small floating info; the full screen is switched on here.
@@ -73,6 +74,8 @@ class RecordActivity : MerksActivity() {
         done = findViewById(R.id.done)
         undo = findViewById(R.id.undo)
         pulse = findViewById(R.id.pulse)
+        mascot = findViewById(R.id.mascot)
+        mascot.mascot = Prefs.mascot(this)
 
         change = findViewById(R.id.change)
         change.setOnClickListener {
@@ -471,6 +474,7 @@ class RecordActivity : MerksActivity() {
     private fun ring(level: Float) {
         val scale = 1f + 0.45f * level.coerceIn(0f, 1f)
         pulse.animate().scaleX(scale).scaleY(scale).setDuration(120).start()
+        mascot.listen(level)
     }
 
     private fun fail(message: String, hint: String = "") {
@@ -563,6 +567,7 @@ class RecordActivity : MerksActivity() {
             },
         )
         spoken.text = e.title
+        mascot.cheer()
         detail.text = if (how == Scheduler.Confirm.NOTED) Store.tidyNote(added.orEmpty()) else Format.whenText(this, e)
         // A note goes with an appointment or a reminder, not with a note.
         if (e.kind == Kind.NOTE) show(done, undo, change) else show(done, undo, change, note)

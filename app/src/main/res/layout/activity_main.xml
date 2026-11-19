@@ -33,6 +33,14 @@
             android:textAppearance="?attr/textAppearanceHeadlineMedium"
             android:textColor="?attr/colorOnSurface" />
 
+        <!-- The mascot, if one was chosen; it cheers when tapped. -->
+        <de.silvertax.merks.MascotView
+            android:id="@+id/mascot"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone" />
+
         <ImageButton
             android:id="@+id/share"
             android:layout_width="56dp"
@@ -133,11 +141,18 @@
         android:paddingHorizontal="40dp">
 
         <ImageView
+            android:id="@+id/empty_logo"
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:alpha="0.9"
             android:importantForAccessibility="no"
             android:src="@drawable/ic_logo" />
+
+        <de.silvertax.merks.MascotView
+            android:id="@+id/empty_mascot"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:visibility="gone" />
 
         <TextView
             android:layout_width="wrap_content"

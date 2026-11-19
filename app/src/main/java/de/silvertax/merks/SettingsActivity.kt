@@ -62,6 +62,8 @@ class SettingsActivity : MerksActivity() {
         findViewById<View>(R.id.row_theme).setOnClickListener { chooseTheme() }
 
         findViewById<TextView>(R.id.accent_value).text = accentName(Prefs.accent(this))
+        showMascot()
+        findViewById<View>(R.id.row_mascot).setOnClickListener { chooseMascot() }
         findViewById<View>(R.id.row_accent).setOnClickListener { chooseAccent() }
 
         switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
@@ -428,6 +430,42 @@ class SettingsActivity : MerksActivity() {
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun mascotName(m: Mascot?): String = getString(m?.label ?: R.string.mascot_none)
+
+    private fun showMascot() {
+        val m = Prefs.mascot(this)
+        findViewById<TextView>(R.id.mascot_value).text = mascotName(m)
+        findViewById<MascotView>(R.id.mascot_preview).mascot = m
+    }
+
+    /** None, or one of the pixel friends, each shown next to its name. */
+    private fun chooseMascot() {
+        val choices = listOf<Mascot?>(null) + Mascot.entries
+        val size = (32 * resources.displayMetrics.density).toInt()
+        val items = choices.map { m ->
+            SpannableStringBuilder().apply {
+                if (m != null) {
+                    val picture = android.graphics.drawable.BitmapDrawable(resources, m.bitmap(Mascot.Face.IDLE)).apply {
+                        paint.isFilterBitmap = false
+                        setBounds(0, 0, size, size)
+                    }
+                    append(" ", android.text.style.ImageSpan(picture, if (android.os.Build.VERSION.SDK_INT >= 29) android.text.style.DynamicDrawableSpan.ALIGN_CENTER else android.text.style.DynamicDrawableSpan.ALIGN_BOTTOM), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    append("   ")
+                }
+                append(mascotName(m))
+            }
+        }.toTypedArray<CharSequence>()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_mascot)
+            .setSingleChoiceItems(items, choices.indexOf(Prefs.mascot(this))) { dialog, which ->
+                dialog.dismiss()
+                Prefs.setMascot(this, choices[which])
+                showMascot()
+                findViewById<MascotView>(R.id.mascot_preview).cheer()
+            }
             .show()
     }
 

@@ -1130,6 +1130,54 @@ class AppSmokeTest {
 
     // ---------- Main list ----------
 
+    /** Every mascot is 16 x 16 pixels in each face, with a colour for every letter used. */
+    @Test fun mascotsAreWholePictures() {
+        for (m in Mascot.entries) for (f in Mascot.Face.entries) {
+            val b = m.bitmap(f)
+            assertEquals(16, b.width)
+            assertEquals(16, b.height)
+            // Something is drawn, and the corners are clear.
+            assertTrue((0 until 16).any { x -> (0 until 16).any { y -> b.getPixel(x, y) != 0 } })
+            assertEquals(0, b.getPixel(0, 0))
+        }
+    }
+
+    /** No mascot at first; chosen in the settings, it shows in the list and while listening. */
+    @Test fun mascotIsChosenAndShown() {
+        Prefs.setAskedPermissions(app)
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertEquals(View.GONE, main.findViewById<View>(R.id.mascot).visibility)
+        assertEquals(View.VISIBLE, main.findViewById<View>(R.id.empty_logo).visibility)
+
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals("Keins", settings.findViewById<TextView>(R.id.mascot_value).text.toString())
+        settings.findViewById<View>(R.id.row_mascot).performClick()
+        val list = (ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog).listView
+        assertEquals(1 + Mascot.entries.size, list.adapter.count)
+        assertTrue(list.adapter.getItem(3).toString().endsWith("Fuchs"))
+        list.performItemClick(list.adapter.getView(3, null, list), 3, list.adapter.getItemId(3))
+        assertEquals(Mascot.FOX, Prefs.mascot(app))
+        assertEquals("Fuchs", settings.findViewById<TextView>(R.id.mascot_value).text.toString())
+
+        // Nothing in the list yet: big in place of the logo, not in the header as well.
+        val empty = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertEquals(View.VISIBLE, empty.findViewById<View>(R.id.empty_mascot).visibility)
+        assertEquals(View.GONE, empty.findViewById<View>(R.id.mascot).visibility)
+        assertEquals(View.GONE, empty.findViewById<View>(R.id.empty_logo).visibility)
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val again = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        assertEquals(Mascot.FOX, again.findViewById<MascotView>(R.id.mascot).mascot)
+        assertEquals(View.VISIBLE, again.findViewById<View>(R.id.mascot).visibility)
+        // A tap: it cheers.
+        again.findViewById<View>(R.id.mascot).performClick()
+
+        speechAvailable()
+        val record = Robolectric.buildActivity(RecordActivity::class.java).setup().get()
+        assertEquals(View.VISIBLE, record.findViewById<View>(R.id.mascot).visibility)
+        say("Morgen um 10 Yoga")
+        idleMain()
+    }
+
     /** Mixed colours: each day its own colour on the date tiles, and each button below "Speak" another one. */
     @Test fun mixedColoursInTheList() {
         Prefs.setAskedPermissions(app)

@@ -189,6 +189,10 @@ object Prefs {
         p(ctx).getString("accent", null)?.takeIf { it in Appearance.ACCENTS || it == Appearance.MIXED } ?: Appearance.TEAL
     fun setAccent(ctx: Context, accent: String) = p(ctx).edit().putString("accent", accent).apply()
 
+    /** The mascot shown in the app, or null for none (the default). */
+    fun mascot(ctx: Context): Mascot? = Mascot.of(p(ctx).getString("mascot", null))
+    fun setMascot(ctx: Context, m: Mascot?) = p(ctx).edit().putString("mascot", m?.key).apply()
+
     /** The colours mixed in the mixed mode, in the order of the list; all of them until some are picked. */
     fun mixedAccents(ctx: Context): List<String> {
         val picked = p(ctx).getString("mixed_accents", null)?.split(',')?.toSet() ?: return Appearance.ACCENTS

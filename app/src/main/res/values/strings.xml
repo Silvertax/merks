@@ -353,4 +353,11 @@
         <item quantity="one">Backup from %1$s with %2$d entry. It replaces everything that is in Merks now.</item>
         <item quantity="other">Backup from %1$s with %2$d entries. It replaces everything that is in Merks now.</item>
     </plurals>
+    <string name="settings_mascot">Mascot</string>
+    <string name="settings_mascot_hint">A little friend in the app: it listens along and cheers when something is saved.</string>
+    <string name="mascot_none">None</string>
+    <string name="mascot_cat">Cat</string>
+    <string name="mascot_owl">Owl</string>
+    <string name="mascot_fox">Fox</string>
+    <string name="mascot_hedgehog">Hedgehog</string>
 </resources>
