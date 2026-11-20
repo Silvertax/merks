@@ -1,0 +1,2 @@
+• All in one widget: two low rows (as on many Xiaomi phones) or large print now show the long buttons with "File" below what comes next again, not just one row.
+• Up next widget: nothing is cut off at the bottom in large print anymore.

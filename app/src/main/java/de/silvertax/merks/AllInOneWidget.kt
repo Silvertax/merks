@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 
@@ -34,7 +35,7 @@ class AllInOneWidget : AppWidgetProvider() {
          * round buttons. [head]: what comes next, or null when only the buttons fit. [words]: the
          * button to speak has room for its word. [file]: there is room for the button to read a file.
          */
-        data class Look(val tall: Boolean, val head: UpNextViews.Look?, val words: Boolean = false, val file: Boolean = false)
+        data class Look(val tall: Boolean, val head: UpNextViews.Look?, val words: Boolean = false, val file: Boolean = false, val tight: Boolean = false)
 
         private const val MIN = 40f
 
@@ -56,6 +57,15 @@ class AllInOneWidget : AppWidgetProvider() {
         /** One row: the date tile, or without it the day, the title in two lines and the time. */
         internal fun rowFullMinH(fs: Float) = 72f * fs + 23.5f
 
+        /**
+         * What comes next over the long buttons, closer together and without "Up next" above it: two rows
+         * on home screens with low rows, as on many Xiaomi phones, or in larger print.
+         */
+        internal fun tallLowMinH(fs: Float) = 44f * fs + 103f
+
+        /** The same narrower, without the date tile: the title takes more lines there. */
+        internal fun narrowTallLowMinH(fs: Float) = 71f * fs + 85f
+
         /** What comes next, with "Up next" above it, over the long buttons. */
         internal fun tallMinH(fs: Float) = 72f * fs + 104f
 
@@ -65,24 +75,34 @@ class AllInOneWidget : AppWidgetProvider() {
         /** And two. */
         internal fun tallList2MinH(fs: Float) = 118.5f * fs + 118.5f
 
-        /** The steps of height at which the look changes; with the three widths 15 layouts, one fewer than Android takes. */
-        internal fun heights(fs: Float) = listOf(rowLowMinH(fs), rowFullMinH(fs), tallMinH(fs), tallList1MinH(fs), tallList2MinH(fs))
+        /** The steps of height at which the look changes. */
+        internal fun heights(fs: Float) =
+            listOf(rowLowMinH(fs), rowFullMinH(fs), tallLowMinH(fs), narrowTallLowMinH(fs), tallMinH(fs), tallList1MinH(fs), tallList2MinH(fs)).sorted()
+
+        /**
+         * Each width with each step of height, but a step that looks the same as the one below it only once:
+         * narrow, the steps of the entries below change nothing. Android takes at most 16.
+         */
+        internal fun sizes(fs: Float): List<SizeF> =
+            listOf(MIN, HEAD_MIN_W, WIDE_W).flatMap { w -> heights(fs).map { h -> SizeF(w, h) } }
+                .distinctBy { it.width to lookFor(it.width, it.height, fs) }
 
         /** [w] and [h] in dp; an unknown size (0) gets the look of the preview. */
         fun lookFor(w: Float, h: Float, fontScale: Float = 1f): Look {
             val fs = fontScale
             if (w <= 0f || h <= 0f) return Look(tall = true, head = UpNextViews.Look(tile = true, label = true), words = true, file = true)
-            if (h >= tallMinH(fs)) {
+            val tile = w >= HEAD_MIN_W
+            if (h >= (if (tile) tallLowMinH(fs) else narrowTallLowMinH(fs))) {
                 // Narrow, the buttons below leave no room for the entries after the next one.
-                val tile = w >= HEAD_MIN_W
+                val tight = h < tallMinH(fs)
                 val rows = when {
-                    !tile -> 0
+                    !tile || tight -> 0
                     h >= tallList2MinH(fs) -> 2
                     h >= tallList1MinH(fs) -> 1
                     else -> 0
                 }
-                val head = UpNextViews.Look(tile = tile, label = tile, rows = rows, compact = !tile)
-                return Look(tall = true, head = head, words = w >= WIDE_W, file = tile)
+                val head = UpNextViews.Look(tile = tile, label = tile && !tight, rows = rows, compact = !tile)
+                return Look(tall = true, head = head, words = w >= WIDE_W, file = tile, tight = tight)
             }
             if (w < HEAD_MIN_W || h < rowLowMinH(fs)) return Look(tall = false, head = null)
             val narrow = w < WIDE_W
@@ -115,6 +135,12 @@ class AllInOneWidget : AppWidgetProvider() {
                 if (mascot != null) setImageViewBitmap(R.id.all_speak_mascot, mascot.picture(ctx, if (look.tall) 36 else 40))
                 setContentDescription(R.id.all_photo, texts.getString(R.string.photo))
                 if (look.tall) {
+                    // Tight: less room above and below, and none extra above the buttons. Both ways each time.
+                    val d = ctx.resources.displayMetrics.density
+                    val side = Math.round(14 * d)
+                    val vertical = Math.round((if (look.tight) 10 else 14) * d)
+                    setViewPadding(android.R.id.background, side, vertical, side, vertical)
+                    setViewVisibility(R.id.all_gap, if (look.tight) View.GONE else View.VISIBLE)
                     val words = if (look.words) View.VISIBLE else View.GONE
                     setTextViewText(R.id.all_speak_label, texts.getString(R.string.speak))
                     setViewVisibility(R.id.all_speak_label, words)
@@ -160,7 +186,7 @@ class AllInOneWidget : AppWidgetProvider() {
                     // The home screen picks what fits the real size, in both orientations.
                     manager.updateAppWidget(
                         id,
-                        UpNextViews.responsive(listOf(MIN, HEAD_MIN_W, WIDE_W), heights(fs)) { w, h -> views(ctx, next, now, lookFor(w, h, fs)) },
+                        UpNextViews.responsive(sizes(fs)) { w, h -> views(ctx, next, now, lookFor(w, h, fs)) },
                     )
                 } else {
                     val (w, h) = NextWidget.size(ctx, manager.getAppWidgetOptions(id))

@@ -14,12 +14,19 @@
 
     <include layout="@layout/widget_next_more" />
 
+    <!-- Room above the buttons; left out where the widget is tight, as in two rows on some home screens. -->
+    <FrameLayout
+        android:id="@+id/all_gap"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        tools:ignore="UselessLeaf" />
+
     <!-- Whatever height is left goes here, so the buttons sit at the bottom. -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:minHeight="12dp"
+        android:minHeight="6dp"
         tools:ignore="UselessLeaf" />
 
     <LinearLayout

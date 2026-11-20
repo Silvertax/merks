@@ -1,0 +1,2 @@
+• Alles-in-einem-Widget: Bei zwei niedrigen Reihen (z. B. auf Xiaomi-Handys) oder großer Schrift erscheinen jetzt wieder die langen Knöpfe mit „Datei“ unter dem nächsten Termin, statt nur einer Reihe.
+• „Als Nächstes“-Widget: Bei großer Schrift wird unten nichts mehr abgeschnitten.

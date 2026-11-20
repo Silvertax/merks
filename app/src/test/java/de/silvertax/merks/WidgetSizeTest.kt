@@ -69,6 +69,23 @@ class WidgetSizeTest {
         }
     }
 
+    /**
+     * Two rows of a home screen with low rows, as on many Xiaomi phones, and in larger print: still what
+     * comes next over the long buttons with "File", only closer together. Android takes at most 16 layouts.
+     */
+    @Test fun twoLowRowsKeepTheLongButtons() {
+        for (fs in scales) assertTrue("print $fs", AllInOneWidget.sizes(fs).size <= 16)
+        for (fs in listOf(1f, 1.15f, 1.3f)) {
+            val look = AllInOneWidget.lookFor(345f, 170f, fs)
+            assertTrue("print $fs: $look", look.tall && look.file && look.tight && look.head?.tile == true && look.head?.label == false)
+        }
+        val roomy = AllInOneWidget.lookFor(345f, 220f, 1f)
+        assertTrue("$roomy", roomy.tall && !roomy.tight && roomy.head?.label == true)
+        // Narrow, without the date tile, it needs a little more.
+        assertTrue(AllInOneWidget.lookFor(160f, 170f, 1f).let { it.tall && it.tight && it.head?.tile == false })
+        assertTrue(AllInOneWidget.lookFor(160f, 150f, 1f).let { !it.tall && it.head == null })
+    }
+
     @Test fun allInOneFitsEveryStep() {
         for (fs in scales) {
             val c = printed(fs)

@@ -475,6 +475,8 @@ class ScreenshotRender {
             listOf(upNext(140, 50), upNext(140, 70), upNext(140, 100), upNext(150, 210), upNext(236, 107), upNext(315, 150), upNext(315, 220)),
             listOf(all(150, 80), all(236, 107), all(315, 90), all(315, 107), all(394, 107)),
             listOf(all(160, 220), all(236, 220), all(315, 214), all(394, 214), all(315, 330)),
+            // Two low rows, as on many Xiaomi home screens.
+            listOf(all(160, 165), all(236, 160), all(345, 170), all(394, 160)),
             listOf(
                 WidgetShot("Up next, nothing planned", 236, 107) { NextWidget.views(it, emptyList(), now, NextWidget.lookFor(236f, 107f)) },
                 WidgetShot("All in one, nothing planned", 315, 107) { AllInOneWidget.views(it, emptyList(), now, AllInOneWidget.lookFor(315f, 107f)) },
@@ -547,7 +549,7 @@ class ScreenshotRender {
             fun all(x: Int, y: Int) = WidgetShot("All in one ${x}x$y", x, y) { AllInOneWidget.views(it, next, now, AllInOneWidget.lookFor(x.toFloat(), y.toFloat())) }
             listOf(
                 listOf(speak(64, 64), speak(78, 107), speak(150, 70), speak(150, 150), all(150, 80), all(394, 107)),
-                listOf(all(160, 220), all(315, 214), all(394, 214)),
+                listOf(all(160, 220), all(315, 214), all(394, 214), all(345, 170)),
             ).map { row -> row.map { draw(c, it) } }
         }.flatten()
         drawSheet(drawn, false, "22_mascot_widgets")

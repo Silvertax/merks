@@ -176,8 +176,11 @@ object UpNextViews {
      * largest height that still fit: so [make] decides by the same steps.
      */
     @RequiresApi(31)
-    fun responsive(widths: List<Float>, heights: List<Float>, make: (Float, Float) -> RemoteViews): RemoteViews {
-        val sizes = widths.flatMap { w -> heights.map { h -> SizeF(w, h) } }
+    fun responsive(widths: List<Float>, heights: List<Float>, make: (Float, Float) -> RemoteViews): RemoteViews =
+        responsive(widths.flatMap { w -> heights.map { h -> SizeF(w, h) } }, make)
+
+    @RequiresApi(31)
+    fun responsive(sizes: List<SizeF>, make: (Float, Float) -> RemoteViews): RemoteViews {
         require(sizes.size <= 16) { "Android takes at most 16 layouts" }
         return RemoteViews(sizes.associateWith { make(it.width, it.height) })
     }

@@ -2,6 +2,13 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.15.1
+
+### Fixed
+
+- **All in one widget in two low rows:** on home screens with low rows, as on many Xiaomi phones, or in larger print, a widget two rows high showed only the single row with the round buttons and left half of it empty. It now shows what comes next over the long buttons with "File", a little closer together.
+- **Up next widget in large print:** with the print at 130 % or 150 %, the last line beside the date tile could be cut off by a few pixels on Android 13 and older. It now gets the room it needs.
+
 ## 0.15.0
 
 ### What's new
