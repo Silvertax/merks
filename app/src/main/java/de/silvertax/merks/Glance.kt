@@ -139,7 +139,7 @@ class NextWidget : AppWidgetProvider() {
         internal fun lowMinH(fs: Float) = 38.5f * fs + 19f
 
         /** The date tile with the title beside it; narrow: the day, the title and the time. */
-        internal fun tileMinH(fs: Float) = 44f * fs + 50f
+        internal fun tileMinH(fs: Float) = 50f * fs + 44f
 
         /** "Up next" above the title; narrow: the title in two lines. */
         internal fun labelMinH(fs: Float) = 72f * fs + 36f
