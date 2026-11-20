@@ -31,7 +31,9 @@ import android.speech.SpeechRecognizer
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.CompoundButton
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
 import de.silvertax.merks.parse.Kind
@@ -43,6 +45,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.After
 import org.junit.Test
@@ -1183,6 +1186,67 @@ class AppSmokeTest {
         assertEquals(View.VISIBLE, record.findViewById<View>(R.id.mascot).visibility)
         say("Morgen um 10 Yoga")
         idleMain()
+    }
+
+    /**
+     * A chosen mascot sits on the widgets' "Speak" button, in its own colours and as big as the microphone;
+     * switched off in the settings, or without a mascot, it is the microphone again, also in reused views.
+     */
+    @Test fun theMascotSitsOnTheSpeakButton() {
+        val now = System.currentTimeMillis()
+        fun speak() = SpeakWidget().views(app, ButtonWidget.Companion.Shape.TALL)
+        fun all(w: Float, h: Float) = AllInOneWidget.views(app, Glance.nextUp(app), now, AllInOneWidget.lookFor(w, h))
+        fun icon(v: View) = v.findViewById<ImageView>(R.id.widget_icon)
+        fun mascotShown(v: View): Boolean {
+            val icon = v.findViewById<View>(R.id.all_speak_icon)
+            val mascot = v.findViewById<ImageView>(R.id.all_speak_mascot)
+            assertEquals(icon.visibility == View.VISIBLE, mascot.visibility == View.GONE)
+            return mascot.visibility == View.VISIBLE
+        }
+
+        val mic = speak().apply(app, null)
+        assertNotNull(icon(mic).imageTintList)
+        val micWidth = icon(mic).drawable.intrinsicWidth
+        val tall = all(394f, 219f).apply(app, null)
+        val row = all(394f, 107f).apply(app, null)
+        assertFalse(mascotShown(tall))
+        assertFalse(mascotShown(row))
+
+        // The settings: the switch only with a mascot, on by default.
+        val settings = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        assertEquals(View.GONE, settings.findViewById<View>(R.id.row_mascot_widget).visibility)
+        settings.findViewById<View>(R.id.row_mascot).performClick()
+        val list = (ShadowDialog.getLatestDialog() as androidx.appcompat.app.AlertDialog).listView
+        val seal = 1 + Mascot.SEAL.ordinal
+        list.performItemClick(list.adapter.getView(seal, null, list), seal, list.adapter.getItemId(seal))
+        assertEquals(Mascot.SEAL, Prefs.mascot(app))
+        assertEquals(View.VISIBLE, settings.findViewById<View>(R.id.row_mascot_widget).visibility)
+        assertTrue(settings.findViewById<CompoundButton>(R.id.mascot_widget).isChecked)
+
+        // The same views again, as the home screen does: the seal, without the microphone's colour.
+        speak().reapply(app, mic)
+        assertNull(icon(mic).imageTintList)
+        val picture = (icon(mic).drawable as android.graphics.drawable.BitmapDrawable).bitmap
+        assertSame(Mascot.SEAL.picture(app, 104, 0.74f), picture)
+        assertEquals(micWidth, icon(mic).drawable.intrinsicWidth)
+        all(394f, 219f).reapply(app, tall)
+        all(394f, 107f).reapply(app, row)
+        assertTrue(mascotShown(tall))
+        assertTrue(mascotShown(row))
+        assertNotNull(tall.findViewById<ImageView>(R.id.all_speak_mascot).drawable)
+        assertTrue(mascotShown(all(150f, 219f).apply(app, null)))
+        // "Photo" keeps its camera.
+        assertNotNull(icon(PhotoWidget().views(app, ButtonWidget.Companion.Shape.TALL).apply(app, null)).imageTintList)
+
+        // Switched off: the microphone again, in its colour.
+        settings.findViewById<View>(R.id.row_mascot_widget).performClick()
+        assertFalse(Prefs.mascotInWidgets(app))
+        speak().reapply(app, mic)
+        assertNotNull(icon(mic).imageTintList)
+        all(394f, 219f).reapply(app, tall)
+        assertFalse(mascotShown(tall))
+        // The mascot stays in the app.
+        assertEquals(Mascot.SEAL, Prefs.mascot(app))
     }
 
     /** Mixed colours: each day its own colour on the date tiles, and each button below "Speak" another one. */

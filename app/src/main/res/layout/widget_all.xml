@@ -48,6 +48,15 @@
                 android:src="@drawable/w_ic_mic"
                 android:tint="@color/w_on_primary" />
 
+            <!-- In place of the microphone when a mascot was chosen for the widgets. -->
+            <ImageView
+                android:id="@+id/all_speak_mascot"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/all_speak_label"
                 android:layout_width="wrap_content"

@@ -18,7 +18,7 @@ object Backup {
     /** The settings that go along: what was chosen on the settings screen, nothing the app keeps for itself. */
     private val SETTINGS = listOf(
         "theme", "oled", "accent", "mixed_accents", "compact", "pause", "leads", "eve_before",
-        "own_calendar", "lang", "model", "next_up", "auto_updates", "mascot",
+        "own_calendar", "lang", "model", "next_up", "auto_updates", "mascot", "mascot_widget",
     )
 
     class Content(val entries: List<Entry>, val settings: Map<String, Any?>, val saved: Long)

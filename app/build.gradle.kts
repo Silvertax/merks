@@ -33,8 +33,8 @@ android {
         applicationId = "de.silvertax.merks"
         minSdk = 26
         targetSdk = 36
-        versionCode = 32
-        versionName = "0.14.0"
+        versionCode = 33
+        versionName = "0.15.0"
         // Reading photos is native code. Phones need only these two; x86 devices run them translated.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }

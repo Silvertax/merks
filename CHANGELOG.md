@@ -2,6 +2,12 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.15.0
+
+### What's new
+
+- **The mascot on the widgets:** with a mascot chosen, it now sits on the "Speak" button of the widgets ("Speak" and "All in one") in place of the microphone: a tap on it and Merks listens. In its own colours, the button keeps its size. Under the mascot in the settings, "Also on the 'Speak' button of the widgets" switches it off again; the widgets change right away.
+
 ## 0.14.0
 
 ### What's new

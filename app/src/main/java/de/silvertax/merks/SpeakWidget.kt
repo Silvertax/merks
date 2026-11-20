@@ -56,13 +56,20 @@ abstract class ButtonWidget : AppWidgetProvider() {
         return RemoteViews(ctx.packageName, layout).apply {
             setOnClickPendingIntent(android.R.id.background, open(ctx, target(ctx)))
             setContentDescription(android.R.id.background, texts.getString(description))
-            setImageViewResource(R.id.widget_icon, glyph)
+            // "Speak" shows the mascot in place of the microphone, if one was chosen for the widgets.
+            val mascot = if (this@ButtonWidget is SpeakWidget) Mascot.forWidgets(ctx) else null
+            if (mascot != null) {
+                // As big as the microphone's picture (104dp), so the button keeps its size.
+                setImageViewBitmap(R.id.widget_icon, mascot.picture(ctx, 104, 0.74f))
+            } else {
+                setImageViewResource(R.id.widget_icon, glyph)
+            }
             setInt(R.id.widget_icon, "setBackgroundResource", if (strong) R.drawable.w_circle_primary else R.drawable.w_circle_tonal)
             if (shape != Shape.SMALL) setTextViewText(R.id.widget_label, text)
             WidgetTheme.paint(ctx, this) {
                 card()
                 background(R.id.widget_icon, slot) { if (strong) primary else tonal }
-                image(R.id.widget_icon, slot) { if (strong) onPrimary else onTonal }
+                if (mascot == null) image(R.id.widget_icon, slot) { if (strong) onPrimary else onTonal } else plainImage(R.id.widget_icon)
                 if (shape != Shape.SMALL) text(R.id.widget_label) { onSurface }
             }
         }

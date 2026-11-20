@@ -114,6 +114,9 @@ object WidgetTheme {
         fun image(id: Int, slot: Int = 0, pick: Colors.() -> Int) =
             rv.setColorStateList(id, "setImageTintList", list(light(slot).pick()), list(dark(slot).pick()))
 
+        /** A picture in its own colours, e.g. the mascot: no colour left over from the microphone. */
+        fun plainImage(id: Int) = rv.setColorStateList(id, "setImageTintList", null as ColorStateList?)
+
         fun text(id: Int, slot: Int = 0, pick: Colors.() -> Int) =
             rv.setColorInt(id, "setTextColor", light(slot).pick(), dark(slot).pick())
 

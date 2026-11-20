@@ -193,6 +193,10 @@ object Prefs {
     fun mascot(ctx: Context): Mascot? = Mascot.of(p(ctx).getString("mascot", null))
     fun setMascot(ctx: Context, m: Mascot?) = p(ctx).edit().putString("mascot", m?.key).apply()
 
+    /** Whether the mascot also sits on the "Speak" button of the widgets, in place of the microphone. */
+    fun mascotInWidgets(ctx: Context): Boolean = p(ctx).getBoolean("mascot_widget", true)
+    fun setMascotInWidgets(ctx: Context, on: Boolean) = p(ctx).edit().putBoolean("mascot_widget", on).apply()
+
     /** The colours mixed in the mixed mode, in the order of the list; all of them until some are picked. */
     fun mixedAccents(ctx: Context): List<String> {
         val picked = p(ctx).getString("mixed_accents", null)?.split(',')?.toSet() ?: return Appearance.ACCENTS

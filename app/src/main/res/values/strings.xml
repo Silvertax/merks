@@ -361,4 +361,5 @@
     <string name="mascot_fox">Fox</string>
     <string name="mascot_hedgehog">Hedgehog</string>
     <string name="mascot_seal">Seal</string>
+    <string name="settings_mascot_widget">Also on the “Speak” button of the widgets</string>
 </resources>

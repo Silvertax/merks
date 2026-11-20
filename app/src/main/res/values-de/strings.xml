@@ -353,4 +353,5 @@
     <string name="mascot_fox">Fuchs</string>
     <string name="mascot_hedgehog">Igel</string>
     <string name="mascot_seal">Robbe</string>
+    <string name="settings_mascot_widget">Auch auf dem „Sprechen“-Knopf der Widgets</string>
 </resources>

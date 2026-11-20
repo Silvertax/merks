@@ -107,6 +107,12 @@ class AllInOneWidget : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.all_speak, ButtonWidget.open(ctx, Intent(ctx, RecordActivity::class.java)))
                 setOnClickPendingIntent(R.id.all_photo, ButtonWidget.open(ctx, Intent(ctx, PhotoActivity::class.java)))
                 setContentDescription(R.id.all_speak, texts.getString(R.string.speak))
+                // The mascot in place of the microphone, if one was chosen for the widgets.
+                // Both ways each time: the home screen may reuse the views of the last update.
+                val mascot = Mascot.forWidgets(ctx)
+                setViewVisibility(R.id.all_speak_icon, if (mascot == null) View.VISIBLE else View.GONE)
+                setViewVisibility(R.id.all_speak_mascot, if (mascot == null) View.GONE else View.VISIBLE)
+                if (mascot != null) setImageViewBitmap(R.id.all_speak_mascot, mascot.picture(ctx, if (look.tall) 36 else 40))
                 setContentDescription(R.id.all_photo, texts.getString(R.string.photo))
                 if (look.tall) {
                     val words = if (look.words) View.VISIBLE else View.GONE
@@ -139,7 +145,7 @@ class AllInOneWidget : AppWidgetProvider() {
                             text(R.id.all_photo_label, 1) { onTonal }
                         }
                     } else {
-                        image(R.id.all_speak, 0) { onPrimary }
+                        image(R.id.all_speak_icon, 0) { onPrimary }
                         image(R.id.all_photo, 1) { onTonal }
                     }
                 }

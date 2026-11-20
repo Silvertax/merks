@@ -527,6 +527,32 @@ class ScreenshotRender {
         save(sheet, name)
     }
 
+    /** The seal on the "Speak" buttons: the home screen, and the widgets at their sizes in light and dark mode. */
+    @Test fun mascotHome() {
+        Prefs.setMascot(app, Mascot.SEAL)
+        homeScreen("22_mascot_home")
+    }
+
+    @Test fun mascotWidgets() {
+        sampleEntries()
+        Prefs.setMascot(app, Mascot.SEAL)
+        val next = Glance.nextUp(app)
+        val now = System.currentTimeMillis()
+        val drawn = listOf(false, true).map { dark ->
+            val config = android.content.res.Configuration(app.resources.configuration)
+            config.uiMode = (config.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                (if (dark) android.content.res.Configuration.UI_MODE_NIGHT_YES else android.content.res.Configuration.UI_MODE_NIGHT_NO)
+            val c = app.createConfigurationContext(config)
+            fun speak(x: Int, y: Int) = WidgetShot("Speak ${x}x$y", x, y) { SpeakWidget().views(it, ButtonWidget.shapeFor(x.toFloat(), y.toFloat())) }
+            fun all(x: Int, y: Int) = WidgetShot("All in one ${x}x$y", x, y) { AllInOneWidget.views(it, next, now, AllInOneWidget.lookFor(x.toFloat(), y.toFloat())) }
+            listOf(
+                listOf(speak(64, 64), speak(78, 107), speak(150, 70), speak(150, 150), all(150, 80), all(394, 107)),
+                listOf(all(160, 220), all(315, 214), all(394, 214)),
+            ).map { row -> row.map { draw(c, it) } }
+        }.flatten()
+        drawSheet(drawn, false, "22_mascot_widgets")
+    }
+
     @Test fun widgetsDark() = widgetSheet(true, "17_widgets_dark")
     @Test fun widgetsLight() = widgetSheet(false, "17_widgets_light")
 

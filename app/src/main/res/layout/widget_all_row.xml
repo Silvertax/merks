@@ -20,16 +20,33 @@
         android:layout_height="wrap_content"
         android:layout_weight="1" />
 
-    <ImageView
+    <!-- The microphone, or the mascot when one was chosen for the widgets. -->
+    <FrameLayout
         android:id="@+id/all_speak"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="10dp"
         android:background="@drawable/w_circle_primary"
-        android:contentDescription="@string/speak"
-        android:padding="13dp"
-        android:src="@drawable/w_ic_mic"
-        android:tint="@color/w_on_primary" />
+        android:contentDescription="@string/speak">
+
+        <ImageView
+            android:id="@+id/all_speak_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:padding="13dp"
+            android:src="@drawable/w_ic_mic"
+            android:tint="@color/w_on_primary" />
+
+        <ImageView
+            android:id="@+id/all_speak_mascot"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:padding="5dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <ImageView
         android:id="@+id/all_photo"

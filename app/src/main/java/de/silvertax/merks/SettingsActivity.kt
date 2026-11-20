@@ -64,6 +64,10 @@ class SettingsActivity : MerksActivity() {
         findViewById<TextView>(R.id.accent_value).text = accentName(Prefs.accent(this))
         showMascot()
         findViewById<View>(R.id.row_mascot).setOnClickListener { chooseMascot() }
+        switchRow(R.id.row_mascot_widget, R.id.mascot_widget, Prefs.mascotInWidgets(this)) { on ->
+            Prefs.setMascotInWidgets(this, on)
+            ButtonWidget.updateAll(this)
+        }
         findViewById<View>(R.id.row_accent).setOnClickListener { chooseAccent() }
 
         switchRow(R.id.row_oled, R.id.oled, Prefs.oled(this)) { on ->
@@ -439,6 +443,7 @@ class SettingsActivity : MerksActivity() {
         val m = Prefs.mascot(this)
         findViewById<TextView>(R.id.mascot_value).text = mascotName(m)
         findViewById<MascotView>(R.id.mascot_preview).mascot = m
+        findViewById<View>(R.id.row_mascot_widget).visibility = if (m == null) View.GONE else View.VISIBLE
     }
 
     /** None, or one of the pixel friends, each shown next to its name. */
@@ -463,6 +468,7 @@ class SettingsActivity : MerksActivity() {
             .setSingleChoiceItems(items, choices.indexOf(Prefs.mascot(this))) { dialog, which ->
                 dialog.dismiss()
                 Prefs.setMascot(this, choices[which])
+                ButtonWidget.updateAll(this)
                 showMascot()
                 findViewById<MascotView>(R.id.mascot_preview).cheer()
             }

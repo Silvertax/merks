@@ -46,8 +46,31 @@ enum class Mascot(private val art: MascotArt) {
         }
     }
 
+    private val framed = HashMap<Int, Bitmap>()
+
+    /**
+     * The mascot as a widget picture of [px] x [px] screen pixels, the mascot taking up about [fill] of it
+     * in the middle. Each of its pixels becomes a whole block of screen pixels, so it stays sharp; and it is
+     * the same picture each time, so a widget with several sizes keeps it once.
+     */
+    fun picture(px: Int, fill: Float = 1f): Bitmap = framed.getOrPut(px * 1000 + (fill * 100).toInt()) {
+        val side = SIZE * maxOf(1, (px * fill / SIZE).toInt())
+        val margin = (px - side) / 2
+        Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also {
+            val paint = android.graphics.Paint().apply { isFilterBitmap = false; isAntiAlias = false }
+            android.graphics.Canvas(it).drawBitmap(bitmap(Face.IDLE), null, android.graphics.Rect(margin, margin, margin + side, margin + side), paint)
+        }
+    }
+
+    /** [picture] for a view of [dp] x [dp]. */
+    fun picture(ctx: android.content.Context, dp: Int, fill: Float = 1f): Bitmap =
+        picture(Math.round(dp * ctx.resources.displayMetrics.density), fill)
+
     companion object {
         const val SIZE = 32
+
+        /** The mascot for the widgets' "Speak" button, or null for the microphone. */
+        fun forWidgets(ctx: android.content.Context): Mascot? = Prefs.mascot(ctx)?.takeIf { Prefs.mascotInWidgets(ctx) }
 
         fun of(key: String?): Mascot? = entries.firstOrNull { it.key == key }
     }
