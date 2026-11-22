@@ -125,6 +125,18 @@ class ScreenshotRender {
     @Test fun mainDark() = main(true, true, "2_main_dark")
     @Test fun mainEmpty() = main(false, false, "3_main_empty")
 
+    /** The end of the list: the notes without a date, each with its tick, and a note just taken off. */
+    @Test fun mainNotes() {
+        night(false)
+        sampleEntries()
+        Store.save(app, Parsed(Kind.NOTE, t("Milch und Brot kaufen", "Buy milk and bread"), null, null, false), "x")
+        Store.save(app, Parsed(Kind.NOTE, t("Fenster putzen", "Clean the windows"), null, null, false), "x")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<android.widget.ListView>(R.id.list)
+        list.setSelection(list.adapter.count - 1)
+        shotActivity(main, "23_main_notes")
+    }
+
     /** The app in another accent colour, as chosen in the settings. */
     @Test fun mainRose() {
         Prefs.setAccent(app, Appearance.ROSE)

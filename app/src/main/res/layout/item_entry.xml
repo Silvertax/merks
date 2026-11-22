@@ -134,6 +134,16 @@
                     android:textColor="?attr/colorOnSurface"
                     android:visibility="gone" />
             </LinearLayout>
+
+            <!-- A note without a date: one tap on the tick takes it off the list. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/note_done"
+                style="@style/Widget.Material3.Button.IconButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                app:icon="@drawable/ic_check" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

@@ -362,4 +362,6 @@
     <string name="mascot_hedgehog">Hedgehog</string>
     <string name="mascot_seal">Seal</string>
     <string name="settings_mascot_widget">Also on the “Speak” button of the widgets</string>
+    <string name="note_done">Done: remove “%1$s”</string>
+    <string name="note_taken_off">“%1$s” removed</string>
 </resources>

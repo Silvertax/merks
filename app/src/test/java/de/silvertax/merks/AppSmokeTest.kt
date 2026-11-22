@@ -891,6 +891,34 @@ class AppSmokeTest {
         assertEquals("Diesen Eintrag gibt es nicht mehr.", status(activity))
     }
 
+    /** A note without a date goes with one tap on its tick, and comes back with "Undo"; appointments have no tick. */
+    @Test fun aNoteGoesWithOneTap() {
+        Prefs.setAskedPermissions(app)
+        Store.save(app, Parsed(Kind.APPOINTMENT, "Zahnarzt", LocalDate.now().plusDays(1).atTime(10, 0), null, false), "Zahnarzt")
+        Store.save(app, Parsed(Kind.NOTE, "Milch kaufen", null, null, false), "Milch kaufen")
+        val main = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val list = main.findViewById<ListView>(R.id.list)
+        fun row(title: String): View? = (0 until list.adapter.count).map { list.adapter.getView(it, null, list) }
+            .firstOrNull { it.findViewById<TextView>(R.id.title).text == title }
+        assertEquals(View.GONE, row("Zahnarzt")!!.findViewById<View>(R.id.note_done).visibility)
+        val tick = row("Milch kaufen")!!.findViewById<View>(R.id.note_done)
+        assertEquals(View.VISIBLE, tick.visibility)
+        assertEquals("Erledigt: „Milch kaufen“ entfernen", tick.contentDescription)
+
+        tick.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertNull(row("Milch kaufen"))
+        assertEquals(listOf("Zahnarzt"), Db(app).all().map { it.title })
+        fun find(v: View, id: Int): View? = v.findViewById(id)
+        val root = main.window.decorView
+        assertEquals("„Milch kaufen“ entfernt", find(root, com.google.android.material.R.id.snackbar_text)!!.let { (it as TextView).text.toString() })
+
+        find(root, com.google.android.material.R.id.snackbar_action)!!.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertNotNull(row("Milch kaufen"))
+        assertEquals(setOf("Zahnarzt", "Milch kaufen"), Db(app).all().map { it.title }.toSet())
+    }
+
     @Test fun theEntryDialogOffersToChangeByVoice() {
         Prefs.setAskedPermissions(app)
         val note = Store.save(app, Parsed(Kind.NOTE, "Zahnarzt", null, null, false), "Zahnarzt")

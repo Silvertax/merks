@@ -1,0 +1,1 @@
+• Notes without a date now have a tick in the list: one tap and they are gone. Tapped by mistake? "Undo" brings them back.

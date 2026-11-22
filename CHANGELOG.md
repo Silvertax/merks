@@ -2,6 +2,12 @@
 
 What changed for users, per version. When a GitHub release is created with an empty description, the Build workflow fills it in from the section of that version.
 
+## 0.16.0
+
+### What's new
+
+- **Notes go with one tap:** a note without a date now has a tick on its card in the list. One tap takes it off the list, and "Undo" brings it back for a few seconds, in case the finger slipped. Before, a note could only be removed by opening it and tapping "Delete".
+
 ## 0.15.1
 
 ### Fixed

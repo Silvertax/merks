@@ -354,4 +354,6 @@
     <string name="mascot_hedgehog">Igel</string>
     <string name="mascot_seal">Robbe</string>
     <string name="settings_mascot_widget">Auch auf dem „Sprechen“-Knopf der Widgets</string>
+    <string name="note_done">Erledigt: „%1$s“ entfernen</string>
+    <string name="note_taken_off">„%1$s“ entfernt</string>
 </resources>

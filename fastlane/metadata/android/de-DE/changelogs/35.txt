@@ -1,0 +1,1 @@
+• Notizen ohne Termin haben jetzt einen Haken in der Liste: ein Tipp, und sie sind weg. Wer sich vertippt hat, holt sie mit „Rückgängig“ zurück.

@@ -354,6 +354,20 @@ class MainActivity : MerksActivity() {
         }
     }
 
+    /** Takes a note off the list, with a moment to bring it back in case the finger slipped. */
+    private fun takeOff(note: Entry) {
+        Store.remove(this, note)
+        reload()
+        com.google.android.material.snackbar.Snackbar
+            .make(findViewById(android.R.id.content), getString(R.string.note_taken_off, note.title), com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+            .setAction(R.string.undo) {
+                Db(this).insert(note)
+                Glance.refresh(this)
+                reload()
+            }
+            .show()
+    }
+
     /** A note spoken on its own goes with one of the coming appointments, e.g. what to bring there. */
     private fun attach(note: Entry, choices: List<Entry>) {
         val names = choices.map { it.title + " · " + Format.whenText(this, it, starts[it.id]) }.toTypedArray()
@@ -439,6 +453,13 @@ class MainActivity : MerksActivity() {
                     setTint(currentTextColor)
                 }
                 setCompoundDrawablesRelative(icon, null, null, null)
+            }
+            // A note without a date goes with one tap, as an appointment goes by itself once it is over.
+            v.findViewById<View>(R.id.note_done).apply {
+                val plain = e.kind == Kind.NOTE && e.start == null && !e.done
+                visibility = if (plain) View.VISIBLE else View.GONE
+                contentDescription = getString(R.string.note_done, e.title)
+                setOnClickListener { if (plain) takeOff(e) }
             }
             v.findViewById<View>(R.id.card).alpha = if (e.done) 0.6f else 1f
             return v
